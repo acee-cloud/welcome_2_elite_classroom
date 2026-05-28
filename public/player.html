@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bộ Điều Khiển Người Chơi</title>
+    <style>
+        body { font-family: 'Segoe UI', Arial, sans-serif; background: #1e1e24; color: white; padding: 20px; text-align: center; margin: 0; }
+        .wrapper { max-width: 400px; margin: 0 auto; }
+        input { padding: 14px; font-size: 1.1rem; width: 85%; margin-bottom: 20px; border-radius: 8px; border: 2px solid #444; background: #2a2a35; color: white; text-align: center; }
+        input:focus { border-color: #00da63; outline: none; }
+        .avatar-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin: 0 auto 25px; width: 90%; }
+        .avatar-item { font-size: 2.6rem; padding: 8px; background: #2a2a35; border-radius: 10px; cursor: pointer; border: 3px solid transparent; transition: 0.15s; }
+        .avatar-item.selected { border-color: #00da63; background: #34495e; transform: scale(1.1); }
+        button { background: #00da63; color: white; border: none; padding: 14px; font-size: 1.3rem; font-weight: bold; border-radius: 8px; cursor: pointer; width: 90%; box-shadow: 0 4px 10px rgba(0,218,99,0.3); }
+        #waiting-screen, #game-screen { display: none; }
+        .error-text { color: #ff4757; font-weight: bold; margin-top: -10px; margin-bottom: 15px; display: block; }
+    </style>
+</head>
+<body>
+    <div class="wrapper">
+        <div id="login-screen">
+            <h2>⚔️ NHẬP TÊN ANH EM</h2>
+            <input type="text" id="player-name" placeholder="Nhập tên hoặc biệt danh..." maxlength="12">
+            <span id="error-msg" class="error-text"></span>
+
+            <h2>🦁 CHỌN LINH THÚ</h2>
+            <div class="avatar-grid">
+                <div class="avatar-item selected" onclick="pickAvatar(this, '🐵')">🐵</div>
+                <div class="avatar-item" onclick="pickAvatar(this, '🦁')">🦁</div>
+                <div class="avatar-item" onclick="pickAvatar(this, '🐯')">🐯</div>
+                <div class="avatar-item" onclick="pickAvatar(this, '🐱')">🐱</div>
+                <div class="avatar-item" onclick="pickAvatar(this, '🐶')">🐶</div>
+                <div class="avatar-item" onclick="pickAvatar(this, '🐺')">🐺</div>
+                <div class="avatar-item" onclick="pickAvatar(this, '🐻')">🐻</div>
+                <div class="avatar-item" onclick="pickAvatar(this, '🐻‍❄️')">🐻‍❄️</div>
+            </div>
+
+            <button onclick="requestJoin()">XUẤT HIỆN TẠI SẢNH</button>
+        </div>
+
+        <div id="waiting-screen">
+            <h2 style="color: #00da63;">Đã vào sảnh thành công! 🎉</h2>
+            <p>Nhìn lên màn hình máy chiếu lớn để thấy linh thú của bạn xuất hiện.</p>
+            <p style="color: #aaa; font-style: italic; margin-top: 30px;">Vui lòng đợi thầy/cô đóng cổng hầm ngục để bắt đầu cuộc chiến Vật lí...</p>
+        </div>
+
+        <div id="game-screen">
+            <h2 style="color: #ff9f43;">🎮 TRÒ CHƠI BẮT ĐẦU!</h2>
+            <p>Hệ thống điều khiển 2.5D hoặc bảng câu hỏi trắc nghiệm Vật lí sẽ hiển thị tại đây.</p>
+        </div>
+    </div>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+        const socket = io();
+        let myAvatar = '🐵';
+
+        function pickAvatar(element, emoji) {
+            document.querySelectorAll('.avatar-item').forEach(item => item.classList.remove('selected'));
+            element.classList.add('selected');
+            myAvatar = emoji;
+        }
+
+        function requestJoin() {
+            const nameInput = document.getElementById('player-name').value.trim();
+            if (!nameInput) {
+                document.getElementById('error-msg').innerText = "Bạn chưa điền tên vào kìa!";
+                return;
+            }
+            document.getElementById('error-msg').innerText = "";
+
+            // Gửi dữ liệu đăng nhập lên server
+            socket.emit('player-join', { name: nameInput, avatar: myAvatar });
+        }
+
+        // Nhận kết quả phản hồi từ server
+        socket.on('join-result', (data) => {
+            if (data.success) {
+                document.getElementById('login-screen').style.display = 'none';
+                document.getElementById('waiting-screen').style.display = 'block';
+            } else {
+                document.getElementById('error-msg').innerText = data.message;
+            }
+        });
+
+        // Nhận lệnh khi Admin đóng cửa bắt đầu trò chơi
+        socket.on('room-status-changed', (data) => {
+            if (data.isLocked) {
+                document.getElementById('waiting-screen').style.display = 'none';
+                document.getElementById('game-screen').style.display = 'block';
+            }
+        });
+    </script>
+</body>
+</html>
