@@ -101,6 +101,44 @@
         <h3 style="color:var(--accent); font-family:'Orbitron'; text-align:left;">XEM LẠI CHI TIẾT ĐÁP ÁN BÀI LÀM</h3>
         <div id="review-list-zone"></div>
     </div>
+<script>
+let katexReady = false;
+const pendingRenderTargets = [];
+
+function maybeRenderMath() {
+    if (!katexReady) return;
+    pendingRenderTargets.forEach(el => {
+        if (typeof renderMathInElement === 'function') {
+            renderMathInElement(el, {
+                delimiters: [
+                    { left: '$$', right: '$$', display: true },
+                    { left: '$', right: '$', display: false },
+                    { left: '\\(', right: '\\)', display: false },
+                    { left: '\\[', right: '\\]', display: true }
+                ],
+                throwOnError: false
+            });
+        }
+    });
+    pendingRenderTargets.length = 0;
+}
+
+function renderMathIn(el) {
+    if (!el) return;
+    if (katexReady && typeof renderMathInElement === 'function') {
+        renderMathInElement(el, {
+            delimiters: [
+                { left: '$$', right: '$$', display: true },
+                { left: '$', right: '$', display: false },
+                { left: '\\(', right: '\\)', display: false },
+                { left: '\\[', right: '\\]', display: true }
+            ],
+            throwOnError: false
+        });
+    } else {
+        pendingRenderTargets.push(el);
+    }
+}
 
     <script>
         const socket = io();
