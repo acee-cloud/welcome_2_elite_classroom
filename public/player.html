@@ -147,7 +147,6 @@ function maybeRenderMath() {
         }
 
         function joinRoom() {
-            const roomId = document.getElementById('input-room-id').value.trim();
             const name = document.getElementById('input-name').value.trim();
             if (!roomId || !name) return alert('Vui lòng nhập đầy đủ họ và tên!');
             currentRoomId = roomId.toUpperCase();
