@@ -3,203 +3,394 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Người Chơi – Vật Lí</title>
-    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700&family=IBM+Plex+Sans:wght@400;600;700&display=swap" rel="stylesheet">
+    <title>Nguoi Choi - He Thong Thi Dau</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/katex.min.css">
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/katex.min.js"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/contrib/auto-render.min.js"
+        onload="katexReady = true; maybeRenderMath()"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=IBM+Plex+Sans:wght@400;600;700&display=swap" rel="stylesheet">
     <script src="/socket.io/socket.io.js"></script>
     <style>
-        :root { --bg: #0a0e1a; --panel: #111827; --border: #1e3a5f; --accent: #00d2ff; --text: #f3f4f6; }
-        body { margin: 0; padding: 0; background-color: var(--bg); color: var(--text); font-family: 'IBM Plex Sans', sans-serif; text-align: center; }
+        :root {
+            --bg: #0a0e1a; --panel: #111827; --border: #1e3a5f;
+            --accent: #00d4ff; --team-a: #ff4d6d; --team-b: #38bdf8; --team-c: #a78bfa;
+            --gold: #ffd700; --success: #34d399; --danger: #f87171;
+            --text: #e2e8f0; --muted: #64748b;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: 'IBM Plex Sans', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; padding: 16px; padding-bottom: 40px; }
+        .hidden { display: none !important; }
+        .screen { max-width: 600px; margin: 0 auto; }
+        .panel { background: var(--panel); border: 1px solid var(--border); border-radius: 16px; padding: 20px; margin-bottom: 14px; }
+        .page-title { font-family: 'Orbitron', monospace; font-size: 22px; font-weight: 900; text-align: center; color: var(--accent); letter-spacing: 4px; margin-bottom: 20px; }
+        .field { margin-bottom: 16px; }
+        .field label { display: block; font-size: 12px; font-weight: 700; color: var(--muted); text-transform: uppercase; margin-bottom: 6px; letter-spacing: 1px; }
+        .input { width: 100%; padding: 12px 14px; background: rgba(0,0,0,0.3); border: 1px solid var(--border); border-radius: 10px; color: var(--text); font-size: 16px; outline: none; }
+        .btn { display: block; width: 100%; padding: 14px; font-family: 'Orbitron', monospace; font-size: 14px; font-weight: 700; color: #000; background: var(--accent); border: none; border-radius: 10px; cursor: pointer; text-align: center; margin-top: 8px; }
+        .btn-success { background: var(--success); }
         
-        /* THANH THỜI GIAN 60S TRÊN CÙNG */
-        #top-progress-container { position: fixed; top: 0; left: 0; width: 100%; height: 6px; background: #1e293b; z-index: 9999; display: none; }
-        #top-progress-bar { width: 100%; height: 100%; background: #00ff88; transition: width 1s linear, background-color 0.5s ease; }
+        .badge-a { background: rgba(255,77,109,0.15); color: var(--team-a); border: 1px solid var(--team-a); padding: 10px 24px; border-radius: 20px; font-weight: bold; font-size: 18px; display: inline-block; }
+        .badge-b { background: rgba(56,189,248,0.15); color: var(--team-b); border: 1px solid var(--team-b); padding: 10px 24px; border-radius: 20px; font-weight: bold; font-size: 18px; display: inline-block; }
+        .badge-c { background: rgba(167,139,250,0.15); color: var(--team-c); border: 1px solid var(--team-c); padding: 10px 24px; border-radius: 20px; font-weight: bold; font-size: 18px; display: inline-block; }
+        .badge-solo { background: rgba(255,215,0,0.15); color: var(--gold); border: 1px solid var(--gold); padding: 10px 24px; border-radius: 20px; font-weight: bold; font-size: 18px; display: inline-block; }
         
-        .screen { display: none; max-width: 500px; margin: 50px auto; padding: 20px; background: var(--panel); border: 2px solid var(--border); border-radius: 12px; }
-        .active { display: block; }
-        input, button { width: 100%; padding: 12px; margin: 10px 0; border-radius: 6px; border: 1px solid var(--border); box-sizing: border-box; font-size: 1rem; }
-        input { background: #0f172a; color: #fff; }
-        button { background: var(--accent); color: #000; font-weight: bold; cursor: pointer; }
-        button:disabled { background: #475569; color: #94a3b8; cursor: not-allowed; }
+        /* Giao diện thanh thời gian mất dần màu ở trên cùng */
+        .sticky-header { position: sticky; top: 0; z-index: 100; background: var(--panel); border: 1px solid var(--border); border-radius: 14px; padding: 12px 16px; display: flex; flex-direction: column; gap: 8px; margin-bottom: 16px; box-shadow: 0 4px 20px rgba(0,0,0,0.5); }
+        .header-top { display: flex; justify-content: space-between; align-items: center; }
+        .header-stage { font-family: 'Orbitron', monospace; font-size: 14px; font-weight: 700; color: var(--gold); }
+        .time-bar-bg { width: 100%; height: 8px; background: rgba(255,255,255,0.08); border-radius: 4px; overflow: hidden; }
+        .time-bar-fill { height: 100%; background: var(--accent); width: 100%; transition: width 1s linear, background-color 0.3s; }
         
-        /* ĐÁP ÁN CUỐN CHIẾU */
-        .choice-btn { text-align: left; background: #1e293b; color: #fff; transition: all 0.2s; }
-        .choice-btn:not(:disabled):hover { background: #334155; }
+        /* Hiện từng câu một */
+        .question-block { padding: 5px 0; }
+        .question-text { font-size: 17px; font-weight: 600; line-height: 1.6; margin-bottom: 22px; color: #fff; }
+        .options-grid { display: flex; flex-direction: column; gap: 12px; }
+        .option-btn { background: rgba(255,255,255,0.04); border: 1px solid var(--border); padding: 16px; border-radius: 12px; cursor: pointer; font-size: 15px; text-align: left; color: var(--text); transition: all 0.15s ease; }
+        .option-btn:active { background: rgba(0,212,255,0.15); }
         
-        /* PHÒNG CHAT GIẢI LAO */
-        .chat-area { height: 180px; overflow-y: auto; background: #0f172a; border: 1px solid var(--border); padding: 10px; border-radius: 6px; text-align: left; font-size: 0.95rem; margin-bottom: 10px; }
-        .msg-line { margin: 4px 0; border-bottom: 1px dashed #1e3a5f; padding-bottom: 2px; }
+        /* Overlay thông báo kết quả tức thì (+/- điểm) của từng câu */
+        .result-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(5,8,16,0.9); display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 999; }
+        .result-points { font-size: 54px; font-weight: 900; font-family: 'Orbitron', monospace; text-shadow: 0 0 20px rgba(255,255,255,0.2); }
+        
+        .chat-box { height: 180px; overflow-y: auto; background: rgba(0,0,0,0.4); border: 1px solid var(--border); border-radius: 10px; padding: 12px; margin-bottom: 12px; font-size: 14px; line-height: 1.5; }
+        .chat-input-grp { display: flex; gap: 8px; }
+        .chat-input { flex: 1; padding: 12px; background: rgba(0,0,0,0.5); border: 1px solid var(--border); color: white; border-radius: 8px; outline: none; }
+        
+        .form-control { width: 100%; padding: 12px; background: rgba(0,0,0,0.5); border: 1px solid var(--border); color: white; border-radius: 8px; margin-bottom: 15px; font-family: inherit; font-size: 15px; outline: none; }
+        textarea.form-control { min-height: 90px; resize: none; }
+        .answer-item { background: rgba(255,255,255,0.03); padding: 14px; border-radius: 8px; margin-bottom: 10px; border-left: 4px solid var(--accent); }
     </style>
 </head>
 <body>
 
-    <div id="top-progress-container">
-        <div id="top-progress-bar"></div>
-    </div>
-
-    <div id="lobby-screen" class="screen active">
-        <h2 style="font-family:'Orbitron'; color:var(--accent);">VẬT LÍ ARENA</h2>
-        <input type="text" id="input-room-id" placeholder="MÃ PHÒNG (Ví dụ: ABCD)">
-        <input type="text" id="input-name" placeholder="NHẬP TÊN CỦA BẠN">
-        <button onclick="joinRoom()">VÀO PHÒNG CHỜ</button>
-    </div>
-
-    <div id="game-screen" class="screen">
-        <div style="display:flex; justify-content:space-between; margin-bottom:15px; color:var(--accent);">
-            <span id="stage-title">STAGE 1</span>
-            <span id="timer-text" style="font-family:'Orbitron'; font-weight:bold;">60s</span>
+<div id="screen-join" class="screen">
+    <h1 class="page-title">TRO CHOI VAT LI</h1>
+    <div class="panel">
+        <div class="field" id="room-field-block">
+            <label>Ma Phong Hoc</label>
+            <input type="text" id="input-room-id" class="input" style="text-transform:uppercase; text-align:center; letter-spacing: 4px; font-weight: bold;" maxlength="6">
         </div>
-        <div id="question-box">
-            </div>
-    </div>
-
-    <div id="intermission-screen" class="screen">
-        <h3 style="color:#00ff88; margin-top:0;">HẾT CHẶNG – NGHỈ GIẢI LAO (<span id="break-timer">30</span>s)</h3>
-        <div style="display:flex; justify-content:space-around; background:#1e293b; padding:10px; border-radius:6px; font-weight:bold; margin-bottom:15px;">
-            <span style="color:#ff4a4a;">Đội A: <span id="score-a">0</span>đ</span>
-            <span style="color:#00d2ff;">Đội B: <span id="score-b">0</span>đ</span>
+        <div class="field">
+            <label>Nhap Ten Cua Ban</label>
+            <input type="text" id="input-name" class="input" placeholder="Vi du: Hong Yen">
         </div>
+        <button class="btn" onclick="joinRoom()">VAO PHONG THI</button>
+    </div>
+</div>
+
+<div id="screen-lobby" class="screen hidden">
+    <div class="panel" style="text-align: center; padding: 40px 20px;">
+        <p style="font-size:18px;">Xin chao nguoi choi: <strong id="player-display-name" style="color:var(--accent);">...</strong></p>
+        <p style="color:var(--muted); margin-top: 15px; font-size: 14px;">Da vao phong thanh cong. Dang cho Admin mo tran dau...</p>
+    </div>
+</div>
+
+<div id="screen-role" class="screen hidden">
+    <div class="panel" style="text-align: center; padding: 40px 20px;">
+        <p style="font-size:13px; color:var(--muted); margin-bottom:20px; letter-spacing: 2px;">HE THONG XEP DOI CUA BAN</p>
+        <div id="team-badge"></div>
+        <p style="color:var(--muted); margin-top: 30px; font-size:14px;">Vong 1 sap bat dau, hay tap trung cao do!</p>
+    </div>
+</div>
+
+<div id="screen-game" class="screen hidden">
+    <div class="sticky-header">
+        <div class="header-top">
+            <div class="header-stage" id="display-stage-title">Vong 1</div>
+            <div style="font-weight: 900; font-family: 'Orbitron', monospace; font-size: 20px; color: var(--accent);" id="game-timer-text">60</div>
+        </div>
+        <div class="time-bar-bg"><div class="time-bar-fill" id="time-bar-fill"></div></div>
+    </div>
+    <div class="panel" id="question-container"></div>
+</div>
+
+<div id="screen-intermission" class="screen hidden">
+    <div class="panel" style="text-align: center;">
+        <h2 style="color:var(--accent); font-family:'Orbitron'; font-size: 18px; margin-bottom: 10px; letter-spacing: 2px;">THOI GIAN NGHI GIUA HIEP</h2>
+        <p style="margin-bottom: 20px; font-size: 14px; color: var(--muted);">Thoi gian con lai: <strong id="intermission-timer" style="color:var(--danger); font-size: 22px; font-family:'Orbitron';">30</strong> giay</p>
         
-        <div class="chat-area" id="chat-logs"></div>
-        <div style="display:flex; gap:6px;">
-            <input type="text" id="chat-input" placeholder="Tán gẫu tự do tại đây..." style="margin:0;" onkeypress="if(event.key==='Enter') sendChat()">
-            <button onclick="sendChat()" style="width:auto; padding:0 20px; margin:0;">Gửi</button>
+        <div class="chat-box" id="chat-messages" style="text-align: left;"></div>
+        <div class="chat-input-grp">
+            <input type="text" id="chat-input-text" class="chat-input" placeholder="Giao luu chat o day...">
+            <button class="btn" style="width: auto; margin: 0; padding: 10px 22px;" onclick="sendGlobalChat()">GUI</button>
         </div>
     </div>
+</div>
 
-    <script>
-        const socket = io();
-        let currentRoomId = '';
-        let myTeam = '';
-        let currentQuestions = [];
-        let questionIndex = 0;
-        let isAnsweringState = false;
+<div id="screen-essay" class="screen hidden">
+    <div class="panel" id="game-area-essay"></div>
+</div>
 
-        // TỰ ĐỘNG QUÉT VÀ ĐIỀN MÃ PHÒNG TỪ QR CODE URL (?room=ABCD)
-        window.addEventListener('DOMContentLoaded', () => {
-            const params = new URLSearchParams(window.location.search);
-            const roomParam = params.get('room');
-            if (roomParam) {
-                document.getElementById('input-room-id').value = roomParam.toUpperCase();
-                document.getElementById('input-name').focus();
+<div id="screen-winner" class="screen hidden">
+    <div class="panel" style="text-align: center; padding: 40px 20px;">
+        <h2 style="color:var(--gold); margin-bottom: 25px; font-family: 'Orbitron', monospace; letter-spacing: 3px;">KET THUC TRAN</h2>
+        <div id="final-results"></div>
+    </div>
+</div>
+
+<div id="result-overlay" class="result-overlay hidden">
+    <div id="overlay-points" class="result-points"></div>
+</div>
+
+<script>
+let katexReady = false;
+const pendingRenderTargets = [];
+
+function maybeRenderMath() {
+    if (!katexReady) return;
+    pendingRenderTargets.forEach(el => renderMathIn(el));
+    pendingRenderTargets.length = 0;
+}
+
+function renderMathIn(el) {
+    if (!el) return;
+    if (katexReady && typeof renderMathInElement === 'function') {
+        renderMathInElement(el, {
+            delimiters: [ 
+                { left: '$$', right: '$$', display: true }, 
+                { left: '$', right: '$', display: false }, 
+                { left: '\\(', right: '\\)', display: false }, 
+                { left: '\\[', right: '\\]', display: true } 
+            ],
+            throwOnError: false
+        });
+    } else { pendingRenderTargets.push(el); }
+}
+
+const socket = io();
+let myRoomId = '';
+let myTeam = '';
+let currentQuestions = [];
+let currentQIndex = 0;
+let stageStartTime = 0;
+
+// CƠ CHẾ TỰ ĐỘNG KHÔNG CẦN NHẬP MÃ PHÒNG KHI QUÉT MÃ QR HOẶC VÀO TỪ LINK
+window.addEventListener('DOMContentLoaded', () => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const roomParam = urlParams.get('room');
+    if (roomParam) {
+        const rInput = document.getElementById('input-room-id');
+        rInput.value = roomParam.trim().toUpperCase();
+        // Ẩn khối nhập mã phòng để tăng tính thẩm mỹ, chỉ cần nhập tên là chiến
+        document.getElementById('room-field-block').style.display = 'none';
+    }
+});
+
+function showScreen(id) {
+    document.querySelectorAll('.screen').forEach(s => s.classList.add('hidden'));
+    document.getElementById(id).classList.remove('hidden');
+    window.scrollTo(0, 0);
+}
+
+function joinRoom() {
+    myRoomId = document.getElementById('input-room-id').value.trim().toUpperCase();
+    const myName = document.getElementById('input-name').value.trim();
+    if (!myRoomId || !myName) return alert('Vui long nhap day du ten va ma phong!');
+    
+    document.getElementById('player-display-name').innerText = myName;
+    socket.emit('playerJoinRoom', { roomId: myRoomId, name: myName });
+    showScreen('screen-lobby');
+}
+
+socket.on('errorMsg', (msg) => { 
+    alert(msg); 
+    showScreen('screen-join'); 
+    document.getElementById('room-field-block').style.display = 'block';
+});
+
+socket.on('roleAssignment', (data) => {
+    myTeam = data.team;
+    const badge = document.getElementById('team-badge');
+    if (myTeam === 'A') { badge.className = 'badge-a'; badge.innerText = 'DOI A'; }
+    else if (myTeam === 'B') { badge.className = 'badge-b'; badge.innerText = 'DOI B'; }
+    else if (myTeam === 'C') { badge.className = 'badge-c'; badge.innerText = 'DOI C (Nguoi Le)'; }
+    else { badge.className = 'badge-solo'; badge.innerText = 'SOLO THI DAU'; }
+    showScreen('screen-role');
+});
+
+socket.on('startStage', (data) => {
+    currentQuestions = data.questions;
+    currentQIndex = 0;
+    stageStartTime = Date.now();
+    document.getElementById('display-stage-title').innerText = `Vong ${data.stageNum} ` + (data.isDouble ? '(X2 DIEM)' : '');
+    showScreen('screen-game');
+    renderCurrentQuestion();
+});
+
+// CƠ CHẾ HIỆN THỊ TỪNG CÂU HỎI MỘT
+function renderCurrentQuestion() {
+    const container = document.getElementById('question-container');
+    container.innerHTML = '';
+    
+    if (currentQIndex >= currentQuestions.length) {
+        container.innerHTML = `
+            <h3 style="text-align:center; color:var(--success); margin-top:20px;">Ban da hoan thanh toan bo cau hoi!</h3>
+            <p style="text-align:center; color:var(--muted); margin-top:8px; font-size:14px;">Vui long cho cac thanh vien khac lam bai...</p>`;
+        return;
+    }
+
+    const q = currentQuestions[currentQIndex];
+    const block = document.createElement('div');
+    block.className = 'question-block';
+    block.innerHTML = `<div class="question-text"><strong>Cau ${currentQIndex + 1}:</strong> ${q.text}</div>`;
+    
+    const gridDiv = document.createElement('div');
+    gridDiv.className = 'options-grid';
+    
+    q.choices.forEach(c => {
+        const btn = document.createElement('button');
+        btn.className = 'option-btn';
+        btn.innerHTML = `<strong>${c.key}.</strong> ${c.text}`;
+        btn.onclick = () => submitSingleAnswer(q.id, c.key);
+        gridDiv.appendChild(btn);
+    });
+
+    block.appendChild(gridDiv);
+    container.appendChild(block);
+    renderMathIn(container);
+}
+
+function submitSingleAnswer(qId, ansKey) {
+    const timeTaken = Math.floor((Date.now() - stageStartTime) / 1000);
+    // Gửi ngay đáp án từng câu lên server để tính điểm realtime
+    socket.emit('submitSingleAnswer', { roomId: myRoomId, questionId: qId, answer: ansKey, timeTaken });
+}
+
+// ĐÁNH GIÁ ĐÚNG SAI VÀ HIỆN +/- ĐIỂM NGAY LẬP TỨC RỒI CHUYỂN CÂU KHÁC
+socket.on('singleAnswerResult', (data) => {
+    const overlay = document.getElementById('result-overlay');
+    const pts = document.getElementById('overlay-points');
+    
+    pts.innerText = data.points;
+    pts.className = 'result-points ' + (data.isCorrect ? 'style="color:var(--success)"' : 'style="color:var(--danger)"');
+    pts.style.color = data.isCorrect ? 'var(--success)' : 'var(--danger)';
+    
+    overlay.classList.remove('hidden');
+    setTimeout(() => {
+        overlay.classList.add('hidden');
+        currentQIndex++; // Tăng chỉ số để chuyển qua câu hỏi tiếp theo
+        renderCurrentQuestion();
+    }, 1200);
+});
+
+socket.on('timerUpdate', (seconds) => {
+    const el = document.getElementById('game-timer-text');
+    if (el) el.innerText = seconds;
+    
+    // Cập nhật thanh trượt thời gian mất dần màu ở trên cùng giao diện
+    const bar = document.getElementById('time-bar-fill');
+    if (bar) {
+        const pct = (seconds / 60) * 100;
+        bar.style.width = `${pct}%`;
+        bar.style.backgroundColor = seconds < 10 ? 'var(--danger)' : 'var(--accent)';
+    }
+    const inter = document.getElementById('intermission-timer');
+    if (inter) inter.innerText = seconds;
+});
+
+socket.on('intermissionStart', () => {
+    showScreen('screen-intermission');
+    document.getElementById('chat-messages').innerHTML = '';
+});
+
+// CƠ CHẾ PHÒNG CHAT TRONG THỜI GIAN NGHỈ GIẢI LAO
+function sendGlobalChat() {
+    const input = document.getElementById('chat-input-text');
+    if (input.value.trim()) {
+        socket.emit('sendGlobalMessage', { roomId: myRoomId, msg: input.value });
+        input.value = '';
+    }
+}
+
+socket.on('receiveGlobalMessage', (data) => {
+    const box = document.getElementById('chat-messages');
+    box.innerHTML += `<div style="margin-bottom: 6px;"><strong>${data.name} [${data.team}]:</strong> <span style="color:#fff;">${data.msg}</span></div>`;
+    box.scrollTop = box.scrollHeight;
+});
+
+// XỬ LÝ VÒNG TỰ LUẬN (DÀNH CHO ĐỘI C VÀ CÁC ĐỘI GIÀNH ĐIỂM)
+socket.on('essayRoundRequestQuestion', (data) => {
+    showScreen('screen-essay');
+    document.getElementById('game-area-essay').innerHTML = `
+        <h3 style="color:var(--accent); margin-bottom: 12px; font-family:'Orbitron'; font-size:16px;">BAN LÀ NGUOI RA DE TU LUAN</h3>
+        <p style="margin-bottom: 15px; font-size:14px; color:var(--muted);">Hay nhap 1 cau hoi tu luan nhanh de thach do ca hai doi A va B. Nguoi giai dung dau tien do ban chon se nhan duoc toan bo <strong style="color:var(--gold); font-size:16px;">${data.scoreC} diem</strong> ban dang co!</p>
+        <input type="text" id="essayQuestionInput" class="form-control" placeholder="Nhap noi dung cau hoi tu luan vat li...">
+        <button id="btnSendEssayQuestion" class="btn btn-success">PHAT DONG CAU HOI</button>
+        <div style="margin-top: 25px;"><div id="receivedAnswersList"></div></div>
+    `;
+    
+    document.getElementById('btnSendEssayQuestion').onclick = () => {
+        const text = document.getElementById('essayQuestionInput').value;
+        if (text.trim()) {
+            socket.emit('submitEssayQuestion', { roomId: myRoomId, questionText: text });
+            document.getElementById('essayQuestionInput').disabled = true;
+            document.getElementById('btnSendEssayQuestion').style.display = 'none';
+        }
+    };
+});
+
+socket.on('essayRoundBroadcastQuestion', (data) => {
+    if (myTeam === 'A' || myTeam === 'B') {
+        showScreen('screen-essay');
+        document.getElementById('game-area-essay').innerHTML = `
+            <h3 style="color:var(--gold); margin-bottom: 10px; font-size:14px;">CAU HOI TRANH DIEM TU ${data.creatorName}:</h3>
+            <p style="font-size: 18px; margin-bottom: 20px; font-weight:600; color:#fff;">"${data.questionText}"</p>
+            <textarea id="essayAnswerInput" class="form-control" placeholder="Nhap cau tra loi chuan nhat, nhanh nhat tai day..."></textarea>
+            <button id="btnSendEssayAnswer" class="btn btn-success">NOP NOI DUNG TRA LOI</button>
+        `;
+        
+        document.getElementById('btnSendEssayAnswer').onclick = () => {
+            const ans = document.getElementById('essayAnswerInput').value;
+            if (ans.trim()) {
+                socket.emit('submitEssayAnswer', { roomId: myRoomId, answerText: ans });
+                document.getElementById('game-area-essay').innerHTML = `<h3 style="text-align:center; color:var(--success); margin-top:30px;">Da nop thanh cong! Dang cho Nguoi le duyet dap an...</h3>`;
             }
-        });
+        };
+    }
+});
 
-        function switchScreen(screenId) {
-            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-            document.getElementById(screenId).classList.add('active');
-        }
+socket.on('essayRoundNewAnswer', (data) => {
+    const list = document.getElementById('receivedAnswersList');
+    if (list) {
+        list.innerHTML += `
+            <div class="answer-item">
+                <p style="margin-bottom: 10px;"><strong>${data.name} (Doi ${data.team}):</strong> ${data.answerText}</p>
+                <button onclick="approveAnswer('${data.playerId}')" class="btn btn-success" style="padding: 6px 14px; font-size:12px; width:auto; display:inline-block; margin:0;">CHON DAY LA DAP AN CHUAN NHAT</button>
+            </div>
+        `;
+    }
+});
 
-        function joinRoom() {
-            const roomId = document.getElementById('input-room-id').value.trim();
-            const name = document.getElementById('input-name').value.trim();
-            if (!roomId || !name) return alert('Vui lòng điền đủ mã phòng và tên!');
-            currentRoomId = roomId.toUpperCase();
-            socket.emit('playerJoinRoom', { roomId: currentRoomId, name });
-        }
+window.approveAnswer = function(playerId) {
+    if (confirm('Xac nhan trao diem cua ban cho thanh vien nay?')) {
+        socket.emit('chooseBestEssayAnswer', { roomId: myRoomId, playerId: playerId });
+    }
+};
 
-        socket.on('joinedRoom', () => {
-            document.getElementById('question-box').innerHTML = '<h3>Đã vào phòng chờ thành công! Đang đợi admin bắt đầu game...</h3>';
-            switchScreen('game-screen');
-        });
+socket.on('gameOver', (data) => {
+    showScreen('screen-winner');
+    let winHtml = data.winningTeam === 'HOA' 
+        ? `<h3 style="color:var(--gold); font-size: 24px; margin-bottom: 15px;">KET QUA: HOA NHAU!</h3>` 
+        : `<h3 style="color:var(--accent); font-size: 24px; margin-bottom: 15px;">DOI CHIEN THANG: DOI ${data.winningTeam}</h3>`;
+    
+    let bonusInfo = data.essayBonusDetails ? `
+        <p style="color:var(--success); font-weight: bold; margin: 15px 0; font-size: 15px;">
+            ${data.essayBonusDetails.winnerName} (Doi ${data.essayBonusDetails.winningTeam}) da nhanh nhat va gianh duoc +${data.essayBonusDetails.bonusPoints} diem tu Doi C!
+        </p>` : '';
+    
+    document.getElementById('final-results').innerHTML = `
+        ${winHtml}
+        <p style="font-size: 16px; margin-bottom: 10px;">Tong diem Doi A: <strong>${data.scoreA}</strong></p>
+        <p style="font-size: 16px; margin-bottom: 20px;">Tong diem Doi B: <strong>${data.scoreB}</strong></p>
+        ${bonusInfo}
+        <p style="margin-top: 35px; font-size: 13px; color: var(--muted);">Admin dang thiet lap lai phong cho tran moi...</p>
+    `;
+});
 
-        socket.on('roleAssignment', (data) => { myTeam = data.team; });
-
-        // KHỞI CHẠY CHẶNG MỚI: BẮT ĐẦU CÂU HỎI CUỐN CHIẾU 1
-        socket.on('startStage', (data) => {
-            isAnsweringState = true;
-            currentQuestions = data.questions;
-            questionIndex = 0;
-            document.getElementById('stage-title').innerText = `STAGE ${data.stageNum} ${data.isDouble ? ' (X2 ĐIỂM)' : ''}`;
-            document.getElementById('top-progress-container').style.display = 'block';
-            switchScreen('game-screen');
-            renderSingleQuestion();
-        });
-
-        function renderSingleQuestion() {
-            const box = document.getElementById('question-box');
-            if (questionIndex >= currentQuestions.length) {
-                box.innerHTML = `<div style="padding:20px;"><h3>Hoàn thành chặng!</h3><p>Đang chờ các người chơi khác hoàn tất...</p></div>`;
-                return;
-            }
-            const q = currentQuestions[questionIndex];
-            let html = `
-                <div style="font-size:0.9rem; color:#94a3b8; text-align:left; margin-bottom:5px;">Câu hỏi ${questionIndex + 1}/${currentQuestions.length}</div>
-                <h3 style="text-align:left; line-height:1.5; margin-bottom:20px;">${q.text}</h3>
-                <div style="display:flex; flex-direction:column; gap:10px;">
-            `;
-            q.choices.forEach(c => {
-                html += `<button class="choice-btn" onclick="selectAnswer('${q.id}', '${c.key}')"><strong>${c.key}.</strong> ${c.text}</button>`;
-            });
-            html += `</div><div id="feedback-badge" style="margin-top:15px; font-size:1.4rem; font-weight:bold;"></div>`;
-            box.innerHTML = html;
-        }
-
-        function selectAnswer(questionId, choiceKey) {
-            document.querySelectorAll('.choice-btn').forEach(b => b.disabled = true);
-            socket.emit('submitSingleAnswer', { roomId: currentRoomId, questionId, answer: choiceKey });
-        }
-
-        // NHẬN BIẾN ĐỘNG ĐIỂM TRỰC TIẾP (+/-) VÀ CHUYỂN CÂU HỎI
-        socket.on('singleAnswerResult', (data) => {
-            const badge = document.getElementById('feedback-badge');
-            if (data.isCorrect) {
-                badge.innerHTML = `<span style="color:#00ff88;">✓ ĐÚNG (${data.points})</span>`;
-            } else {
-                badge.innerHTML = `<span style="color:#ff4a4a;">✗ SAI (${data.points})</span>`;
-            }
-            setTimeout(() => {
-                questionIndex++;
-                renderSingleQuestion();
-            }, 1200);
-        });
-
-        // ĐỒNG HỒ 60S CO RÚT, ĐỔI MÀU / ĐỒNG HỒ NGHỈ GIẢI LAO
-        socket.on('timerUpdate', (timeLeft) => {
-            if (isAnsweringState) {
-                document.getElementById('timer-text').innerText = timeLeft + 's';
-                const percent = (timeLeft / 60) * 100;
-                const bar = document.getElementById('top-progress-bar');
-                bar.style.width = percent + '%';
-                if (percent > 50) bar.style.backgroundColor = '#00ff88';
-                else if (percent > 20) bar.style.backgroundColor = '#ffaa00';
-                else bar.style.backgroundColor = '#ff4a4a';
-            } else {
-                const el = document.getElementById('break-timer');
-                if (el) el.innerText = timeLeft;
-            }
-        });
-
-        // BẮT ĐẦU MÀN HÌNH NGHỈ GIẢI LAO KÈM CHAT ROOM 30S
-        socket.on('intermissionStart', (data) => {
-            isAnsweringState = false;
-            document.getElementById('top-progress-container').style.display = 'none';
-            document.getElementById('score-a').innerText = data.scoreA;
-            document.getElementById('score-b').innerText = data.scoreB;
-            document.getElementById('chat-logs').innerHTML = `<p style="color:gray; font-style:italic; margin:0;">Mở phòng chat tự do công khai 30s...</p>`;
-            switchScreen('intermission-screen');
-        });
-
-        function sendChat() {
-            const input = document.getElementById('chat-input');
-            const msg = input.value.trim();
-            if (!msg) return;
-            socket.emit('sendGlobalMessage', { roomId: currentRoomId, msg });
-            input.value = '';
-        }
-
-        socket.on('receiveGlobalMessage', (data) => {
-            const logs = document.getElementById('chat-logs');
-            const teamColor = data.team === 'A' ? '#ff4a4a' : '#00d2ff';
-            logs.innerHTML += `<div class="msg-line"><strong style="color:${teamColor}">${data.name}:</strong> ${data.msg}</div>`;
-            logs.scrollTop = logs.scrollHeight;
-        });
-
-        socket.on('gameOver', (d) => {
-            document.getElementById('top-progress-container').style.display = 'none';
-            document.getElementById('question-box').innerHTML = `<h2>TRÒ CHƠI KẾT THÚC</h2><h3>ĐỘI CHIẾN THẮNG: ĐỘI ${d.winningTeam}</h3>`;
-            switchScreen('game-screen');
-        });
-        socket.on('errorMsg', m => alert(m));
-    </script>
+socket.on('gameReset', () => {
+    alert('Phong cho da duoc Admin lam moi! Chuyen huong ve trang chu...');
+    window.location.reload();
+});
+</script>
 </body>
 </html>
