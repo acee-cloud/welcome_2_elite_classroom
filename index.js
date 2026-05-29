@@ -1,65 +1,107 @@
 const express = require('express');
+const http = require('http');
+const { Server } = require('socket.io');
+
 const app = express();
-const http = require('http').createServer(app);
-const io = require('socket.io')(http);
-const path = require('path');
+const server = http.createServer(app);
+const io = new Server(server, { cors: { origin: "*" } });
 
-app.use(express.static(path.join(__dirname, 'public')));
+app.use(express.static('public'));
 
-// Lưu trạng thái phòng trên server
-let roomState = {
+let gameState = {
     players: {},
-    isLocked: false
+    roomLocked: false,
+    currentStage: 0,
+    spyData: { id: null, accumulatedPoints: 0 }
 };
 
 io.on('connection', (socket) => {
-    console.log('🟢 Kết nối mới: ' + socket.id);
+    console.log(`Người chơi kết nối: ${socket.id}`);
 
-    // Gửi trạng thái hiện tại ngay khi có người vào
-    socket.emit('update-lobby', roomState);
-
-    // Admin đăng ký
-    socket.on('register-admin', () => {
-        socket.join('admin-room');
-        socket.emit('update-lobby', roomState);
-    });
-
-    // Người chơi xin vào phòng
-    socket.on('player-join', (data) => {
-        if (roomState.isLocked) {
-            socket.emit('join-result', { success: false, message: 'Cửa hầm đã khóa rồi! Chờ ván sau nhé.' });
+    socket.on('join_room', (data) => {
+        if (gameState.roomLocked) {
+            socket.emit('error_message', 'Phòng đã khóa hoặc trận đấu đã bắt đầu!');
             return;
         }
-        // Kiểm tra tên trùng
-        const nameTaken = Object.values(roomState.players).some(p => p.name === data.name);
-        if (nameTaken) {
-            socket.emit('join-result', { success: false, message: 'Tên này đã có người dùng rồi!' });
+        gameState.players[socket.id] = {
+            id: socket.id,
+            name: data.name,
+            avatar: data.avatar,
+            team: null,
+            score: 0,
+            isSpy: false,
+            doneCurrentStage: false
+        };
+        io.emit('update_players', Object.values(gameState.players));
+    });
+
+    socket.on('admin_start_game', () => {
+        gameState.roomLocked = true;
+        let playerIds = Object.keys(gameState.players);
+        let totalPlayers = playerIds.length;
+
+        if (totalPlayers < 2) {
+            socket.emit('error_message', 'Cần tối thiểu 2 người chơi để bắt đầu!');
             return;
         }
 
-        roomState.players[socket.id] = { name: data.name, avatar: data.avatar };
-        socket.emit('join-result', { success: true });
-        io.emit('update-lobby', roomState); // Cập nhật tất cả
+        playerIds.sort(() => Math.random() - 0.5);
+
+        let isOdd = totalPlayers % 2 !== 0;
+        let spyId = isOdd ? playerIds[Math.floor(Math.random() * totalPlayers)] : null;
+
+        playerIds.forEach((id, index) => {
+            let team = (index % 2 === 0) ? 'A' : 'B';
+            gameState.players[id].team = team;
+
+            if (id === spyId) {
+                gameState.players[id].isSpy = true;
+                gameState.players[id].team = 'A';
+                gameState.spyData.id = spyId;
+                io.to(id).emit('assign_role', { role: 'spy', team: 'A' });
+            } else {
+                io.to(id).emit('assign_role', { role: 'normal', team: team });
+            }
+        });
+
+        gameState.currentStage = 1;
+        io.emit('start_stage', { stage: 1, players: Object.values(gameState.players) });
     });
 
-    // Admin đóng cửa
-    socket.on('lock-room', () => {
-        roomState.isLocked = true;
-        io.emit('update-lobby', roomState);
-        io.emit('room-status-changed', { isLocked: true });
+    socket.on('submit_stage', (data) => {
+        let p = gameState.players[socket.id];
+        if (!p) return;
+
+        let stageScore = (data.correctCount * 10) + (data.wrongCount * -2);
+
+        if (p.isSpy) {
+            gameState.spyData.accumulatedPoints += stageScore;
+        }
+        p.score += stageScore;
+        p.doneCurrentStage = true;
+
+        socket.emit('stage_completed_waiting', { score: p.score });
+        socket.join(`chat_team_${p.team}`);
+        io.to(`chat_team_${p.team}`).emit('sys_message', `${p.name} đã hoàn thành Cửa và tham gia phòng chờ!`);
+
+        let allDone = Object.values(gameState.players).every(player => player.doneCurrentStage);
+        if (allDone) {
+            io.emit('intermission_30s', { spyPointsHidden: gameState.spyData.accumulatedPoints });
+            io.emit('sys_message', 'Trạm nghỉ 30 giây bắt đầu! Khung chat tổng đã mở.');
+        }
     });
 
-    // Xử lý khi người thoát
+    socket.on('send_message', (msg) => {
+        let p = gameState.players[socket.id];
+        if (!p) return;
+        io.emit('receive_message', { name: p.name, avatar: p.avatar, text: msg, team: p.team });
+    });
+
     socket.on('disconnect', () => {
-        if (roomState.players[socket.id]) {
-            delete roomState.players[socket.id];
-            io.emit('update-lobby', roomState);
-        }
-        console.log('🔴 Thoát: ' + socket.id);
+        delete gameState.players[socket.id];
+        io.emit('update_players', Object.values(gameState.players));
     });
 });
 
 const PORT = process.env.PORT || 3000;
-http.listen(PORT, () => {
-    console.log(`🚀 Chạy tại cổng ${PORT}`);
-});
+server.listen(PORT, () => console.log(`🚀 Game Server chạy tại cổng ${PORT}`));
