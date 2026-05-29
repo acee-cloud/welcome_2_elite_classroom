@@ -4,17 +4,17 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Người Chơi – Đấu Trường</title>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/katex.min.css">
-    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/katex.min.js"></script>
-    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/contrib/auto-render.min.js"
-        onload="katexReady = true; maybeRenderMath()"></script>
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700&family=IBM+Plex+Sans:wght@400;600;700&display=swap" rel="stylesheet">
+    
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"></script>
+
     <script src="/socket.io/socket.io.js"></script>
     <style>
         :root { --bg: #0a0e1a; --panel: #111827; --border: #1e3a5f; --accent: #00d2ff; --text: #f3f4f6; --success: #00ff88; --danger: #ff4a4a; }
         body { margin: 0; padding: 0; background-color: var(--bg); color: var(--text); font-family: 'IBM Plex Sans', sans-serif; text-align: center; }
         
-        /* THANH ĐỒNG HỒ ĐẾM NGƯỢC TIÊU HAO MẤT DẦN MÀU SẮC */
         #top-progress-container { position: fixed; top: 0; left: 0; width: 100%; height: 6px; background: #1e293b; z-index: 9999; display: none; }
         #top-progress-bar { width: 100%; height: 100%; background: var(--success); transition: width 1s linear, background-color 0.5s ease; }
         
@@ -28,12 +28,10 @@
         .choice-btn { text-align: left; background: #1e293b; color: #fff; transition: all 0.2s; padding: 14px; }
         .choice-btn:not(:disabled):hover { background: #334155; }
         
-        /* PHÒNG CHAT GIẢI LAO */
         .chat-area { height: 160px; overflow-y: auto; background: #0f172a; border: 1px solid var(--border); padding: 10px; border-radius: 6px; text-align: left; font-size: 0.95rem; margin-bottom: 10px; }
         .msg-line { margin: 4px 0; border-bottom: 1px dashed #1e3a5f; padding-bottom: 2px; }
         
-        /* PHẦN BÁO CÁO REVIEW CUỐI GAME */
-        .review-card { background: #0f172a; border: 1px solid var(--border); padding: 15px; margin-bottom: 12px; text-align: left; border-radius: 8px; }
+        .review-card { background: #0f172a; border: 1px solid var(--border); padding: 15px; margin-bottom: 12px; text-align: left; border-radius: 8px; line-height: 1.6; }
     </style>
 </head>
 <body>
@@ -44,11 +42,16 @@
 
     <div id="lobby-screen" class="screen active">
         <h2 style="font-family:'Orbitron'; color:var(--accent);">ARENA VẬT LÍ</h2>
-        <div id="room-id-container">
-            <input type="text" id="input-room-id" placeholder="MÃ PHÒNG (VÍ DỤ: ABCD)">
+        
+        <div id="missing-room-warning" style="display:none; color:var(--danger); background: rgba(255, 74, 74, 0.1); padding: 15px; border-radius: 8px; margin-bottom:15px; font-weight: bold;">
+            ⚠️ BẠN CHƯA VÀO ĐÚNG PHÒNG!<br><br>
+            <span style="font-weight:normal; font-size: 0.9rem; color:#f3f4f6;">Vui lòng dùng điện thoại quét mã QR hoặc truy cập qua đường link do Giáo viên cung cấp để tham gia trò chơi.</span>
         </div>
-        <input type="text" id="input-name" placeholder="NHẬP TÊN CỦA BẠN">
-        <button onclick="joinRoom()">VÀO PHÒNG CHỜ</button>
+
+        <div id="join-form">
+            <input type="text" id="input-name" placeholder="NHẬP TÊN CỦA BẠN">
+            <button onclick="joinRoom()">VÀO PHÒNG CHỜ</button>
+        </div>
     </div>
 
     <div id="game-screen" class="screen">
@@ -81,13 +84,13 @@
             <input type="text" id="fast-question-input" placeholder="Nhập câu hỏi phụ tự luận nhanh...">
             <button onclick="hostPublishQuestion()" style="background:#ffaa00;">PHÁT HÀNH CÂU HỎI</button>
             <div style="margin-top:20px; text-align:left;">
-                <h4>Danh sách phản hồi nhanh từ các đội (Click để chọn người đúng đầu tiên):</h4>
+                <h4>Danh sách phản hồi nhanh từ các đội:</h4>
                 <div id="host-submission-list">Đang chờ câu trả lời gửi lên...</div>
             </div>
         </div>
 
         <div id="player-controls" style="display:none;">
-            <h3 id="fast-question-display" style="color:#fff;">Đang chờ chủ khảo đặt câu hỏi...</h3>
+            <h3 id="fast-question-display" style="color:#fff; line-height: 1.5;">Đang chờ chủ khảo đặt câu hỏi...</h3>
             <div id="fast-answer-zone" style="display:none;">
                 <input type="text" id="player-fast-answer-input" placeholder="Nhập câu trả lời nhanh tại đây...">
                 <button onclick="playerSubmitFastAnswer()">NỘP CÂU TRẢ LỜI</button>
@@ -101,27 +104,7 @@
         <h3 style="color:var(--accent); font-family:'Orbitron'; text-align:left;">XEM LẠI CHI TIẾT ĐÁP ÁN BÀI LÀM</h3>
         <div id="review-list-zone"></div>
     </div>
-<script>
-let katexReady = false;
-const pendingRenderTargets = [];
 
-function maybeRenderMath() {
-    if (!katexReady) return;
-    pendingRenderTargets.forEach(el => {
-        if (typeof renderMathInElement === 'function') {
-            renderMathInElement(el, {
-                delimiters: [
-                    { left: '$$', right: '$$', display: true },
-                    { left: '$', right: '$', display: false },
-                    { left: '\\(', right: '\\)', display: false },
-                    { left: '\\[', right: '\\]', display: true }
-                ],
-                throwOnError: false
-            });
-        }
-    });
-    pendingRenderTargets.length = 0;
-}
     <script>
         const socket = io();
         let currentRoomId = '';
@@ -129,15 +112,38 @@ function maybeRenderMath() {
         let currentQuestions = [];
         let questionIndex = 0;
         let isAnsweringState = false;
+        
+        // Lấy room ID trực tiếp từ URL
+        let urlRoomId = '';
 
-        // Xử lý tự động điền mã phòng từ đường dẫn QR code (?room=ABCD)
+        function renderMath(elementId) {
+            const el = document.getElementById(elementId);
+            if (el && window.renderMathInElement) {
+                renderMathInElement(el, {
+                    delimiters: [
+                        {left: '$$', right: '$$', display: true},
+                        {left: '$', right: '$', display: false},
+                        {left: '\\(', right: '\\)', display: false},
+                        {left: '\\[', right: '\\]', display: true}
+                    ],
+                    throwOnError: false
+                });
+            }
+        }
+
+        // Kiểm tra URL ngay khi tải trang
         window.addEventListener('DOMContentLoaded', () => {
             const params = new URLSearchParams(window.location.search);
             const roomParam = params.get('room');
+            
             if (roomParam) {
-                document.getElementById('input-room-id').value = roomParam.toUpperCase();
-                document.getElementById('room-id-container').style.display = 'none'; // Ẩn luôn ô nhập code
+                // Có mã phòng từ link QR -> Cho phép nhập tên
+                urlRoomId = roomParam.toUpperCase();
                 document.getElementById('input-name').focus();
+            } else {
+                // Khách vãng lai truy cập thẳng /play -> Chặn lại báo lỗi
+                document.getElementById('join-form').style.display = 'none';
+                document.getElementById('missing-room-warning').style.display = 'block';
             }
         });
 
@@ -148,8 +154,11 @@ function maybeRenderMath() {
 
         function joinRoom() {
             const name = document.getElementById('input-name').value.trim();
-            if (!roomId || !name) return alert('Vui lòng nhập đầy đủ họ và tên!');
-            currentRoomId = roomId.toUpperCase();
+            
+            if (!urlRoomId) return alert('Không tìm thấy mã phòng. Vui lòng quét mã QR!');
+            if (!name) return alert('Vui lòng nhập tên của bạn!');
+            
+            currentRoomId = urlRoomId;
             socket.emit('playerJoinRoom', { roomId: currentRoomId, name });
         }
 
@@ -170,7 +179,6 @@ function maybeRenderMath() {
             renderSingleQuestion();
         });
 
-        // Thiết kế render cuốn chiếu từng câu hỏi một
         function renderSingleQuestion() {
             const box = document.getElementById('question-box');
             if (questionIndex >= currentQuestions.length) {
@@ -188,6 +196,8 @@ function maybeRenderMath() {
             });
             html += `</div><div id="feedback-badge" style="margin-top:20px; font-size:1.3rem; font-weight:bold; min-height:30px;"></div>`;
             box.innerHTML = html;
+            
+            renderMath('question-box');
         }
 
         function selectAnswer(questionId, choiceKey) {
@@ -195,7 +205,6 @@ function maybeRenderMath() {
             socket.emit('submitSingleAnswer', { roomId: currentRoomId, questionId, answer: choiceKey });
         }
 
-        // Đánh giá đúng sai và biến động điểm nhảy số lập tức cho học sinh quan sát
         socket.on('singleAnswerResult', (data) => {
             const badge = document.getElementById('feedback-badge');
             if (data.isCorrect) {
@@ -206,10 +215,9 @@ function maybeRenderMath() {
             setTimeout(() => {
                 questionIndex++;
                 renderSingleQuestion();
-            }, 1200); // Chuyển câu sau 1.2 giây hiển thị kết quả trực quan
+            }, 1200); 
         });
 
-        // Thanh thời gian co rút mất dần màu sắc đồng đều
         socket.on('timerUpdate', (timeLeft) => {
             if (isAnsweringState) {
                 document.getElementById('timer-text').innerText = timeLeft + 's';
@@ -258,7 +266,6 @@ function maybeRenderMath() {
             logs.scrollTop = logs.scrollHeight;
         });
 
-        // XỬ LÝ ĐỘC QUYỀN MÀN HÌNH VÒNG PHỤ TỰ LUẬN
         socket.on('startFastQuestionPhase', (d) => {
             isAnsweringState = false;
             switchScreen('fast-phase-screen');
@@ -280,8 +287,9 @@ function maybeRenderMath() {
 
         socket.on('fastQuestionBroadcast', (d) => {
             if (myTeam !== 'C') {
-                document.getElementById('fast-question-display').innerText = `CÂU HỎI TỰ LUẬN: ${d.questionText}`;
+                document.getElementById('fast-question-display').innerHTML = `CÂU HỎI TỰ LUẬN: <br> ${d.questionText}`;
                 document.getElementById('fast-answer-zone').style.display = 'block';
+                renderMath('fast-phase-screen');
             }
         });
 
@@ -299,11 +307,12 @@ function maybeRenderMath() {
                 subs.forEach(s => {
                     container.innerHTML += `
                         <div style="background:#1e293b; padding:10px; border-radius:6px; margin:8px 0; display:flex; justify-content:space-between; align-items:center;">
-                            <div><strong>${s.name} (Đội ${s.team}):</strong> ${s.answerText}</div>
+                            <div><strong>${s.name} (Đội ${s.team}):</strong> <span class="submission-ans">${s.answerText}</span></div>
                             <button onclick="approveWinner('${s.id}')" style="width:auto; margin:0; padding:6px 12px; background:var(--success);">Đúng (Chọn)</button>
                         </div>
                     `;
                 });
+                renderMath('host-submission-list');
             }
         });
 
@@ -315,7 +324,6 @@ function maybeRenderMath() {
             alert(`Vòng phụ kết thúc! Bạn ${data.winnerName} của Đội ${data.winningTeam} trả lời đúng và mang về ${data.pointsAwarded}đ cho cả đội!`);
         });
 
-        // XUẤT PHÁT MÀN HÌNH TỔNG HỢP CÂU HỎI VÀ ĐÁP ÁN BÀI LÀM CUỐI GAME
         socket.on('gameSummaryReport', (historyLog) => {
             const container = document.getElementById('review-list-zone');
             container.innerHTML = '';
@@ -346,6 +354,8 @@ function maybeRenderMath() {
                     </div>
                 `;
             });
+            
+            renderMath('review-list-zone');
         });
 
         socket.on('gameOver', (d) => {
