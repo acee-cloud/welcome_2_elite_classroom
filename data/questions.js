@@ -1,5 +1,60 @@
 'use strict';
 
+/**
+ * KaTeX Rendering Utilities
+ *
+ * Browser – thêm vào <head> của HTML:
+ *   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
+ *   <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"
+ *           onload="window.__katexReady=true"></script>
+ *
+ * Node.js:
+ *   npm install katex
+ *   const { renderTeX, renderQuestion } = require('./questions');
+ *   // truyền katex instance vào hàm nếu cần
+ */
+
+/**
+ * Render các biểu thức LaTeX $...$ trong chuỗi văn bản thành HTML (KaTeX).
+ * @param {string} text         - Văn bản chứa $...$ LaTeX
+ * @param {object} [kt]         - KaTeX instance (mặc định: global `katex`)
+ * @returns {string}            - HTML đã render, hoặc text gốc nếu KaTeX chưa load
+ */
+function renderTeX(text, kt) {
+  const katexLib = kt || (typeof katex !== 'undefined' ? katex : null);
+  if (!katexLib || typeof text !== 'string') return text;
+  return text.replace(/\$((?:[^$\\]|\\.)+)\$/g, (match, math) => {
+    try {
+      return katexLib.renderToString(math, {
+        throwOnError: false,
+        displayMode: false,
+        strict: false,
+      });
+    } catch (_) {
+      return match; // fallback: giữ nguyên nếu lỗi parse
+    }
+  });
+}
+
+/**
+ * Render tất cả LaTeX trong một đối tượng câu hỏi.
+ * @param {object} q   - { question, options: {A,B,C,D}, answer }
+ * @param {object} [kt] - KaTeX instance (tuỳ chọn)
+ * @returns {object}   - Câu hỏi với HTML KaTeX thay thế LaTeX
+ */
+function renderQuestion(q, kt) {
+  return {
+    question: renderTeX(q.question, kt),
+    options: {
+      A: renderTeX(q.options.A, kt),
+      B: renderTeX(q.options.B, kt),
+      C: renderTeX(q.options.C, kt),
+      D: renderTeX(q.options.D, kt),
+    },
+    answer: q.answer,
+  };
+}
+
 // Helper: convert compact array format to question object
 function q(arr) {
   return arr.map(([question, A, B, C, D, answer]) => ({
@@ -327,10 +382,16 @@ const keyQuestions = [
   }
 ];
 
+
 module.exports = {
-  chapter1: { name: "Dao động", stages: [c1s1, c1s2, c1s3, c1s4, c1s5, c1s6, c1s7, c1s8, c1s9, c1s10] },
-  chapter2: { name: "Sóng", stages: [c2s1, c2s2, c2s3, c2s4, c2s5, c2s6, c2s7, c2s8, c2s9, c2s10] },
-  chapter3: { name: "Điện trường", stages: [c3s1, c3s2, c3s3, c3s4, c3s5, c3s6, c3s7, c3s8, c3s9, c3s10] },
-  chapter4: { name: "Dòng điện & Mạch điện", stages: [c4s1, c4s2, c4s3, c4s4, c4s5, c4s6, c4s7, c4s8, c4s9, c4s10] },
+  // ── Dữ liệu câu hỏi ───────────────────────────────────────────────────────
+  chapter1:     { name: 'Dao động',              stages: [c1s1, c1s2, c1s3, c1s4, c1s5, c1s6, c1s7, c1s8, c1s9, c1s10] },
+  chapter2:     { name: 'Sóng',                  stages: [c2s1, c2s2, c2s3, c2s4, c2s5, c2s6, c2s7, c2s8, c2s9, c2s10] },
+  chapter3:     { name: 'Điện trường',           stages: [c3s1, c3s2, c3s3, c3s4, c3s5, c3s6, c3s7, c3s8, c3s9, c3s10] },
+  chapter4:     { name: 'Dòng điện & Mạch điện', stages: [c4s1, c4s2, c4s3, c4s4, c4s5, c4s6, c4s7, c4s8, c4s9, c4s10] },
   keyQuestions,
+
+  // ── KaTeX helpers ──────────────────────────────────────────────────────────
+  renderTeX,       // renderTeX(text [, katexInstance]) → HTML string
+  renderQuestion,  // renderQuestion(q [, katexInstance]) → rendered question
 };
