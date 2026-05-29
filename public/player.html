@@ -2,95 +2,107 @@
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Bộ Điều Khiển Người Chơi</title>
+    <title>Đấu Trường Học Sinh</title>
+    <script src="/socket.io/socket.io.js"></script>
     <style>
-        body { font-family: 'Segoe UI', Arial, sans-serif; background: #1e1e24; color: white; padding: 20px; text-align: center; margin: 0; }
-        .wrapper { max-width: 400px; margin: 0 auto; }
-        input { padding: 14px; font-size: 1.1rem; width: 85%; margin-bottom: 20px; border-radius: 8px; border: 2px solid #444; background: #2a2a35; color: white; text-align: center; }
-        input:focus { border-color: #00da63; outline: none; }
-        .avatar-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin: 0 auto 25px; width: 90%; }
-        .avatar-item { font-size: 2.6rem; padding: 8px; background: #2a2a35; border-radius: 10px; cursor: pointer; border: 3px solid transparent; transition: 0.15s; }
-        .avatar-item.selected { border-color: #00da63; background: #34495e; transform: scale(1.1); }
-        button { background: #00da63; color: white; border: none; padding: 14px; font-size: 1.3rem; font-weight: bold; border-radius: 8px; cursor: pointer; width: 90%; box-shadow: 0 4px 10px rgba(0,218,99,0.3); }
-        #waiting-screen, #game-screen { display: none; }
-        .error-text { color: #ff4757; font-weight: bold; margin-top: -10px; margin-bottom: 15px; display: block; }
+        :root { --bg: #0a1128; --cyan: #00f0ff; --blue: #0066ff; --surface: #101f42; }
+        body { background: var(--bg); color: #fff; font-family: sans-serif; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; }
+        .container { background: var(--surface); border: 3px solid var(--cyan); box-shadow: 0 0 20px var(--blue); border-radius: 12px; padding: 30px; width: 90%; max-width: 500px; text-align: center; box-sizing: border-box; }
+        .avatar-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin: 20px 0; }
+        .avatar-item { font-size: 1.8rem; background: #1a2f63; border: 2px solid var(--blue); border-radius: 6px; cursor: pointer; padding: 8px; }
+        .avatar-item.selected { background: var(--cyan); box-shadow: 0 0 10px var(--cyan); color: #000; }
+        input[type="text"] { width: 100%; padding: 12px; background: #0d1b3e; border: 2px solid var(--blue); color: #fff; border-radius: 6px; box-sizing: border-box; outline: none; }
+        input[type="text"]:focus { border-color: var(--cyan); }
+        .btn { background: linear-gradient(45deg, var(--blue), var(--cyan)); color: #000; font-weight: bold; border: none; padding: 12px 30px; border-radius: 6px; cursor: pointer; text-transform: uppercase; margin-top: 15px; }
+        .chat-box { background: #071126; border: 2px solid var(--blue); height: 150px; overflow-y: auto; text-align: left; padding: 10px; margin-top: 15px; border-radius: 6px; }
+        .hidden { display: none; }
     </style>
 </head>
 <body>
-    <div class="wrapper">
-        <div id="login-screen">
-            <h2>⚔️ NHẬP TÊN ANH EM</h2>
-            <input type="text" id="player-name" placeholder="Nhập tên hoặc biệt danh..." maxlength="12">
-            <span id="error-msg" class="error-text"></span>
 
-            <h2>🦁 CHỌN LINH THÚ</h2>
-            <div class="avatar-grid">
-                <div class="avatar-item selected" onclick="pickAvatar(this, '🐵')">🐵</div>
-                <div class="avatar-item" onclick="pickAvatar(this, '🦁')">🦁</div>
-                <div class="avatar-item" onclick="pickAvatar(this, '🐯')">🐯</div>
-                <div class="avatar-item" onclick="pickAvatar(this, '🐱')">🐱</div>
-                <div class="avatar-item" onclick="pickAvatar(this, '🐶')">🐶</div>
-                <div class="avatar-item" onclick="pickAvatar(this, '🐺')">🐺</div>
-                <div class="avatar-item" onclick="pickAvatar(this, '🐻')">🐻</div>
-                <div class="avatar-item" onclick="pickAvatar(this, '🐻‍❄️')">🐻‍❄️</div>
-            </div>
-
-            <button onclick="requestJoin()">XUẤT HIỆN TẠI SẢNH</button>
+    <div class="container" id="login-box">
+        <h2 style="color: var(--cyan);">VÀO PHÒNG THI ĐẤU</h2>
+        <input type="text" id="username" placeholder="Nhập tên của bạn..." maxlength="12">
+        <div class="avatar-grid">
+            <div class="avatar-item" onclick="setAvt('⚛️', this)">⚛️</div>
+            <div class="avatar-item" onclick="setAvt('⚡', this)">⚡</div>
+            <div class="avatar-item" onclick="setAvt('💡', this)">💡</div>
+            <div class="avatar-item" onclick="setAvt('🧲', this)">🧲</div>
         </div>
-
-        <div id="waiting-screen">
-            <h2 style="color: #00da63;">Đã vào sảnh thành công! 🎉</h2>
-            <p>Nhìn lên màn hình máy chiếu lớn để thấy linh thú của bạn xuất hiện.</p>
-            <p style="color: #aaa; font-style: italic; margin-top: 30px;">Vui lòng đợi thầy/cô đóng cổng hầm ngục để bắt đầu cuộc chiến Vật lí...</p>
-        </div>
-
-        <div id="game-screen">
-            <h2 style="color: #ff9f43;">🎮 TRÒ CHƠI BẮT ĐẦU!</h2>
-            <p>Hệ thống điều khiển 2.5D hoặc bảng câu hỏi trắc nghiệm Vật lí sẽ hiển thị tại đây.</p>
-        </div>
+        <button class="btn" onclick="join()">Xác Nhận Sẵn Sàng</button>
     </div>
 
-    <script src="/socket.io/socket.io.js"></script>
+    <div class="container hidden" id="game-box">
+        <h3 id="stage-info" style="color: var(--cyan);">VÒNG ĐẤU: 1/10 CÂU</h3>
+        <p id="question-text" style="background: #12244f; padding: 20px; border-radius: 6px;">Đang tải câu hỏi Vật Lí...</p>
+        <button class="btn" style="width:100%; margin: 5px 0;" onclick="nextQuestion(true)">Đáp án A (ĐÚNG)</button>
+        <button class="btn" style="width:100%; margin: 5px 0; background: #333; color:#fff;" onclick="nextQuestion(false)">Đáp án B (SAI)</button>
+    </div>
+
+    <div class="container hidden" id="waiting-box">
+        <h3>KHU VỰC CHỜ PHÒNG LUYỆN</h3>
+        <p>Bạn đã hoàn thành chặng đua này. Hệ thống chat nội bộ đội đã kích hoạt!</p>
+        <div class="chat-box" id="chats"></div>
+        <input type="text" id="chat-msg" placeholder="Nhập tin nhắn..." onkeypress="sendChat(event)" style="margin-top:10px;">
+    </div>
+
     <script>
         const socket = io();
-        let myAvatar = '🐵';
+        let myAvt = '', qIndex = 0, correct = 0, wrong = 0;
 
-        function pickAvatar(element, emoji) {
-            document.querySelectorAll('.avatar-item').forEach(item => item.classList.remove('selected'));
-            element.classList.add('selected');
-            myAvatar = emoji;
+        function setAvt(avt, el) {
+            document.querySelectorAll('.avatar-item').forEach(i => i.classList.remove('selected'));
+            el.classList.add('selected'); myAvt = avt;
         }
 
-        function requestJoin() {
-            const nameInput = document.getElementById('player-name').value.trim();
-            if (!nameInput) {
-                document.getElementById('error-msg').innerText = "Bạn chưa điền tên vào kìa!";
-                return;
-            }
-            document.getElementById('error-msg').innerText = "";
-
-            // Gửi dữ liệu đăng nhập lên server
-            socket.emit('player-join', { name: nameInput, avatar: myAvatar });
+        function join() {
+            let name = document.getElementById('username').value.trim();
+            if(!name || !myAvt) return alert('Hãy điền tên và chọn biểu tượng đại diện!');
+            socket.emit('join_room', { name: name, avatar: myAvt });
+            document.getElementById('login-box').classList.add('hidden');
+            document.getElementById('waiting-box').classList.remove('hidden');
         }
 
-        // Nhận kết quả phản hồi từ server
-        socket.on('join-result', (data) => {
-            if (data.success) {
-                document.getElementById('login-screen').style.display = 'none';
-                document.getElementById('waiting-screen').style.display = 'block';
+        socket.on('assign_role', (d) => {
+            if(d.role === 'spy') alert('🕵️ MẬT LỆNH: Bạn là GIÁN ĐIỆP đội A. Hãy cày điểm thật cao để chuyển giao cho đội B!');
+            else alert(`Hệ thống phân phối: Bạn thuộc ĐỘI ${d.team}`);
+        });
+
+        socket.on('start_stage', () => {
+            document.getElementById('waiting-box').classList.add('hidden');
+            document.getElementById('game-box').classList.remove('hidden');
+            qIndex = 0; correct = 0; wrong = 0;
+            document.getElementById('stage-info').innerText = `CỬA 1: DAO ĐỘNG (${qIndex+1}/10)`;
+        });
+
+        function nextQuestion(isCorrect) {
+            if(isCorrect) correct++; else wrong++;
+            qIndex++;
+            if(qIndex >= 10) {
+                socket.emit('submit_stage', { correctCount: correct, wrongCount: wrong });
+                document.getElementById('game-box').classList.add('hidden');
+                document.getElementById('waiting-box').classList.remove('hidden');
             } else {
-                document.getElementById('error-msg').innerText = data.message;
+                document.getElementById('stage-info').innerText = `CỬA 1: DAO ĐỘNG (${qIndex+1}/10)`;
             }
+        }
+
+        function sendChat(e) {
+            if(e.key === 'Enter') {
+                let input = document.getElementById('chat-msg');
+                if(!input.value.trim()) return;
+                socket.emit('send_message', input.value);
+                input.value = '';
+            }
+        }
+
+        socket.on('receive_message', (d) => {
+            let box = document.getElementById('chats');
+            box.innerHTML += `<div><b>${d.avatar} ${d.name} [Đội ${d.team}]:</b> ${d.text}</div>`;
+            box.scrollTop = box.scrollHeight;
         });
 
-        // Nhận lệnh khi Admin đóng cửa bắt đầu trò chơi
-        socket.on('room-status-changed', (data) => {
-            if (data.isLocked) {
-                document.getElementById('waiting-screen').style.display = 'none';
-                document.getElementById('game-screen').style.display = 'block';
-            }
-        });
+        socket.on('error_message', (msg) => alert(msg));
     </script>
 </body>
 </html>
