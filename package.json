@@ -1,13 +1,13 @@
 {
-  "name": "game-vat-ly",
+  "name": "physicsgamee",
   "version": "1.0.0",
-  "description": "Game học tập Vật lý 2.5D",
+  "description": "Game hoc tap Vat Li - Phong cach Cyber 2D",
   "main": "index.js",
   "scripts": {
     "start": "node index.js"
   },
   "dependencies": {
-    "express": "^4.18.2",
-    "socket.io": "^4.7.2"
+    "express": "^4.19.2",
+    "socket.io": "^4.7.5"
   }
 }
