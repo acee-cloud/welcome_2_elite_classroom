@@ -2,7 +2,7 @@
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Người Chơi – Đấu Trường</title>
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=IBM+Plex+Sans:wght@400;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
@@ -31,6 +31,7 @@
             font-family: 'IBM Plex Sans', sans-serif;
             text-align: center;
             min-height: 100vh;
+            overflow-x: hidden;
         }
 
         /* ── PROGRESS BAR ── */
@@ -45,9 +46,10 @@
            SCREEN 1 – NHẬP TÊN
         ══════════════════════════════════ */
         #lobby-screen {
+            width: 90%;
             max-width: 520px;
-            margin: 40px auto;
-            padding: 28px 24px;
+            margin: 20px auto;
+            padding: 24px 20px;
             background: var(--panel);
             border: 2px solid var(--border);
             border-radius: 16px;
@@ -56,580 +58,217 @@
         .arena-title {
             font-family: 'Orbitron', sans-serif;
             color: var(--accent);
-            font-size: 1.6rem;
-            letter-spacing: 3px;
+            font-size: 1.5rem;
+            letter-spacing: 2px;
             margin: 0 0 6px 0;
         }
 
-        .arena-subtitle {
-            color: #64748b;
-            font-size: 0.85rem;
-            margin-bottom: 24px;
-            letter-spacing: 1px;
-        }
-
-        .field-label {
-            text-align: left;
-            font-size: 0.8rem;
-            color: #94a3b8;
-            font-weight: 600;
-            letter-spacing: 1px;
-            text-transform: uppercase;
-            margin-bottom: 6px;
-        }
+        .arena-subtitle { color: #64748b; font-size: 0.85rem; margin-bottom: 24px; letter-spacing: 1px; }
+        .field-label { text-align: left; font-size: 0.8rem; color: #94a3b8; font-weight: 600; margin-bottom: 6px; }
 
         input[type="text"] {
-            width: 100%;
-            padding: 12px 16px;
-            border-radius: 8px;
-            border: 1px solid var(--border);
-            background: #0f172a;
-            color: #fff;
-            font-size: 1rem;
-            font-family: 'IBM Plex Sans', sans-serif;
-            outline: none;
-            transition: border-color 0.2s;
+            width: 100%; padding: 12px 16px; border-radius: 8px; border: 1px solid var(--border);
+            background: #0f172a; color: #fff; font-size: 1rem; font-family: 'IBM Plex Sans', sans-serif; outline: none;
         }
         input[type="text"]:focus { border-color: var(--accent); }
 
         .btn-primary {
-            width: 100%;
-            padding: 13px;
-            margin-top: 10px;
-            border-radius: 8px;
-            border: none;
-            background: var(--accent);
-            color: #000;
-            font-weight: 700;
-            font-size: 1rem;
-            cursor: pointer;
-            font-family: 'IBM Plex Sans', sans-serif;
-            transition: opacity 0.2s, transform 0.1s;
+            width: 100%; padding: 13px; margin-top: 10px; border-radius: 8px; border: none;
+            background: var(--accent); color: #000; font-weight: 700; font-size: 1rem; cursor: pointer;
         }
-        .btn-primary:hover { opacity: 0.9; transform: translateY(-1px); }
-        .btn-primary:disabled { background: #475569; color: #94a3b8; cursor: not-allowed; transform: none; }
-
-        /* Avatar grid */
-        #avatar-section { margin-top: 22px; }
 
         .avatar-grid {
-            display: grid;
-            grid-template-columns: repeat(6, 1fr);
-            gap: 8px;
-            margin-top: 10px;
-            max-height: 260px;
-            overflow-y: auto;
-            padding: 4px;
+            display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; margin-top: 10px;
+            max-height: 200px; overflow-y: auto; padding: 4px;
         }
+        @media (min-width: 400px) { .avatar-grid { grid-template-columns: repeat(6, 1fr); } }
 
         .avatar-cell {
-            aspect-ratio: 1;
-            background: #0f172a;
-            border: 2px solid #1e293b;
-            border-radius: 10px;
-            cursor: pointer;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            font-size: 1.6rem;
-            transition: all 0.15s;
-            position: relative;
+            aspect-ratio: 1; background: #0f172a; border: 2px solid #1e293b; border-radius: 10px;
+            cursor: pointer; display: flex; flex-direction: column; align-items: center; justify-content: center;
+            font-size: 1.4rem; transition: all 0.15s;
         }
-        .avatar-cell:hover { border-color: var(--accent); transform: scale(1.08); }
-        .avatar-cell.selected {
-            border-color: var(--accent);
-            background: rgba(0, 210, 255, 0.12);
-            box-shadow: 0 0 10px rgba(0, 210, 255, 0.4);
-        }
-        .avatar-cell .av-name {
-            font-size: 0.5rem;
-            color: #64748b;
-            margin-top: 2px;
-            line-height: 1;
-        }
+        .avatar-cell.selected { border-color: var(--accent); background: rgba(0, 210, 255, 0.12); }
+        .avatar-cell .av-name { font-size: 0.45rem; color: #64748b; margin-top: 2px; line-height: 1; text-align: center; }
 
         .selected-avatar-preview {
-            margin-top: 14px;
-            padding: 10px 16px;
-            background: rgba(0, 210, 255, 0.08);
-            border: 1px solid rgba(0, 210, 255, 0.3);
-            border-radius: 8px;
-            font-size: 0.9rem;
-            color: var(--accent);
-            display: none;
+            margin-top: 14px; padding: 10px; background: rgba(0, 210, 255, 0.08);
+            border: 1px solid rgba(0, 210, 255, 0.3); border-radius: 8px; font-size: 0.85rem;
+            color: var(--accent); display: none;
         }
 
         #missing-room-warning {
-            color: var(--danger);
-            background: rgba(255, 74, 74, 0.1);
-            padding: 15px;
-            border-radius: 8px;
-            margin-bottom: 15px;
-            font-weight: bold;
+            color: var(--danger); background: rgba(255, 74, 74, 0.1); padding: 15px;
+            border-radius: 8px; margin-bottom: 15px; font-weight: bold;
         }
 
         /* ══════════════════════════════════
            SCREEN 2 – SẢNH CHỜ
         ══════════════════════════════════ */
         #waiting-screen {
-            width: 100%;
-            min-height: 100vh;
-            position: relative;
-            overflow: hidden;
+            width: 100%; height: 100vh; position: relative; overflow: hidden;
             background: radial-gradient(ellipse at center, #0d1625 0%, #07090f 100%);
+            display: flex; flex-direction: column;
         }
 
-        /* Header */
         .waiting-header {
-            padding: 16px 20px;
-            background: rgba(10, 14, 26, 0.85);
-            border-bottom: 1px solid #1e3a5f;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            backdrop-filter: blur(8px);
-            position: relative;
-            z-index: 10;
+            padding: 12px 16px; background: rgba(10, 14, 26, 0.9);
+            border-bottom: 1px solid #1e3a5f; display: flex; align-items: center;
+            justify-content: space-between; z-index: 10; flex-shrink: 0;
+        }
+        .waiting-title { font-family: 'Orbitron', sans-serif; color: var(--accent); font-size: 0.9rem; letter-spacing: 1px; }
+        .waiting-badge { background: rgba(0, 210, 255, 0.1); border: 1px solid rgba(0, 210, 255, 0.3); color: var(--accent); padding: 4px 10px; border-radius: 20px; font-size: 0.7rem; font-weight: 600; }
+
+        #arena-workspace {
+            position: relative; flex: 1; display: flex; overflow: hidden;
         }
 
-        .waiting-title {
-            font-family: 'Orbitron', sans-serif;
-            color: var(--accent);
-            font-size: 1rem;
-            letter-spacing: 2px;
-        }
-
-        .waiting-badge {
-            background: rgba(0, 210, 255, 0.1);
-            border: 1px solid rgba(0, 210, 255, 0.3);
-            color: var(--accent);
-            padding: 4px 12px;
-            border-radius: 20px;
-            font-size: 0.75rem;
-            font-weight: 600;
-            letter-spacing: 1px;
-        }
-
-        /* Team panels */
+        /* Team panels narrowed for mobile */
         .team-panel {
-            position: fixed;
-            top: 57px;
-            bottom: 140px;
-            width: 160px;
-            background: rgba(10, 14, 26, 0.7);
-            border: 1px solid;
-            backdrop-filter: blur(10px);
-            z-index: 10;
-            overflow-y: auto;
-            padding: 12px 8px;
+            width: 85px; background: rgba(10, 14, 26, 0.7); backdrop-filter: blur(10px);
+            z-index: 10; overflow-y: auto; padding: 10px 4px; border: 1px solid;
+            position: absolute; top: 0; bottom: 0;
         }
-        .team-panel.left {
-            left: 0;
-            border-color: rgba(255, 74, 74, 0.3);
-            border-left: none;
-            border-radius: 0 12px 12px 0;
-        }
-        .team-panel.right {
-            right: 0;
-            border-color: rgba(0, 210, 255, 0.3);
-            border-right: none;
-            border-radius: 12px 0 0 12px;
-        }
+        .team-panel.left { left: 0; border-color: rgba(255, 74, 74, 0.3); border-left: none; border-radius: 0 12px 12px 0; }
+        .team-panel.right { right: 0; border-color: rgba(0, 210, 255, 0.3); border-right: none; border-radius: 12px 0 0 12px; }
 
         .team-panel-title {
-            font-family: 'Orbitron', sans-serif;
-            font-size: 0.7rem;
-            letter-spacing: 2px;
-            font-weight: 700;
-            padding: 4px 6px;
-            border-radius: 6px;
-            margin-bottom: 10px;
-            text-align: center;
+            font-family: 'Orbitron', sans-serif; font-size: 0.6rem; letter-spacing: 1px; font-weight: 700;
+            padding: 4px 2px; border-radius: 4px; margin-bottom: 8px; text-align: center;
         }
         .team-panel.left .team-panel-title { color: var(--team-a); background: rgba(255, 74, 74, 0.1); }
         .team-panel.right .team-panel-title { color: var(--team-b); background: rgba(0, 210, 255, 0.1); }
 
         .member-item {
-            display: flex;
-            align-items: center;
-            gap: 6px;
-            padding: 5px 6px;
-            margin-bottom: 4px;
-            border-radius: 6px;
-            background: rgba(255,255,255,0.04);
-            font-size: 0.75rem;
-            color: #e2e8f0;
-            animation: memberSlideIn 0.3s ease;
+            display: flex; flex-direction: column; align-items: center; gap: 2px;
+            padding: 4px; margin-bottom: 6px; border-radius: 6px;
+            background: rgba(255,255,255,0.04); font-size: 0.6rem; color: #e2e8f0;
         }
-        @keyframes memberSlideIn {
-            from { opacity: 0; transform: translateX(-10px); }
-            to { opacity: 1; transform: translateX(0); }
-        }
-        .member-item .member-av { font-size: 1rem; }
-        .member-item .member-name { flex: 1; text-align: left; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .member-item .member-av { font-size: 1.1rem; }
+        .member-item .member-name { width: 100%; text-align: center; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .member-count { font-size: 0.65rem; color: #64748b; margin-top: 8px; text-align: center; }
 
-        .member-count {
-            font-size: 0.7rem;
-            color: #64748b;
-            margin-top: 8px;
-            text-align: center;
-        }
-
-        /* Arena floor */
+        /* Arena Floor */
         #arena-floor {
-            position: fixed;
-            top: 57px;
-            left: 160px;
-            right: 160px;
-            bottom: 140px;
-            overflow: hidden;
+            position: absolute; top: 0; bottom: 0; left: 85px; right: 85px; overflow: hidden;
         }
-
-        /* Grid lines on floor */
         #arena-floor::before {
-            content: '';
-            position: absolute;
-            inset: 0;
-            background-image:
-                linear-gradient(rgba(0, 210, 255, 0.04) 1px, transparent 1px),
-                linear-gradient(90deg, rgba(0, 210, 255, 0.04) 1px, transparent 1px);
-            background-size: 40px 40px;
+            content: ''; position: absolute; inset: 0;
+            background-image: linear-gradient(rgba(0, 210, 255, 0.04) 1px, transparent 1px), linear-gradient(90deg, rgba(0, 210, 255, 0.04) 1px, transparent 1px);
+            background-size: 30px 30px;
         }
-
-        /* Division line */
         #arena-floor::after {
-            content: 'VS';
-            position: absolute;
-            left: 50%;
-            top: 0;
-            bottom: 0;
-            transform: translateX(-50%);
-            width: 2px;
-            background: linear-gradient(180deg, transparent, rgba(255,255,255,0.1) 20%, rgba(255,255,255,0.1) 80%, transparent);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-family: 'Orbitron', sans-serif;
-            font-size: 0.6rem;
-            color: rgba(255,255,255,0.2);
-            letter-spacing: 2px;
+            content: 'VS'; position: absolute; left: 50%; top: 0; bottom: 0; transform: translateX(-50%);
+            width: 1px; background: linear-gradient(180deg, transparent, rgba(255,255,255,0.1) 20%, rgba(255,255,255,0.1) 80%, transparent);
+            display: flex; align-items: center; justify-content: center; font-family: 'Orbitron'; font-size: 0.6rem; color: rgba(255,255,255,0.2);
         }
 
-        /* Player token */
         .player-token {
-            position: absolute;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 2px;
-            pointer-events: none;
-            animation: tokenAppear 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-            transition: left 1s ease, top 1s ease;
+            position: absolute; display: flex; flex-direction: column; align-items: center; gap: 2px;
+            pointer-events: none; transition: left 1s ease, top 1s ease;
         }
-
-        @keyframes tokenAppear {
-            from { opacity: 0; transform: scale(0) translateY(20px); }
-            to { opacity: 1; transform: scale(1) translateY(0); }
-        }
-
-        .player-token .token-av {
-            font-size: 2rem;
-            filter: drop-shadow(0 2px 8px rgba(0,0,0,0.8));
-            line-height: 1;
-        }
-
+        .player-token .token-av { font-size: 1.6rem; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.8)); line-height: 1; }
         .player-token .token-label {
-            background: rgba(0, 0, 0, 0.75);
-            border: 1px solid rgba(255,255,255,0.15);
-            border-radius: 12px;
-            padding: 2px 8px;
-            font-size: 0.65rem;
-            font-weight: 600;
-            white-space: nowrap;
-            max-width: 90px;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            color: #fff;
+            background: rgba(0, 0, 0, 0.75); border: 1px solid; border-radius: 8px; padding: 2px 6px;
+            font-size: 0.55rem; font-weight: 600; white-space: nowrap; max-width: 60px; overflow: hidden; text-overflow: ellipsis;
         }
         .player-token.team-a .token-label { border-color: rgba(255, 74, 74, 0.5); color: #ffb3b3; }
         .player-token.team-b .token-label { border-color: rgba(0, 210, 255, 0.5); color: #b3f0ff; }
+        .player-token.is-me .token-label::before { content: '★ '; color: #ffd700; }
 
-        .token-ring {
-            position: absolute;
-            width: 44px;
-            height: 44px;
-            border-radius: 50%;
-            top: -2px;
-            left: 50%;
-            transform: translateX(-50%);
-            border: 2px solid;
-        }
-        .team-a .token-ring { border-color: rgba(255, 74, 74, 0.5); box-shadow: 0 0 10px rgba(255, 74, 74, 0.3); }
-        .team-b .token-ring { border-color: rgba(0, 210, 255, 0.5); box-shadow: 0 0 10px rgba(0, 210, 255, 0.3); }
-
-        /* "MY" token indicator */
-        .player-token.is-me .token-label::before {
-            content: '★ ';
-            color: #ffd700;
-        }
-
-        /* ── CHAT LOBBY ── */
+        /* Full Width Chat at bottom */
         #lobby-chat {
-            position: fixed;
-            bottom: 0;
-            left: 160px;
-            right: 160px;
-            height: 136px;
-            background: rgba(10, 14, 26, 0.9);
-            border-top: 1px solid #1e3a5f;
-            border-left: 1px solid #1e3a5f;
-            border-right: 1px solid #1e3a5f;
-            border-radius: 12px 12px 0 0;
-            backdrop-filter: blur(12px);
-            display: flex;
-            flex-direction: column;
-            z-index: 20;
-            padding: 8px 12px;
+            height: 30vh; min-height: 200px;
+            background: rgba(10, 14, 26, 0.95); border-top: 1px solid #1e3a5f;
+            display: flex; flex-direction: column; padding: 10px; z-index: 20;
+            border-radius: 16px 16px 0 0; backdrop-filter: blur(10px); flex-shrink: 0;
         }
-
         #lobby-chat-messages {
-            flex: 1;
-            overflow-y: auto;
-            font-size: 0.78rem;
-            padding-right: 4px;
+            flex: 1; overflow-y: auto; font-size: 0.8rem; padding-right: 4px; text-align: left;
         }
-        #lobby-chat-messages::-webkit-scrollbar { width: 3px; }
-        #lobby-chat-messages::-webkit-scrollbar-thumb { background: #1e3a5f; border-radius: 2px; }
-
-        .chat-msg {
-            padding: 2px 0;
-            border-bottom: 1px solid rgba(30, 58, 95, 0.4);
-            color: #cbd5e1;
-            text-align: left;
-            line-height: 1.4;
-        }
+        .chat-msg { padding: 3px 0; border-bottom: 1px solid rgba(30, 58, 95, 0.4); color: #cbd5e1; line-height: 1.4; }
         .chat-msg .msg-author { font-weight: 700; }
         .chat-msg .msg-author.team-a-name { color: var(--team-a); }
         .chat-msg .msg-author.team-b-name { color: var(--team-b); }
         .chat-msg.system-msg { color: #64748b; font-style: italic; }
 
-        .chat-input-row {
-            display: flex;
-            gap: 6px;
-            margin-top: 6px;
-        }
+        .chat-input-row { display: flex; gap: 6px; margin-top: 8px; }
         .chat-input-row input {
-            flex: 1;
-            padding: 7px 12px;
-            background: #0f172a;
-            border: 1px solid #1e3a5f;
-            border-radius: 6px;
-            color: #fff;
-            font-size: 0.8rem;
-            font-family: 'IBM Plex Sans', sans-serif;
-            outline: none;
+            flex: 1; padding: 10px 12px; background: #0f172a; border: 1px solid #1e3a5f;
+            border-radius: 8px; color: #fff; font-size: 0.9rem; outline: none;
         }
-        .chat-input-row input:focus { border-color: var(--accent); }
         .chat-input-row button {
-            padding: 7px 14px;
-            background: var(--accent);
-            color: #000;
-            border: none;
-            border-radius: 6px;
-            font-weight: 700;
-            cursor: pointer;
-            font-size: 0.8rem;
-            white-space: nowrap;
+            padding: 0 16px; background: var(--accent); color: #000; border: none;
+            border-radius: 8px; font-weight: 700; cursor: pointer; font-size: 0.9rem;
         }
 
-        /* Waiting status pulse */
-        .waiting-pulse {
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-            color: #64748b;
-            font-size: 0.75rem;
-        }
-        .pulse-dot {
-            width: 7px; height: 7px;
-            background: var(--success);
-            border-radius: 50%;
-            animation: pulseDot 1.4s infinite;
-        }
-        @keyframes pulseDot {
-            0%, 100% { opacity: 1; transform: scale(1); }
-            50% { opacity: 0.4; transform: scale(0.7); }
-        }
-
-        /* Team assignment reveal */
+        /* Banner Phân Đội */
         .team-reveal-banner {
-            display: none;
-            position: fixed;
-            inset: 0;
-            z-index: 999;
-            align-items: center;
-            justify-content: center;
-            background: rgba(0, 0, 0, 0.85);
-            backdrop-filter: blur(4px);
+            display: none; position: fixed; inset: 0; z-index: 999; align-items: center; justify-content: center;
+            background: rgba(0, 0, 0, 0.85); backdrop-filter: blur(4px);
         }
-        .team-reveal-banner.show {
-            display: flex;
-            animation: fadeIn 0.3s;
-        }
-        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-
-        .team-reveal-card {
-            text-align: center;
-            padding: 40px 60px;
-            border-radius: 20px;
-            border: 2px solid;
-            animation: cardBounce 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-        }
-        @keyframes cardBounce {
-            from { transform: scale(0.5); opacity: 0; }
-            to { transform: scale(1); opacity: 1; }
-        }
-        .team-reveal-card.team-a { background: rgba(20, 6, 6, 0.95); border-color: var(--team-a); }
-        .team-reveal-card.team-b { background: rgba(0, 10, 22, 0.95); border-color: var(--team-b); }
-
+        .team-reveal-banner.show { display: flex; }
+        .team-reveal-card { text-align: center; padding: 40px; border-radius: 20px; border: 2px solid; background: #000; width: 80%; }
+        .team-reveal-card.team-a { border-color: var(--team-a); }
+        .team-reveal-card.team-b { border-color: var(--team-b); }
         .reveal-avatar { font-size: 4rem; margin-bottom: 8px; }
-        .reveal-team-label {
-            font-family: 'Orbitron', sans-serif;
-            font-size: 1.8rem;
-            font-weight: 900;
-            letter-spacing: 4px;
-        }
-        .team-a .reveal-team-label { color: var(--team-a); text-shadow: 0 0 20px rgba(255,74,74,0.6); }
-        .team-b .reveal-team-label { color: var(--team-b); text-shadow: 0 0 20px rgba(0,210,255,0.6); }
-
+        .reveal-team-label { font-family: 'Orbitron'; font-size: 1.8rem; font-weight: 900; letter-spacing: 2px; }
+        .team-a .reveal-team-label { color: var(--team-a); }
+        .team-b .reveal-team-label { color: var(--team-b); }
         .reveal-name { font-size: 1.1rem; margin-top: 8px; color: #94a3b8; }
         .reveal-dismiss { margin-top: 20px; font-size: 0.8rem; color: #475569; }
 
         /* ══════════════════════════════════
-           SCREEN 3 – GAME
+           GAME, BREAK, RESULT SCREENS
         ══════════════════════════════════ */
-        #game-screen {
-            max-width: 550px;
-            margin: 40px auto;
-            padding: 20px;
-            background: var(--panel);
-            border: 2px solid var(--border);
-            border-radius: 12px;
+        .content-box {
+            width: 90%; max-width: 550px; margin: 20px auto; padding: 20px;
+            background: var(--panel); border: 2px solid var(--border); border-radius: 12px;
         }
 
         .choice-btn {
-            width: 100%;
-            text-align: left;
-            background: #1e293b;
-            color: #fff;
-            border: 1px solid var(--border);
-            padding: 14px;
-            border-radius: 8px;
-            cursor: pointer;
-            font-size: 0.95rem;
-            font-family: 'IBM Plex Sans', sans-serif;
-            transition: all 0.2s;
-            margin-bottom: 8px;
+            width: 100%; text-align: left; background: #1e293b; color: #fff; border: 1px solid var(--border);
+            padding: 14px; border-radius: 8px; cursor: pointer; font-size: 0.95rem; margin-bottom: 8px; font-family: 'IBM Plex Sans';
         }
         .choice-btn:not(:disabled):hover { background: #334155; border-color: var(--accent); }
-        .choice-btn:disabled { cursor: not-allowed; opacity: 0.6; }
-
-        /* ══════════════════════════════════
-           SCREEN 4 – GIẢI LAO
-        ══════════════════════════════════ */
-        #intermission-screen {
-            max-width: 550px;
-            margin: 40px auto;
-            padding: 20px;
-            background: var(--panel);
-            border: 2px solid var(--border);
-            border-radius: 12px;
-        }
 
         .chat-area {
-            height: 160px;
-            overflow-y: auto;
-            background: #0f172a;
-            border: 1px solid var(--border);
-            padding: 10px;
-            border-radius: 6px;
-            text-align: left;
-            font-size: 0.95rem;
-            margin-bottom: 10px;
-        }
-        .msg-line { margin: 4px 0; border-bottom: 1px dashed #1e3a5f; padding-bottom: 2px; }
-
-        /* ══════════════════════════════════
-           OTHER SCREENS
-        ══════════════════════════════════ */
-        #fast-phase-screen {
-            max-width: 550px;
-            margin: 40px auto;
-            padding: 20px;
-            background: var(--panel);
-            border: 2px solid var(--border);
-            border-radius: 12px;
+            height: 160px; overflow-y: auto; background: #0f172a; border: 1px solid var(--border);
+            padding: 10px; border-radius: 6px; text-align: left; font-size: 0.85rem; margin-bottom: 10px;
         }
 
-        #summary-screen {
-            max-width: 650px;
-            margin: 40px auto;
-            padding: 20px;
-            background: var(--panel);
-            border: 2px solid var(--border);
-            border-radius: 12px;
-        }
-
-        .review-card {
-            background: #0f172a;
-            border: 1px solid var(--border);
-            padding: 15px;
-            margin-bottom: 12px;
-            text-align: left;
-            border-radius: 8px;
-            line-height: 1.6;
-        }
-
-        /* Scrollbar */
-        ::-webkit-scrollbar { width: 5px; }
-        ::-webkit-scrollbar-track { background: #0f172a; }
-        ::-webkit-scrollbar-thumb { background: #1e3a5f; border-radius: 3px; }
+        .review-card { background: #0f172a; border: 1px solid var(--border); padding: 15px; margin-bottom: 12px; text-align: left; border-radius: 8px; line-height: 1.5; font-size: 0.9rem; }
+        
+        ::-webkit-scrollbar { width: 4px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #1e3a5f; border-radius: 2px; }
     </style>
 </head>
 <body>
 
-<div id="top-progress-container">
-    <div id="top-progress-bar"></div>
-</div>
+<div id="top-progress-container"><div id="top-progress-bar"></div></div>
 
-<!-- ──────────────────────────────────────
-     SCREEN 1 – NHẬP TÊN & CHỌN BIỂU TƯỢNG
-────────────────────────────────────── -->
 <div id="lobby-screen" class="screen active">
     <h2 class="arena-title">ARENA VẬT LÍ</h2>
-    <p class="arena-subtitle">MULTIPLAYER BATTLE ROYALE</p>
+    <p class="arena-subtitle">BATTLE ROYALE</p>
 
     <div id="missing-room-warning" style="display:none;">
         ⚠️ BẠN CHƯA VÀO ĐÚNG PHÒNG!<br><br>
-        <span style="font-weight:normal; font-size:0.9rem; color:#f3f4f6;">Vui lòng dùng điện thoại quét mã QR hoặc truy cập qua đường link do Giáo viên cung cấp để tham gia trò chơi.</span>
+        <span style="font-weight:normal; font-size:0.85rem;">Vui lòng dùng điện thoại quét mã QR do Giáo viên cung cấp.</span>
     </div>
 
     <div id="join-form">
         <div class="field-label">TÊN CỦA BẠN</div>
         <input type="text" id="input-name" placeholder="Nhập tên hiển thị..." maxlength="20">
-
         <div id="avatar-section">
-            <div class="field-label" style="margin-top:18px;">CHỌN BIỂU TƯỢNG (30 LOÀI)</div>
+            <div class="field-label" style="margin-top:18px;">CHỌN BIỂU TƯỢNG</div>
             <div class="avatar-grid" id="avatar-grid"></div>
             <div class="selected-avatar-preview" id="avatar-preview"></div>
         </div>
-
         <button class="btn-primary" onclick="joinRoom()" style="margin-top:18px;">VÀO PHÒNG CHỜ</button>
     </div>
 </div>
 
-<!-- Team Reveal Banner -->
 <div class="team-reveal-banner" id="team-reveal">
     <div class="team-reveal-card" id="team-reveal-card">
         <div class="reveal-avatar" id="reveal-avatar-display"></div>
@@ -639,53 +278,37 @@
     </div>
 </div>
 
-<!-- ──────────────────────────────────────
-     SCREEN 2 – SẢNH CHỜ
-────────────────────────────────────── -->
 <div id="waiting-screen" class="screen">
-
-    <!-- Header -->
     <div class="waiting-header">
         <div class="waiting-title">SẢNH CHỜ</div>
-        <div class="waiting-pulse">
-            <div class="pulse-dot"></div>
-            <span id="waiting-count">0 người chơi</span>
-        </div>
+        <div style="font-size:0.75rem; color:#94a3b8;"><span id="waiting-count">0</span> người chơi</div>
         <div class="waiting-badge" id="my-team-badge">TEAM ?</div>
     </div>
 
-    <!-- Team A panel (left) -->
-    <div class="team-panel left">
-        <div class="team-panel-title">⚔ TEAM A</div>
-        <div id="team-a-list"></div>
-        <div class="member-count" id="team-a-count">0 thành viên</div>
+    <div id="arena-workspace">
+        <div class="team-panel left">
+            <div class="team-panel-title">⚔ TEAM A</div>
+            <div id="team-a-list"></div>
+            <div class="member-count" id="team-a-count">0</div>
+        </div>
+        <div id="arena-floor"></div>
+        <div class="team-panel right">
+            <div class="team-panel-title">🛡 TEAM B</div>
+            <div id="team-b-list"></div>
+            <div class="member-count" id="team-b-count">0</div>
+        </div>
     </div>
 
-    <!-- Team B panel (right) -->
-    <div class="team-panel right">
-        <div class="team-panel-title">🛡 TEAM B</div>
-        <div id="team-b-list"></div>
-        <div class="member-count" id="team-b-count">0 thành viên</div>
-    </div>
-
-    <!-- Arena floor with player tokens -->
-    <div id="arena-floor" role="region" aria-label="Không gian sảnh chờ"></div>
-
-    <!-- Lobby Chat -->
     <div id="lobby-chat">
         <div id="lobby-chat-messages"></div>
         <div class="chat-input-row">
-            <input type="text" id="lobby-chat-input" placeholder="Nhắn tin với mọi người..." maxlength="120"
-                onkeypress="if(event.key==='Enter') sendLobbyChat()">
+            <input type="text" id="lobby-chat-input" placeholder="Nhắn tin..." maxlength="100" onkeypress="if(event.key==='Enter') sendLobbyChat()">
             <button onclick="sendLobbyChat()">Gửi</button>
         </div>
     </div>
 </div>
 
-<!-- ──────────────────────────────────────
-     SCREEN 3 – GAME
-────────────────────────────────────── -->
-<div id="game-screen" class="screen">
+<div id="game-screen" class="screen content-box">
     <div style="display:flex; justify-content:space-between; margin-bottom:15px; color:var(--accent);">
         <span id="stage-title" style="font-weight:600;">STAGE 1</span>
         <span id="timer-text" style="font-family:'Orbitron'; font-weight:bold;">60s</span>
@@ -693,627 +316,261 @@
     <div id="question-box"></div>
 </div>
 
-<!-- ──────────────────────────────────────
-     SCREEN 4 – GIẢI LAO
-────────────────────────────────────── -->
-<div id="intermission-screen" class="screen">
-    <h3 style="color:var(--success); margin-top:0;">GIẢI LAO GIỮA CHẶNG (<span id="break-timer">15</span>s)</h3>
-    <div style="display:flex; justify-content:space-around; background:#1e293b; padding:10px; border-radius:6px; font-weight:bold; margin-bottom:15px; font-size:0.9rem;">
-        <span style="color:var(--danger);">Đội A: <span id="score-a">0</span>đ</span>
-        <span style="color:var(--accent);">Đội B: <span id="score-b">0</span>đ</span>
-        <span style="color:#ffaa00; display:none;" id="score-c-wrapper">Đội C: <span id="score-c">0</span>đ</span>
+<div id="intermission-screen" class="screen content-box">
+    <h3 style="color:var(--success); margin-top:0; font-size: 1.1rem;">GIẢI LAO (<span id="break-timer">15</span>s)</h3>
+    <div style="display:flex; justify-content:space-around; background:#1e293b; padding:10px; border-radius:6px; font-weight:bold; margin-bottom:15px; font-size:0.85rem;">
+        <span style="color:var(--danger);">A: <span id="score-a">0</span>đ</span>
+        <span style="color:var(--accent);">B: <span id="score-b">0</span>đ</span>
+        <span style="color:#ffaa00; display:none;" id="score-c-wrapper">C: <span id="score-c">0</span>đ</span>
     </div>
     <div class="chat-area" id="chat-logs"></div>
     <div style="display:flex; gap:6px;">
-        <input type="text" id="chat-input" placeholder="Tán gẫu tự do tại đây..." style="flex:1; margin:0;"
-            onkeypress="if(event.key==='Enter') sendChat()">
-        <button onclick="sendChat()" style="width:auto; padding:0 20px; background:var(--accent); color:#000; border:none; border-radius:6px; font-weight:700; cursor:pointer;">Gửi</button>
+        <input type="text" id="chat-input" placeholder="Tán gẫu..." style="flex:1; padding:10px; border-radius:6px; border:1px solid #1e3a5f; background:#0f172a; color:#fff;" onkeypress="if(event.key==='Enter') sendChat()">
+        <button onclick="sendChat()" style="padding:0 15px; background:var(--accent); color:#000; border:none; border-radius:6px; font-weight:700;">Gửi</button>
     </div>
 </div>
 
-<!-- ──────────────────────────────────────
-     SCREEN 5 – VÒNG NHANH
-────────────────────────────────────── -->
-<div id="fast-phase-screen" class="screen">
-    <h2 style="font-family:'Orbitron'; color:#ffaa00;">VÒNG TRANH ĐIỂM NHANH</h2>
-    <div id="host-controls" style="display:none;">
-        <p style="color:#ef4444; font-weight:bold;">Bạn là chủ khảo!</p>
-        <input type="text" id="fast-question-input" placeholder="Nhập câu hỏi phụ tự luận nhanh...">
-        <button onclick="hostPublishQuestion()" style="background:#ffaa00; width:100%; padding:12px; border:none; border-radius:8px; font-weight:700; cursor:pointer;">PHÁT HÀNH CÂU HỎI</button>
-        <div style="margin-top:20px; text-align:left;">
-            <h4>Danh sách phản hồi nhanh:</h4>
-            <div id="host-submission-list">Đang chờ câu trả lời gửi lên...</div>
-        </div>
-    </div>
-    <div id="player-controls" style="display:none;">
-        <h3 id="fast-question-display" style="color:#fff; line-height:1.5;">Đang chờ chủ khảo đặt câu hỏi...</h3>
+<div id="fast-phase-screen" class="screen content-box">
+    <h3 style="font-family:'Orbitron'; color:#ffaa00; font-size:1.1rem;">VÒNG TRANH ĐIỂM NHANH</h3>
+    <div id="player-controls">
+        <p id="fast-question-display" style="color:#fff; font-size:0.9rem; margin-bottom:15px;">Đang đợi chủ khảo đặt câu hỏi...</p>
         <div id="fast-answer-zone" style="display:none;">
-            <input type="text" id="player-fast-answer-input" placeholder="Nhập câu trả lời nhanh...">
-            <button onclick="playerSubmitFastAnswer()" style="width:100%; padding:12px; background:var(--accent); color:#000; border:none; border-radius:8px; font-weight:700; cursor:pointer; margin-top:6px;">NỘP CÂU TRẢ LỜI</button>
+            <input type="text" id="player-fast-answer-input" placeholder="Nhập câu trả lời..." style="width:100%; padding:10px; border-radius:6px; border:1px solid #1e3a5f; background:#0f172a; color:#fff; margin-bottom:10px;">
+            <button onclick="playerSubmitFastAnswer()" style="width:100%; padding:12px; background:var(--accent); color:#000; border:none; border-radius:8px; font-weight:700;">NỘP BÀI</button>
         </div>
     </div>
 </div>
 
-<!-- ──────────────────────────────────────
-     SCREEN 6 – KẾT QUẢ
-────────────────────────────────────── -->
-<div id="summary-screen" class="screen">
+<div id="summary-screen" class="screen content-box" style="max-width: 600px;">
     <div id="game-over-box"></div>
     <hr style="border:1px solid var(--border); margin:20px 0;">
-    <h3 style="color:var(--accent); font-family:'Orbitron'; text-align:left;">XEM LẠI CHI TIẾT ĐÁP ÁN</h3>
+    <h4 style="color:var(--accent); font-family:'Orbitron'; text-align:left; margin-bottom: 10px;">CHI TIẾT ĐÁP ÁN</h4>
     <div id="review-list-zone"></div>
 </div>
 
 <script>
-// ═══════════════════════════════════════
-//  DỮ LIỆU 30 BIỂU TƯỢNG ĐỘNG VẬT
-// ═══════════════════════════════════════
 const AVATARS = [
-    // Trên cạn
-    { emoji: '🦁', name: 'Sư Tử' },
-    { emoji: '🐯', name: 'Hổ' },
-    { emoji: '🦊', name: 'Cáo' },
-    { emoji: '🐺', name: 'Sói' },
-    { emoji: '🦌', name: 'Hươu' },
-    { emoji: '🐘', name: 'Voi' },
-    { emoji: '🦒', name: 'Hươu Cao' },
-    { emoji: '🦓', name: 'Ngựa Vằn' },
-    { emoji: '🐆', name: 'Báo' },
-    { emoji: '🦅', name: 'Đại Bàng' },
-    { emoji: '🦉', name: 'Cú' },
-    { emoji: '🦜', name: 'Vẹt' },
-    { emoji: '🐸', name: 'Ếch' },
-    { emoji: '🦎', name: 'Tắc Kè' },
-    { emoji: '🐢', name: 'Rùa' },
-    { emoji: '🦔', name: 'Nhím' },
-    { emoji: '🦦', name: 'Rái Cá' },
-    { emoji: '🦥', name: 'Lười' },
-    { emoji: '🦩', name: 'Hồng Hạc' },
-    { emoji: '🐓', name: 'Gà Trống' },
-    // Dưới nước
-    { emoji: '🦈', name: 'Cá Mập' },
-    { emoji: '🐬', name: 'Cá Heo' },
-    { emoji: '🐋', name: 'Cá Voi' },
-    { emoji: '🐙', name: 'Bạch Tuộc' },
-    { emoji: '🦑', name: 'Mực' },
-    { emoji: '🦞', name: 'Tôm Hùm' },
-    { emoji: '🦀', name: 'Cua' },
-    { emoji: '🐡', name: 'Cá Nóc' },
-    { emoji: '🐠', name: 'Cá Nhiệt Đới' },
-    { emoji: '🦭', name: 'Hải Cẩu' },
+    { emoji: '🦁', name: 'Sư Tử' }, { emoji: '🐯', name: 'Hổ' }, { emoji: '🦊', name: 'Cáo' }, { emoji: '🐺', name: 'Sói' }, { emoji: '🦌', name: 'Hươu' },
+    { emoji: '🐘', name: 'Voi' }, { emoji: '🦒', name: 'Hươu Cao' }, { emoji: '🦓', name: 'Ngựa Vằn' }, { emoji: '🐆', name: 'Báo' }, { emoji: '🦅', name: 'Đại Bàng' },
+    { emoji: '🦉', name: 'Cú' }, { emoji: '🦜', name: 'Vẹt' }, { emoji: '🐸', name: 'Ếch' }, { emoji: '🦎', name: 'Tắc Kè' }, { emoji: '🐢', name: 'Rùa' },
+    { emoji: '🦈', name: 'Cá Mập' }, { emoji: '🐬', name: 'Cá Heo' }, { emoji: '🐋', name: 'Cá Voi' }, { emoji: '🐙', name: 'Bạch Tuộc' }, { emoji: '🦑', name: 'Mực' }
 ];
 
-// ═══════════════════════════════════════
-//  BIẾN TRẠNG THÁI
-// ═══════════════════════════════════════
 const socket = io();
-let currentRoomId = '';
-let myTeam = '';
-let myName = '';
-let myAvatar = null;
-let currentQuestions = [];
-let questionIndex = 0;
-let isAnsweringState = false;
-let urlRoomId = '';
-let allPlayers = {};   // { socketId: { name, avatar, team } }
-let revealTimeout = null;
+let currentRoomId = '', myTeam = '', myName = '', myAvatar = null;
+let currentQuestions = [], questionIndex = 0, isAnsweringState = false;
+let urlRoomId = '', allPlayers = {};
 
-// ═══════════════════════════════════════
-//  KHỞI TẠO
-// ═══════════════════════════════════════
 window.addEventListener('DOMContentLoaded', () => {
-    buildAvatarGrid();
+    const grid = document.getElementById('avatar-grid');
+    AVATARS.forEach((av, i) => {
+        const cell = document.createElement('div');
+        cell.className = 'avatar-cell';
+        cell.innerHTML = `<span>${av.emoji}</span><span class="av-name">${av.name}</span>`;
+        cell.addEventListener('click', () => {
+            document.querySelectorAll('.avatar-cell').forEach(c => c.classList.remove('selected'));
+            cell.classList.add('selected');
+            myAvatar = av;
+            const preview = document.getElementById('avatar-preview');
+            preview.style.display = 'block';
+            preview.innerHTML = `Bạn chọn: <strong>${av.emoji} ${av.name}</strong>`;
+        });
+        grid.appendChild(cell);
+    });
 
     const params = new URLSearchParams(window.location.search);
-    const roomParam = params.get('room');
-
-    if (roomParam) {
-        urlRoomId = roomParam.toUpperCase();
-        document.getElementById('input-name').focus();
-    } else {
+    urlRoomId = params.get('room');
+    if (urlRoomId) document.getElementById('input-name').focus();
+    else {
         document.getElementById('join-form').style.display = 'none';
         document.getElementById('missing-room-warning').style.display = 'block';
     }
 });
 
-function buildAvatarGrid() {
-    const grid = document.getElementById('avatar-grid');
-    AVATARS.forEach((av, i) => {
-        const cell = document.createElement('div');
-        cell.className = 'avatar-cell';
-        cell.dataset.index = i;
-        cell.innerHTML = `<span>${av.emoji}</span><span class="av-name">${av.name}</span>`;
-        cell.addEventListener('click', () => selectAvatar(i, cell));
-        grid.appendChild(cell);
-    });
-}
-
-function selectAvatar(index, cell) {
-    document.querySelectorAll('.avatar-cell').forEach(c => c.classList.remove('selected'));
-    cell.classList.add('selected');
-    myAvatar = AVATARS[index];
-
-    const preview = document.getElementById('avatar-preview');
-    preview.style.display = 'block';
-    preview.innerHTML = `<strong>${myAvatar.emoji} ${myAvatar.name}</strong> đã được chọn làm biểu tượng của bạn`;
-}
-
-// ═══════════════════════════════════════
-//  ĐIỀU HƯỚNG MÀN HÌNH
-// ═══════════════════════════════════════
-function switchScreen(screenId) {
+function switchScreen(id) {
     document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-    const el = document.getElementById(screenId);
-    if (el) el.classList.add('active');
+    document.getElementById(id).classList.add('active');
 }
 
-// ═══════════════════════════════════════
-//  VÀO PHÒNG
-// ═══════════════════════════════════════
 function joinRoom() {
     const name = document.getElementById('input-name').value.trim();
+    if (!urlRoomId) return alert('Lỗi mã phòng!');
+    if (!name) return alert('Nhập tên của bạn!');
+    if (!myAvatar) return alert('Chọn biểu tượng!');
 
-    if (!urlRoomId) return alert('Không tìm thấy mã phòng. Vui lòng quét mã QR!');
-    if (!name) return alert('Vui lòng nhập tên của bạn!');
-    if (!myAvatar) return alert('Vui lòng chọn 1 biểu tượng đại diện!');
-
-    myName = name;
-    currentRoomId = urlRoomId;
-
-    socket.emit('playerJoinRoom', {
-        roomId: currentRoomId,
-        name: myName,
-        avatar: myAvatar
-    });
+    myName = name; currentRoomId = urlRoomId.toUpperCase();
+    socket.emit('playerJoinRoom', { roomId: currentRoomId, name: myName, avatar: myAvatar });
 }
-
-// ═══════════════════════════════════════
-//  SỰ KIỆN SOCKET – VÀO PHÒNG & PHÂN ĐỘI
-// ═══════════════════════════════════════
-socket.on('joinedRoom', () => {
-    // Không chuyển ngay, chờ roleAssignment
-});
 
 socket.on('roleAssignment', (data) => {
     myTeam = data.team;
-
-    // Hiện banner phân đội
-    showTeamReveal(data.team, myAvatar, myName);
+    const b = document.getElementById('team-reveal');
+    document.getElementById('reveal-avatar-display').textContent = myAvatar.emoji;
+    document.getElementById('reveal-team-text').textContent = `ĐỘI ${data.team}`;
+    document.getElementById('reveal-player-name').textContent = myName;
+    document.getElementById('team-reveal-card').className = 'team-reveal-card ' + (data.team === 'A' ? 'team-a' : 'team-b');
+    b.classList.add('show');
+    const dismiss = () => { b.classList.remove('show'); switchScreen('waiting-screen'); b.removeEventListener('click', dismiss); };
+    b.addEventListener('click', dismiss);
+    setTimeout(dismiss, 4000);
 });
 
-function showTeamReveal(team, avatar, name) {
-    const banner = document.getElementById('team-reveal');
-    const card = document.getElementById('team-reveal-card');
-    const avatarEl = document.getElementById('reveal-avatar-display');
-    const teamEl = document.getElementById('reveal-team-text');
-    const nameEl = document.getElementById('reveal-player-name');
-
-    avatarEl.textContent = avatar ? avatar.emoji : '🎮';
-    teamEl.textContent = `ĐỘI ${team}`;
-    nameEl.textContent = name;
-
-    card.className = 'team-reveal-card ' + (team === 'A' ? 'team-a' : 'team-b');
-    banner.classList.add('show');
-
-    // Nhấn bất kỳ để đóng
-    const dismiss = () => {
-        banner.classList.remove('show');
-        switchScreen('waiting-screen');
-        banner.removeEventListener('click', dismiss);
-        document.removeEventListener('keydown', dismiss);
-    };
-    banner.addEventListener('click', dismiss);
-    document.addEventListener('keydown', dismiss);
-
-    // Tự đóng sau 4s
-    revealTimeout = setTimeout(dismiss, 4000);
-}
-
-// ═══════════════════════════════════════
-//  SỰ KIỆN SOCKET – CẬP NHẬT SẢNH CHỜ
-// ═══════════════════════════════════════
 socket.on('lobbyUpdate', (data) => {
-    // data: { players: [ { id, name, avatar, team } ] }
     allPlayers = {};
     data.players.forEach(p => { allPlayers[p.id] = p; });
-    renderLobby();
-});
-
-function renderLobby() {
-    const floor = document.getElementById('arena-floor');
-    const teamAList = document.getElementById('team-a-list');
-    const teamBList = document.getElementById('team-b-list');
-
-    // Phân loại
+    
     const teamA = Object.values(allPlayers).filter(p => p.team === 'A');
     const teamB = Object.values(allPlayers).filter(p => p.team === 'B');
 
-    // Cập nhật badge team mình
-    const badgeEl = document.getElementById('my-team-badge');
-    if (myTeam === 'A') {
-        badgeEl.textContent = '⚔ TEAM A';
-        badgeEl.style.color = 'var(--team-a)';
-        badgeEl.style.borderColor = 'rgba(255,74,74,0.4)';
-        badgeEl.style.background = 'rgba(255,74,74,0.1)';
-    } else if (myTeam === 'B') {
-        badgeEl.textContent = '🛡 TEAM B';
-        badgeEl.style.color = 'var(--team-b)';
-        badgeEl.style.borderColor = 'rgba(0,210,255,0.4)';
-        badgeEl.style.background = 'rgba(0,210,255,0.1)';
-    }
+    const badge = document.getElementById('my-team-badge');
+    badge.textContent = `TEAM ${myTeam}`;
+    badge.style.color = `var(--team-${myTeam.toLowerCase()})`;
 
-    // Danh sách team A
-    teamAList.innerHTML = '';
-    teamA.forEach(p => {
-        const div = document.createElement('div');
-        div.className = 'member-item';
-        const av = p.avatar ? p.avatar.emoji : '🎮';
-        div.innerHTML = `<span class="member-av">${av}</span><span class="member-name">${p.name}</span>`;
-        if (p.id === socket.id) div.style.opacity = '1';
-        teamAList.appendChild(div);
-    });
-    document.getElementById('team-a-count').textContent = `${teamA.length} thành viên`;
+    const renderPanel = (arr, listId, countId) => {
+        document.getElementById(listId).innerHTML = arr.map(p => 
+            `<div class="member-item" ${p.id === socket.id ? 'style="border:1px solid #fff;"' : ''}>
+                <span class="member-av">${p.avatar?p.avatar.emoji:'🐾'}</span>
+                <span class="member-name">${p.name}</span>
+            </div>`
+        ).join('');
+        document.getElementById(countId).textContent = arr.length;
+    };
+    renderPanel(teamA, 'team-a-list', 'team-a-count');
+    renderPanel(teamB, 'team-b-list', 'team-b-count');
+    document.getElementById('waiting-count').textContent = teamA.length + teamB.length;
 
-    // Danh sách team B
-    teamBList.innerHTML = '';
-    teamB.forEach(p => {
-        const div = document.createElement('div');
-        div.className = 'member-item';
-        const av = p.avatar ? p.avatar.emoji : '🎮';
-        div.innerHTML = `<span class="member-av">${av}</span><span class="member-name">${p.name}</span>`;
-        teamBList.appendChild(div);
-    });
-    document.getElementById('team-b-count').textContent = `${teamB.length} thành viên`;
-
-    // Đếm tổng
-    const total = teamA.length + teamB.length;
-    document.getElementById('waiting-count').textContent = `${total} người chơi`;
-
-    // Render tokens trên sân
-    renderArenaTokens(teamA, teamB);
-}
-
-function renderArenaTokens(teamA, teamB) {
     const floor = document.getElementById('arena-floor');
-    const floorW = floor.offsetWidth || 400;
-    const floorH = floor.offsetHeight || 300;
-
-    // Xóa tokens cũ
     floor.innerHTML = '';
-
-    // Phân bố: Team A bên trái, Team B bên phải
-    // Mỗi bên chia đều theo chiều dọc với random offset nhỏ
-    const placeTokens = (players, sideX, teamClass) => {
-        const count = players.length;
-        players.forEach((p, i) => {
-            const yPercent = count <= 1
-                ? 0.5
-                : 0.15 + (i / (count - 1)) * 0.7;
-
-            const xJitter = (Math.random() - 0.5) * 0.15;
-            const yJitter = count <= 1 ? 0 : (Math.random() - 0.5) * 0.08;
-
-            const xPercent = sideX + xJitter;
-            const yPercentFinal = yPercent + yJitter;
-
-            const x = Math.max(0.02, Math.min(0.95, xPercent)) * floorW;
-            const y = Math.max(0.05, Math.min(0.88, yPercentFinal)) * floorH;
-
-            const token = document.createElement('div');
-            token.className = `player-token ${teamClass}${p.id === socket.id ? ' is-me' : ''}`;
-            token.style.left = x + 'px';
-            token.style.top = y + 'px';
-
-            const av = p.avatar ? p.avatar.emoji : '🎮';
-            token.innerHTML = `
-                <div class="token-ring"></div>
-                <div class="token-av">${av}</div>
-                <div class="token-label">${p.name}</div>
-            `;
-            floor.appendChild(token);
+    const fW = floor.offsetWidth || 200, fH = floor.offsetHeight || 300;
+    
+    const placeTokens = (arr, sideX, cls) => {
+        arr.forEach((p, i) => {
+            const yP = arr.length <= 1 ? 0.5 : 0.1 + (i/(arr.length-1))*0.8;
+            const x = Math.max(0.1, Math.min(0.9, sideX + (Math.random()-0.5)*0.2)) * fW;
+            const y = Math.max(0.1, Math.min(0.9, yP + (Math.random()-0.5)*0.1)) * fH;
+            
+            const t = document.createElement('div');
+            t.className = `player-token ${cls} ${p.id===socket.id?'is-me':''}`;
+            t.style.left = x+'px'; t.style.top = y+'px';
+            t.innerHTML = `<div class="token-av">${p.avatar?p.avatar.emoji:'🐾'}</div><div class="token-label">${p.name}</div>`;
+            floor.appendChild(t);
         });
     };
+    placeTokens(teamA, 0.25, 'team-a'); placeTokens(teamB, 0.75, 'team-b');
+});
 
-    placeTokens(teamA, 0.18, 'team-a');
-    placeTokens(teamB, 0.72, 'team-b');
-}
-
-// ═══════════════════════════════════════
-//  CHAT SẢNH CHỜ
-// ═══════════════════════════════════════
 function sendLobbyChat() {
-    const input = document.getElementById('lobby-chat-input');
-    const msg = input.value.trim();
-    if (!msg) return;
-    socket.emit('sendLobbyMessage', { roomId: currentRoomId, msg });
-    input.value = '';
+    const i = document.getElementById('lobby-chat-input');
+    if (!i.value.trim()) return;
+    socket.emit('sendLobbyMessage', { roomId: currentRoomId, msg: i.value });
+    i.value = '';
 }
 
-socket.on('receiveLobbyMessage', (data) => {
-    const container = document.getElementById('lobby-chat-messages');
-    const div = document.createElement('div');
-    div.className = 'chat-msg';
-
-    let teamClass = '';
-    let teamLabel = '';
-    if (data.team === 'A') { teamClass = 'team-a-name'; teamLabel = '[A]'; }
-    else if (data.team === 'B') { teamClass = 'team-b-name'; teamLabel = '[B]'; }
-
-    div.innerHTML = `<span class="msg-author ${teamClass}">${data.name} ${teamLabel}:</span> ${escapeHtml(data.msg)}`;
-    container.appendChild(div);
-    container.scrollTop = container.scrollHeight;
+socket.on('receiveLobbyMessage', (d) => {
+    const c = document.getElementById('lobby-chat-messages');
+    c.innerHTML += `<div class="chat-msg"><span class="msg-author team-${d.team.toLowerCase()}-name">${d.name}:</span> ${d.msg.replace(/</g, '&lt;')}</div>`;
+    c.scrollTop = c.scrollHeight;
 });
 
-socket.on('lobbyChatSystem', (text) => {
-    const container = document.getElementById('lobby-chat-messages');
-    const div = document.createElement('div');
-    div.className = 'chat-msg system-msg';
-    div.textContent = text;
-    container.appendChild(div);
-    container.scrollTop = container.scrollHeight;
-});
-
-function escapeHtml(str) {
-    return str
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;');
+function renderMathEl(id) {
+    if(window.renderMathInElement) renderMathInElement(document.getElementById(id), { delimiters:[{left:'$$',right:'$$',display:true},{left:'$',right:'$',display:false}] });
 }
 
-// ═══════════════════════════════════════
-//  KaTex RENDER
-// ═══════════════════════════════════════
-function renderMath(elementId) {
-    const el = document.getElementById(elementId);
-    if (el && window.renderMathInElement) {
-        renderMathInElement(el, {
-            delimiters: [
-                { left: '$$', right: '$$', display: true },
-                { left: '$', right: '$', display: false },
-                { left: '\\(', right: '\\)', display: false },
-                { left: '\\[', right: '\\]', display: true }
-            ],
-            throwOnError: false
-        });
-    }
-}
+socket.on('gameStart', () => switchScreen('game-screen'));
 
-// ═══════════════════════════════════════
-//  GAME BẮT ĐẦU
-// ═══════════════════════════════════════
-socket.on('gameStart', () => {
-    switchScreen('game-screen');
-    document.getElementById('question-box').innerHTML =
-        '<div style="padding:40px 10px;"><h3>Game đang bắt đầu...</h3></div>';
-});
-
-socket.on('startStage', (data) => {
-    isAnsweringState = true;
-    currentQuestions = data.questions;
-    questionIndex = 0;
-    document.getElementById('stage-title').innerText = `STAGE ${data.stageNum}${data.isDouble ? ' (X2 ĐIỂM ĐÚNG)' : ''}`;
+socket.on('startStage', (d) => {
+    isAnsweringState = true; currentQuestions = d.questions; questionIndex = 0;
+    document.getElementById('stage-title').innerText = `STAGE ${d.stageNum}`;
     document.getElementById('top-progress-container').style.display = 'block';
-    switchScreen('game-screen');
-    renderSingleQuestion();
+    switchScreen('game-screen'); renderSingleQuestion();
 });
 
 function renderSingleQuestion() {
     const box = document.getElementById('question-box');
     if (questionIndex >= currentQuestions.length) {
-        box.innerHTML = `<div style="padding:30px 10px;"><h3>Chặng này đã hoàn thành!</h3><p style="color:#94a3b8;">Đang chờ những người chơi khác hoàn tất...</p></div>`;
+        box.innerHTML = `<div style="padding:30px 10px;"><h4>Đã hoàn thành!</h4><p style="font-size:0.85rem; color:#94a3b8;">Đợi người khác...</p></div>`;
         return;
     }
     const q = currentQuestions[questionIndex];
-    let html = `
-        <div style="font-size:0.9rem; color:#94a3b8; text-align:left; margin-bottom:5px;">Câu hỏi ${questionIndex + 1}/${currentQuestions.length}</div>
-        <h3 style="text-align:left; line-height:1.5; margin-bottom:20px;">${q.text}</h3>
-        <div style="display:flex; flex-direction:column; gap:8px;">
-    `;
-    q.choices.forEach(c => {
-        html += `<button class="choice-btn" onclick="selectAnswer('${q.id}', '${c.key}')"><strong>${c.key}.</strong> ${c.text}</button>`;
-    });
-    html += `</div><div id="feedback-badge" style="margin-top:20px; font-size:1.3rem; font-weight:bold; min-height:30px;"></div>`;
-    box.innerHTML = html;
-    renderMath('question-box');
+    let html = `<div style="font-size:0.8rem; color:#94a3b8; text-align:left; margin-bottom:5px;">Câu ${questionIndex+1}/${currentQuestions.length}</div>
+                <h4 style="text-align:left; line-height:1.4; margin-bottom:15px; font-size:1rem;">${q.text}</h4><div style="display:flex; flex-direction:column; gap:6px;">`;
+    q.choices.forEach(c => html += `<button class="choice-btn" onclick="selectAnswer('${q.id}','${c.key}')"><strong>${c.key}.</strong> ${c.text}</button>`);
+    box.innerHTML = html + `</div><div id="feedback-badge" style="margin-top:15px; font-size:1.1rem; font-weight:bold; min-height:25px;"></div>`;
+    renderMathEl('question-box');
 }
 
-function selectAnswer(questionId, choiceKey) {
+function selectAnswer(qid, k) {
     document.querySelectorAll('.choice-btn').forEach(b => b.disabled = true);
-    socket.emit('submitSingleAnswer', { roomId: currentRoomId, questionId, answer: choiceKey });
+    socket.emit('submitSingleAnswer', { roomId: currentRoomId, questionId: qid, answer: k });
 }
 
-socket.on('singleAnswerResult', (data) => {
-    const badge = document.getElementById('feedback-badge');
-    if (data.isCorrect) {
-        badge.innerHTML = `<span style="color:var(--success);">✓ ĐÁP ÁN CHÍNH XÁC (+${data.points})</span>`;
-    } else {
-        badge.innerHTML = `<span style="color:var(--danger);">✗ SAI RỒI (${data.points})</span>`;
-    }
-    setTimeout(() => {
-        questionIndex++;
-        renderSingleQuestion();
-    }, 1200);
+socket.on('singleAnswerResult', (d) => {
+    document.getElementById('feedback-badge').innerHTML = d.isCorrect ? `<span style="color:var(--success);">✓ ĐÚNG (+${d.points})</span>` : `<span style="color:var(--danger);">✗ SAI (${d.points})</span>`;
+    setTimeout(() => { questionIndex++; renderSingleQuestion(); }, 1200);
 });
 
-socket.on('timerUpdate', (timeLeft) => {
+socket.on('timerUpdate', (t) => {
     if (isAnsweringState) {
-        document.getElementById('timer-text').innerText = timeLeft + 's';
-        const percent = (timeLeft / 60) * 100;
+        document.getElementById('timer-text').innerText = t+'s';
         const bar = document.getElementById('top-progress-bar');
-        bar.style.width = percent + '%';
-        if (percent > 50) bar.style.backgroundColor = 'var(--success)';
-        else if (percent > 20) bar.style.backgroundColor = '#ffaa00';
-        else bar.style.backgroundColor = 'var(--danger)';
-    } else {
-        const el = document.getElementById('break-timer');
-        if (el) el.innerText = timeLeft;
-    }
+        bar.style.width = (t/60*100)+'%';
+        bar.style.backgroundColor = t > 30 ? 'var(--success)' : (t > 10 ? '#ffaa00' : 'var(--danger)');
+    } else document.getElementById('break-timer').innerText = t;
 });
 
-// ═══════════════════════════════════════
-//  GIẢI LAO
-// ═══════════════════════════════════════
-socket.on('intermissionStart', (data) => {
-    isAnsweringState = false;
-    document.getElementById('top-progress-container').style.display = 'none';
-    document.getElementById('score-a').innerText = data.scoreA;
-    document.getElementById('score-b').innerText = data.scoreB;
-
-    if (data.scoreC !== undefined && data.scoreC > 0) {
-        document.getElementById('score-c-wrapper').style.display = 'inline';
-        document.getElementById('score-c').innerText = data.scoreC;
-    }
-    document.getElementById('chat-logs').innerHTML =
-        '<p style="color:gray; font-style:italic; margin:0; font-size:0.85rem;">Phòng hội ý chiến thuật mở ra trong 15 giây nghỉ...</p>';
+socket.on('intermissionStart', (d) => {
+    isAnsweringState = false; document.getElementById('top-progress-container').style.display = 'none';
+    document.getElementById('score-a').innerText = d.scoreA; document.getElementById('score-b').innerText = d.scoreB;
     switchScreen('intermission-screen');
 });
 
 function sendChat() {
-    const input = document.getElementById('chat-input');
-    const msg = input.value.trim();
-    if (!msg) return;
-    socket.emit('sendGlobalMessage', { roomId: currentRoomId, msg });
-    input.value = '';
+    const i = document.getElementById('chat-input');
+    if (!i.value.trim()) return;
+    socket.emit('sendGlobalMessage', { roomId: currentRoomId, msg: i.value }); i.value = '';
 }
-
-socket.on('receiveGlobalMessage', (data) => {
-    const logs = document.getElementById('chat-logs');
-    let teamColor = '#fff';
-    if (data.team === 'A') teamColor = 'var(--danger)';
-    if (data.team === 'B') teamColor = 'var(--accent)';
-    if (data.team === 'C') teamColor = '#ffaa00';
-    logs.innerHTML += `<div class="msg-line"><strong style="color:${teamColor}">${data.name}:</strong> ${escapeHtml(data.msg)}</div>`;
-    logs.scrollTop = logs.scrollHeight;
+socket.on('receiveGlobalMessage', (d) => {
+    const c = document.getElementById('chat-logs');
+    c.innerHTML += `<div style="margin:4px 0; border-bottom:1px dashed #1e3a5f; padding-bottom:2px;"><strong style="color:${d.team==='A'?'var(--danger)':'var(--accent)'}">${d.name}:</strong> ${d.msg.replace(/</g, '&lt;')}</div>`;
+    c.scrollTop = c.scrollHeight;
 });
 
-// ═══════════════════════════════════════
-//  VÒNG NHANH
-// ═══════════════════════════════════════
 socket.on('startFastQuestionPhase', (d) => {
-    isAnsweringState = false;
-    switchScreen('fast-phase-screen');
-    if (myTeam === 'C') {
-        document.getElementById('host-controls').style.display = 'block';
-        document.getElementById('player-controls').style.display = 'none';
-    } else {
-        document.getElementById('host-controls').style.display = 'none';
-        document.getElementById('player-controls').style.display = 'block';
-        document.getElementById('fast-question-display').innerText = `Đang đợi chủ khảo ${d.hostName} đặt đề bài tự luận nhanh...`;
-    }
+    isAnsweringState = false; switchScreen('fast-phase-screen');
+    document.getElementById('fast-question-display').innerText = `Đợi chủ khảo ${d.hostName} đặt đề...`;
 });
-
-function hostPublishQuestion() {
-    const text = document.getElementById('fast-question-input').value.trim();
-    if (!text) return alert('Vui lòng điền nội dung câu hỏi!');
-    socket.emit('hostSubmitFastQuestion', { roomId: currentRoomId, questionText: text });
-}
-
 socket.on('fastQuestionBroadcast', (d) => {
-    if (myTeam !== 'C') {
-        document.getElementById('fast-question-display').innerHTML = `CÂU HỎI TỰ LUẬN:<br>${d.questionText}`;
-        document.getElementById('fast-answer-zone').style.display = 'block';
-        renderMath('fast-phase-screen');
-    }
+    document.getElementById('fast-question-display').innerHTML = `<strong>CÂU HỎI:</strong><br>${d.questionText}`;
+    document.getElementById('fast-answer-zone').style.display = 'block'; renderMathEl('fast-phase-screen');
 });
-
 function playerSubmitFastAnswer() {
     const ans = document.getElementById('player-fast-answer-input').value.trim();
     if (!ans) return;
     socket.emit('playerSubmitFastAnswer', { roomId: currentRoomId, answerText: ans });
-    document.getElementById('fast-answer-zone').innerHTML = '<h4>Đã gửi câu trả lời! Đang chờ chủ khảo duyệt...</h4>';
+    document.getElementById('fast-answer-zone').innerHTML = '<p>Đã nộp! Chờ duyệt...</p>';
 }
 
-socket.on('hostReceiveSubmissions', (subs) => {
-    if (myTeam === 'C') {
-        const container = document.getElementById('host-submission-list');
-        container.innerHTML = '';
-        subs.forEach(s => {
-            container.innerHTML += `
-                <div style="background:#1e293b; padding:10px; border-radius:6px; margin:8px 0; display:flex; justify-content:space-between; align-items:center;">
-                    <div><strong>${s.name} (Đội ${s.team}):</strong> <span>${s.answerText}</span></div>
-                    <button onclick="approveWinner('${s.id}')" style="padding:6px 12px; background:var(--success); border:none; border-radius:6px; cursor:pointer; font-weight:700;">Đúng</button>
-                </div>
-            `;
+socket.on('gameSummaryReport', (h) => {
+    const c = document.getElementById('review-list-zone'); c.innerHTML = '';
+    h.forEach((item, i) => {
+        let text = `<div class="review-card"><strong>Câu ${i+1}: ${item.questionText}</strong> <span style="color:${item.isCorrect?'var(--success)':'var(--danger)'}">[${item.isCorrect?'ĐÚNG':'SAI'}]</span><ul style="list-style:none; padding-left:5px; margin:5px 0;">`;
+        item.choices.forEach(ch => {
+            let st = ch.key===item.correctAnswer ? 'color:var(--success);font-weight:bold;' : (ch.key===item.chosenAnswer&&!item.isCorrect ? 'color:var(--danger);text-decoration:line-through;' : '');
+            text += `<li style="${st}">${ch.key}. ${ch.text} ${ch.key===item.correctAnswer?'✓':''}</li>`;
         });
-        renderMath('host-submission-list');
-    }
-});
-
-function approveWinner(socketId) {
-    socket.emit('hostApproveWinner', { roomId: currentRoomId, winnerSocketId: socketId });
-}
-
-socket.on('fastPhaseEnded', (data) => {
-    alert(`Vòng phụ kết thúc! ${data.winnerName} (Đội ${data.winningTeam}) trả lời đúng và mang về ${data.pointsAwarded}đ!`);
-});
-
-// ═══════════════════════════════════════
-//  KẾT THÚC GAME
-// ═══════════════════════════════════════
-socket.on('gameSummaryReport', (historyLog) => {
-    const container = document.getElementById('review-list-zone');
-    container.innerHTML = '';
-
-    if (!historyLog || historyLog.length === 0) {
-        container.innerHTML = '<p style="color:gray;">Không có lịch sử làm bài được ghi nhận.</p>';
-        return;
-    }
-
-    historyLog.forEach((h, idx) => {
-        let statusText = h.isCorrect
-            ? `<span style="color:var(--success);">[ĐÚNG] (+${h.pointsDelta}đ)</span>`
-            : `<span style="color:var(--danger);">[SAI] (${h.pointsDelta}đ)</span>`;
-
-        let choicesHtml = '<ul style="list-style:none; padding-left:10px; margin:8px 0;">';
-        h.choices.forEach(c => {
-            let style = '';
-            if (c.key === h.correctAnswer) style = 'color:var(--success); font-weight:bold;';
-            else if (c.key === h.chosenAnswer && !h.isCorrect) style = 'color:var(--danger); text-decoration:line-through;';
-            choicesHtml += `<li style="${style}">${c.key}. ${c.text} ${c.key === h.correctAnswer ? '✓' : ''}</li>`;
-        });
-        choicesHtml += '</ul>';
-
-        container.innerHTML += `
-            <div class="review-card">
-                <strong>Câu ${idx + 1}: ${h.questionText}</strong> ${statusText}
-                <div>${choicesHtml}</div>
-                <div style="font-size:0.9rem; margin-top:5px; color:#94a3b8;">Bạn chọn: <strong>${h.chosenAnswer}</strong></div>
-            </div>
-        `;
+        c.innerHTML += text + `</ul><div style="font-size:0.8rem; color:#94a3b8;">Bạn chọn: ${item.chosenAnswer}</div></div>`;
     });
-    renderMath('review-list-zone');
+    renderMathEl('review-list-zone');
 });
 
 socket.on('gameOver', (d) => {
     document.getElementById('top-progress-container').style.display = 'none';
-    const winText = d.winningTeam === 'Hòa'
-        ? 'KẾT QUẢ TRẬN ĐẤU: HÒA NHAU!'
-        : `ĐỘI CHIẾN THẮNG CHUNG CUỘC: ĐỘI ${d.winningTeam}`;
-    document.getElementById('game-over-box').innerHTML = `
-        <h2 style="font-family:'Orbitron'; color:#ff007f;">TRÒ CHƠI KẾT THÚC</h2>
-        <h3 style="color:#fff;">${winText}</h3>
-    `;
+    document.getElementById('game-over-box').innerHTML = `<h3 style="font-family:'Orbitron'; color:#ff007f;">KẾT THÚC</h3><h4 style="color:#fff;">${d.winningTeam==='Hòa'?'HÒA NHAU!':`ĐỘI THẮNG: TEAM ${d.winningTeam}`}</h4>`;
     switchScreen('summary-screen');
 });
 
-socket.on('roomResetByAdmin', () => {
-    alert('Giáo viên đã reset phòng chơi. Hệ thống sẽ đưa bạn về màn hình sảnh chờ ban đầu.');
-    window.location.reload();
-});
-
+socket.on('roomResetByAdmin', () => window.location.reload());
 socket.on('errorMsg', m => alert(m));
-
-// ═══════════════════════════════════════
-//  RE-RENDER KHI RESIZE
-// ═══════════════════════════════════════
-window.addEventListener('resize', () => {
-    if (document.getElementById('waiting-screen').classList.contains('active')) {
-        const teamA = Object.values(allPlayers).filter(p => p.team === 'A');
-        const teamB = Object.values(allPlayers).filter(p => p.team === 'B');
-        renderArenaTokens(teamA, teamB);
-    }
-});
 </script>
 </body>
 </html>
