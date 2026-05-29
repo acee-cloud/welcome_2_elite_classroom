@@ -2,63 +2,242 @@
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
-    <title>Bảng Điều Khiển Admin - Giáo Viên</title>
-    <script src="/socket.io/socket.io.js"></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard - Trò Chơi Vật Lí 11</title>
     <style>
-        :root { --bg: #060b19; --cyan: #00f0ff; --blue: #0066ff; --surface: #101f42; }
-        body { background: var(--bg); color: #fff; font-family: sans-serif; text-align: center; padding: 20px; }
-        .box { background: var(--surface); border: 2px solid var(--cyan); border-radius: 8px; padding: 20px; max-width: 800px; margin: 20px auto; box-shadow: 0 0 15px var(--blue); }
-        .btn { background: linear-gradient(45deg, var(--blue), var(--cyan)); border: none; padding: 12px 30px; color: #000; font-weight: bold; border-radius: 4px; cursor: pointer; font-size: 1.1rem; text-transform: uppercase; }
-        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; text-align: left; margin-top: 20px; }
-        .team-panel { background: #0c1630; padding: 15px; border-radius: 6px; border: 1px solid var(--blue); }
-        .status-done { color: #00ff66; font-weight: bold; }
-        .status-doing { color: #ffcc00; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f0f2f5; margin: 0; padding: 20px; color: #333; }
+        .container { max-width: 1000px; margin: 0 auto; background: #fff; padding: 20px; border-radius: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        h1, h2, h3 { text-align: center; color: #2c3e50; }
+        .hidden { display: none !important; }
+        .btn { padding: 10px 20px; font-size: 18px; color: #fff; background-color: #3498db; border: none; border-radius: 5px; cursor: pointer; display: block; margin: 20px auto; }
+        .btn:hover { background-color: #2980b9; }
+        
+        /* Giai đoạn 1: Lobby */
+        #qr-container { display: flex; flex-direction: column; align-items: center; margin-bottom: 20px; }
+        #qrcode { margin: 15px; padding: 10px; background: #fff; border: 2px solid #bdc3c7; border-radius: 10px; }
+        #player-list { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; list-style: none; padding: 0; }
+        .player-badge { background: #ecf0f1; padding: 8px 15px; border-radius: 20px; font-weight: bold; border: 1px solid #bdc3c7; }
+
+        /* Giai đoạn 2: Thi đấu & Trạm nghỉ */
+        .dashboard-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #ecf0f1; padding-bottom: 10px; }
+        .timer-box { font-size: 40px; font-weight: bold; color: #e74c3c; }
+        .teams-container { display: flex; justify-content: space-around; margin-top: 20px; }
+        .team-card { width: 40%; padding: 20px; border-radius: 10px; text-align: center; font-size: 24px; font-weight: bold; }
+        .team-a { background-color: #ffeaa7; border: 2px solid #fdcb6e; }
+        .team-b { background-color: #81ecec; border: 2px solid #00cec9; }
+        
+        /* Bảng xếp hạng */
+        .leaderboard { width: 80%; margin: 20px auto; border-collapse: collapse; }
+        .leaderboard th, .leaderboard td { border: 1px solid #bdc3c7; padding: 10px; text-align: center; }
+        .leaderboard th { background-color: #34495e; color: #fff; }
+
+        /* Giai đoạn 3: Phán quyết */
+        .final-phase { text-align: center; padding: 20px; background: #ffe6e6; border: 2px dashed #ff7675; border-radius: 10px; }
+        .spy-points { font-size: 30px; font-weight: bold; color: #d63031; margin: 15px 0; }
     </style>
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 </head>
 <body>
-    <div class="box">
-        <h1>HỆ THỐNG QUẢN TRÒ VẬT LÍ 11</h1>
-        <p>Chiếu màn hình này lên Tivi/Máy chiếu của lớp học</p>
-        <button class="btn" onclick="startGame()">Khóa Phòng & Phát Động Trận Đấu</button>
+
+<div class="container">
+    <h1>BẢNG ĐIỀU KHIỂN ADMIN</h1>
+
+    <div id="lobby-screen">
+        <h2>Phòng chờ (Lobby)</h2>
+        <div id="qr-container">
+            <p>Mã Phòng: <strong id="room-id-display" style="font-size: 24px; color: #e67e22;">Đang tạo...</strong></p>
+            <div id="qrcode"></div>
+            <p>Học sinh quét mã QR để tham gia trò chơi</p>
+        </div>
+        
+        <h3 id="player-count">Số người chơi: 0</h3>
+        <ul id="player-list">
+            </ul>
+        <button class="btn" id="start-game-btn" onclick="startGame()">Bắt Đầu Trò Chơi (Chia đội & Tìm Gián điệp)</button>
     </div>
 
-    <div class="box">
-        <h2>Trạng Thái Lớp Học & Tiến Độ Đội Nhóm</h2>
-        <div class="grid">
-            <div class="team-panel">
-                <h3 style="color: var(--cyan);">TỔ ĐỘI A</h3>
-                <div id="team-A-list">Chưa có người chơi...</div>
+    <div id="game-screen" class="hidden">
+        <div class="dashboard-header">
+            <h2 id="stage-title">Cửa 1: Khái niệm cơ bản</h2>
+            <div class="timer-box" id="timer">01:30</div>
+        </div>
+        
+        <h3 id="status-text">Đang trong thời gian làm bài...</h3>
+
+        <div class="teams-container">
+            <div class="team-card team-a">
+                ĐỘI A
+                <div id="score-team-a">0 Điểm</div>
+                <div style="font-size: 14px; font-weight: normal; margin-top: 10px;">(Chứa điểm Gián điệp ẩn)</div>
             </div>
-            <div class="team-panel">
-                <h3 style="color: #ff00ff;">TỔ ĐỘI B</h3>
-                <div id="team-B-list">Chưa có người chơi...</div>
+            <div class="team-card team-b">
+                ĐỘI B
+                <div id="score-team-b">0 Điểm</div>
             </div>
+        </div>
+
+        <div id="intermission-screen" class="hidden">
+            <hr style="margin: 30px 0;">
+            <h3>Trạm Nghỉ - Bảng Xếp Hạng Cá Nhân Top 5</h3>
+            <table class="leaderboard">
+                <thead>
+                    <tr>
+                        <th>Hạng</th>
+                        <th>Tên Người Chơi</th>
+                        <th>Đội</th>
+                        <th>Điểm Số</th>
+                    </tr>
+                </thead>
+                <tbody id="leaderboard-body">
+                    </tbody>
+            </table>
         </div>
     </div>
 
-    <script>
-        const socket = io();
-        function startGame() { socket.emit('admin_start_game'); }
+    <div id="final-screen" class="hidden">
+        <h2>PHÁN QUYẾT CUỐI GAME</h2>
+        <div class="final-phase">
+            <h3>Lật Bài: Quỹ Tình Báo</h3>
+            <p>Gián điệp đã âm thầm tuồn điểm vào quỹ đen!</p>
+            <div class="spy-points" id="spy-fund">Quỹ tình báo: 0 Điểm</div>
+            
+            <div id="team-b-task">
+                <hr>
+                <h4>Nhiệm vụ Đội B (60s)</h4>
+                <p>Đội B đang giải Câu hỏi Chìa khóa để cướp quỹ...</p>
+                <strong id="b-task-status">Đang chờ kết quả...</strong>
+            </div>
 
-        socket.on('update_players', (players) => {
-            const listA = document.getElementById('team-A-list');
-            const listB = document.getElementById('team-B-list');
-            listA.innerHTML = ''; listB.innerHTML = '';
+            <div id="team-a-task">
+                <hr>
+                <h4>Nhiệm vụ Đội A (60s)</h4>
+                <p>Đội A đang vote để truy tìm Gián điệp nội bộ...</p>
+                <strong id="a-task-status">Đang chờ kết quả...</strong>
+            </div>
+        </div>
+    </div>
+</div>
 
-            players.forEach(p => {
-                let status = p.doneCurrentStage ? '<span class="status-done">[ĐÃ XONG]</span>' : '<span class="status-doing">[ĐANG LÀM...]</span>';
-                let item = `<div style="margin-bottom:8px;">${p.avatar} <b>${p.name}</b> - Điểm: ${p.score}đ ${p.team ? status : ''}</div>`;
-                
-                if(p.team === 'A') listA.innerHTML += item;
-                else if(p.team === 'B') listB.innerHTML += item;
-                else { listA.innerHTML += `<div>${p.avatar} ${p.name} (Đang ở sảnh chờ)</div>`; }
-            });
+<script>
+    // Khởi tạo kết nối Socket (đảm bảo file admin.html chạy trên cùng server Node.js)
+    const socket = io();
+    let currentRoomId = '';
+
+    // ==========================================
+    // KHỞI TẠO PHÒNG & QR CODE
+    // ==========================================
+    socket.emit('adminCreateRoom');
+
+    socket.on('roomCreated', (roomId) => {
+        currentRoomId = roomId;
+        document.getElementById('room-id-display').innerText = roomId;
+        
+        // Tạo QR Code dẫn đến trang người chơi (Ví dụ URL: http://your-render-app.com/play?room=ABCD)
+        const playUrl = window.location.origin + '/play?room=' + roomId;
+        new QRCode(document.getElementById("qrcode"), {
+            text: playUrl,
+            width: 200,
+            height: 200
         });
+    });
 
-        socket.on('intermission_30s', (data) => {
-            alert(`Cửa đấu kết thúc! Toàn bộ học sinh đã hoàn thành. Quỹ điểm gián điệp tích lũy hiện tại: ${data.spyPointsHidden}đ`);
+    // Cập nhật người chơi tham gia
+    socket.on('updatePlayerList', (players) => {
+        const list = document.getElementById('player-list');
+        list.innerHTML = '';
+        players.forEach(p => {
+            const li = document.createElement('li');
+            li.className = 'player-badge';
+            li.innerText = p.name;
+            list.appendChild(li);
         });
-        socket.on('error_message', (msg) => alert(msg));
-    </script>
+        document.getElementById('player-count').innerText = `Số người chơi: ${players.length}`;
+    });
+
+    // ==========================================
+    // ĐIỀU KHIỂN GAME LOGIC
+    // ==========================================
+    function startGame() {
+        if(confirm("Bạn có chắc chắn muốn bắt đầu trò chơi? Máy sẽ tiến hành chia đội và random Gián điệp.")){
+            socket.emit('adminStartGame', currentRoomId);
+        }
+    }
+
+    socket.on('gameStarted', () => {
+        // Chuyển giao diện
+        document.getElementById('lobby-screen').classList.add('hidden');
+        document.getElementById('game-screen').classList.remove('hidden');
+    });
+
+    // Nhận luồng cập nhật từng Cửa (Stage)
+    socket.on('stageUpdate', (data) => {
+        // data: { stageNum: 1, timer: 90, isIntermission: false, teamA_score: 50, teamB_score: 40 }
+        document.getElementById('stage-title').innerText = `Cửa ${data.stageNum}`;
+        document.getElementById('intermission-screen').classList.add('hidden');
+        document.getElementById('status-text').innerText = "Trong 90s làm bài, khung chat đã bị khóa.";
+        
+        updateScores(data.teamA_score, data.teamB_score);
+    });
+
+    // Cập nhật đồng hồ đếm ngược (được server gửi mỗi giây)
+    socket.on('timerUpdate', (seconds) => {
+        const m = Math.floor(seconds / 60).toString().padStart(2, '0');
+        const s = (seconds % 60).toString().padStart(2, '0');
+        document.getElementById('timer').innerText = `${m}:${s}`;
+    });
+
+    // Kích hoạt Trạm nghỉ 15 giây
+    socket.on('intermissionStart', (data) => {
+        // data: { leaderboard: [...], teamA_score: 100, teamB_score: 90 }
+        document.getElementById('status-text').innerText = "Trạm nghỉ 15s. Khung chat toàn phòng đã mở!";
+        document.getElementById('intermission-screen').classList.remove('hidden');
+        updateScores(data.teamA_score, data.teamB_score);
+        renderLeaderboard(data.leaderboard);
+    });
+
+    // ==========================================
+    // GIAI ĐOẠN 3: PHÁN QUYẾT
+    // ==========================================
+    socket.on('finalPhaseStart', (data) => {
+        // data: { spyFund: 150 }
+        document.getElementById('game-screen').classList.add('hidden');
+        document.getElementById('final-screen').classList.remove('hidden');
+        document.getElementById('spy-fund').innerText = `Quỹ tình báo: ${data.spyFund} Điểm`;
+    });
+
+    socket.on('finalPhaseResult', (data) => {
+        // Cập nhật kết quả Team B trả lời câu hỏi chìa khóa và Team A vote
+        document.getElementById('b-task-status').innerText = data.teamB_success ? "Thành công cướp quỹ!" : "Thất bại, mất trắng!";
+        document.getElementById('a-task-status').innerText = data.teamA_success ? "Vote trúng Gián điệp, lấy lại điểm!" : "Vote sai, Gián điệp tẩu thoát!";
+        document.getElementById('a-task-status').style.color = data.teamA_success ? "green" : "red";
+        document.getElementById('b-task-status').style.color = data.teamB_success ? "green" : "red";
+    });
+
+    // Hàm phụ trợ
+    function updateScores(scoreA, scoreB) {
+        document.getElementById('score-team-a').innerText = `${scoreA} Điểm`;
+        document.getElementById('score-team-b').innerText = `${scoreB} Điểm`;
+    }
+
+    function renderLeaderboard(players) {
+        const tbody = document.getElementById('leaderboard-body');
+        tbody.innerHTML = '';
+        players.slice(0, 5).forEach((p, index) => { // Render Top 5
+            tbody.innerHTML += `
+                <tr>
+                    <td>${index + 1}</td>
+                    <td>${p.name}</td>
+                    <td>${p.team}</td>
+                    <td>${p.score}</td>
+                </tr>
+            `;
+        });
+    }
+</script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css" />
+<script defer src=".../katex.min.js"></script>
+<script defer src=".../auto-render.min.js"></script>
+
 </body>
 </html>
