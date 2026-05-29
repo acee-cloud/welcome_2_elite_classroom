@@ -122,24 +122,6 @@ function maybeRenderMath() {
     });
     pendingRenderTargets.length = 0;
 }
-
-function renderMathIn(el) {
-    if (!el) return;
-    if (katexReady && typeof renderMathInElement === 'function') {
-        renderMathInElement(el, {
-            delimiters: [
-                { left: '$$', right: '$$', display: true },
-                { left: '$', right: '$', display: false },
-                { left: '\\(', right: '\\)', display: false },
-                { left: '\\[', right: '\\]', display: true }
-            ],
-            throwOnError: false
-        });
-    } else {
-        pendingRenderTargets.push(el);
-    }
-}
-
     <script>
         const socket = io();
         let currentRoomId = '';
