@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Người Chơi – Vật Lí 11</title>
 
-    <!-- KaTeX (CDN đầy đủ, đúng) -->
+    <!-- KaTeX -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/katex.min.css">
     <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/katex.min.js"></script>
     <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/contrib/auto-render.min.js"
@@ -19,420 +19,84 @@
 
     <style>
         :root {
-            --bg: #0a0e1a;
-            --panel: #111827;
-            --border: #1e3a5f;
-            --accent: #00d4ff;
-            --accent2: #ff6b35;
-            --team-a: #ff4d6d;
-            --team-b: #38bdf8;
-            --gold: #ffd700;
-            --success: #34d399;
-            --danger: #f87171;
-            --spy: #a78bfa;
-            --text: #e2e8f0;
-            --muted: #64748b;
+            --bg: #0a0e1a; --panel: #111827; --border: #1e3a5f;
+            --accent: #00d4ff; --accent2: #ff6b35;
+            --team-a: #ff4d6d; --team-b: #38bdf8;
+            --gold: #ffd700; --success: #34d399; --danger: #f87171;
+            --spy: #a78bfa; --text: #e2e8f0; --muted: #64748b;
         }
-
         * { box-sizing: border-box; margin: 0; padding: 0; }
-
-        body {
-            font-family: 'IBM Plex Sans', sans-serif;
-            background: var(--bg);
-            color: var(--text);
-            min-height: 100vh;
-            padding: 16px;
-            padding-bottom: 40px;
-        }
-
+        body { font-family: 'IBM Plex Sans', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; padding: 16px; padding-bottom: 40px; }
         .hidden { display: none !important; }
-
-        /* ── SCREENS ── */
         .screen { max-width: 600px; margin: 0 auto; }
-
-        /* ── PANEL ── */
-        .panel {
-            background: var(--panel);
-            border: 1px solid var(--border);
-            border-radius: 16px;
-            padding: 20px;
-            margin-bottom: 14px;
-        }
-
-        .panel-title {
-            font-family: 'Orbitron', monospace;
-            font-size: 12px;
-            letter-spacing: 3px;
-            color: var(--accent);
-            text-transform: uppercase;
-            margin-bottom: 14px;
-            padding-bottom: 8px;
-            border-bottom: 1px solid var(--border);
-        }
-
-        /* ── PAGE TITLE ── */
-        .page-title {
-            font-family: 'Orbitron', monospace;
-            font-size: 18px;
-            font-weight: 900;
-            text-align: center;
-            color: var(--accent);
-            letter-spacing: 3px;
-            margin-bottom: 20px;
-            text-shadow: 0 0 20px rgba(0,212,255,0.4);
-        }
-
-        /* ── INPUT ── */
+        .panel { background: var(--panel); border: 1px solid var(--border); border-radius: 16px; padding: 20px; margin-bottom: 14px; }
+        .panel-title { font-family: 'Orbitron', monospace; font-size: 12px; letter-spacing: 3px; color: var(--accent); text-transform: uppercase; margin-bottom: 14px; padding-bottom: 8px; border-bottom: 1px solid var(--border); }
+        .page-title { font-family: 'Orbitron', monospace; font-size: 18px; font-weight: 900; text-align: center; color: var(--accent); letter-spacing: 3px; margin-bottom: 20px; text-shadow: 0 0 20px rgba(0,212,255,0.4); }
         .field { margin-bottom: 14px; }
-        .field label {
-            display: block;
-            font-size: 12px;
-            font-weight: 700;
-            letter-spacing: 1px;
-            color: var(--muted);
-            text-transform: uppercase;
-            margin-bottom: 6px;
-        }
-        .input {
-            width: 100%;
-            padding: 12px 14px;
-            background: rgba(0,0,0,0.3);
-            border: 1px solid var(--border);
-            border-radius: 10px;
-            color: var(--text);
-            font-size: 16px;
-            font-family: 'IBM Plex Sans', sans-serif;
-            outline: none;
-            transition: border-color 0.2s;
-        }
+        .field label { display: block; font-size: 12px; font-weight: 700; letter-spacing: 1px; color: var(--muted); text-transform: uppercase; margin-bottom: 6px; }
+        .input { width: 100%; padding: 12px 14px; background: rgba(0,0,0,0.3); border: 1px solid var(--border); border-radius: 10px; color: var(--text); font-size: 16px; font-family: 'IBM Plex Sans', sans-serif; outline: none; transition: border-color 0.2s; }
         .input:focus { border-color: var(--accent); }
         .input::placeholder { color: var(--muted); }
-
-        /* ── BUTTON ── */
-        .btn {
-            display: block;
-            width: 100%;
-            padding: 14px;
-            font-family: 'Orbitron', monospace;
-            font-size: 13px;
-            font-weight: 700;
-            letter-spacing: 2px;
-            color: #000;
-            background: var(--accent);
-            border: none;
-            border-radius: 10px;
-            cursor: pointer;
-            text-align: center;
-            transition: all 0.2s;
-            box-shadow: 0 0 20px rgba(0,212,255,0.2);
-            margin-top: 8px;
-        }
+        .btn { display: block; width: 100%; padding: 14px; font-family: 'Orbitron', monospace; font-size: 13px; font-weight: 700; letter-spacing: 2px; color: #000; background: var(--accent); border: none; border-radius: 10px; cursor: pointer; text-align: center; transition: all 0.2s; box-shadow: 0 0 20px rgba(0,212,255,0.2); margin-top: 8px; }
         .btn:hover { transform: translateY(-2px); box-shadow: 0 0 30px rgba(0,212,255,0.5); }
-        .btn:active { transform: translateY(0); }
-        .btn-a { background: var(--team-a); box-shadow: 0 0 20px rgba(255,77,109,0.2); }
+        .btn-a { background: var(--team-a); color: #fff; }
         .btn-b { background: var(--team-b); }
-        .btn-danger { background: var(--danger); }
+        .btn-danger { background: var(--danger); color: #fff; }
         .btn-success { background: var(--success); }
         .btn-spy { background: var(--spy); color: #fff; }
         .btn-inline { width: auto; padding: 10px 18px; display: inline-block; margin: 0; }
-
-        /* ── BADGES ── */
-        .badge {
-            display: inline-block;
-            padding: 6px 16px;
-            border-radius: 20px;
-            font-weight: 700;
-            font-size: 15px;
-            letter-spacing: 1px;
-        }
+        .badge { display: inline-block; padding: 6px 16px; border-radius: 20px; font-weight: 700; font-size: 15px; letter-spacing: 1px; }
         .badge-a { background: rgba(255,77,109,0.15); color: var(--team-a); border: 1px solid var(--team-a); }
         .badge-b { background: rgba(56,189,248,0.15); color: var(--team-b); border: 1px solid var(--team-b); }
-        .badge-spy {
-            background: rgba(167,139,250,0.15);
-            color: var(--spy);
-            border: 1px solid var(--spy);
-            animation: pulseSpy 1.5s infinite;
-        }
-        @keyframes pulseSpy {
-            0%,100% { box-shadow: 0 0 0 0 rgba(167,139,250,0.4); }
-            50%      { box-shadow: 0 0 0 8px rgba(167,139,250,0); }
-        }
-
-        /* ── LOBBY SPINNER ── */
-        .spinner {
-            width: 36px; height: 36px;
-            border: 3px solid var(--border);
-            border-top-color: var(--accent);
-            border-radius: 50%;
-            animation: spin 0.8s linear infinite;
-            margin: 20px auto;
-        }
+        .badge-spy { background: rgba(167,139,250,0.15); color: var(--spy); border: 1px solid var(--spy); animation: pulseSpy 1.5s infinite; }
+        @keyframes pulseSpy { 0%,100% { box-shadow: 0 0 0 0 rgba(167,139,250,0.4); } 50% { box-shadow: 0 0 0 8px rgba(167,139,250,0); } }
+        .spinner { width: 36px; height: 36px; border: 3px solid var(--border); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.8s linear infinite; margin: 20px auto; }
         @keyframes spin { to { transform: rotate(360deg); } }
-
-        /* ── ROLE SCREEN ── */
-        .role-countdown {
-            font-family: 'Orbitron', monospace;
-            font-size: 64px;
-            font-weight: 900;
-            color: var(--danger);
-            text-align: center;
-            text-shadow: 0 0 30px rgba(248,113,113,0.5);
-            margin: 16px 0;
-        }
-
-        /* ── STICKY HEADER (GAME) ── */
-        .sticky-header {
-            position: sticky;
-            top: 0;
-            z-index: 100;
-            background: var(--panel);
-            border: 1px solid var(--border);
-            border-radius: 14px;
-            padding: 12px 16px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 14px;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.5);
-        }
-
-        .header-stage {
-            font-family: 'Orbitron', monospace;
-            font-size: 15px;
-            font-weight: 700;
-        }
-
-        .header-team {
-            font-size: 12px;
-            font-weight: 600;
-            margin-top: 3px;
-        }
-
-        .header-timer {
-            font-family: 'Orbitron', monospace;
-            font-size: 28px;
-            font-weight: 900;
-            color: var(--danger);
-        }
+        .role-countdown { font-family: 'Orbitron', monospace; font-size: 64px; font-weight: 900; color: var(--danger); text-align: center; text-shadow: 0 0 30px rgba(248,113,113,0.5); margin: 16px 0; }
+        .sticky-header { position: sticky; top: 0; z-index: 100; background: var(--panel); border: 1px solid var(--border); border-radius: 14px; padding: 12px 16px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; box-shadow: 0 4px 20px rgba(0,0,0,0.5); }
+        .header-stage { font-family: 'Orbitron', monospace; font-size: 15px; font-weight: 700; }
+        .header-team { font-size: 12px; font-weight: 600; margin-top: 3px; }
+        .header-timer { font-family: 'Orbitron', monospace; font-size: 28px; font-weight: 900; color: var(--danger); }
         .header-timer.warning { animation: blinkTimer 0.5s infinite; }
         @keyframes blinkTimer { 0%,100%{opacity:1} 50%{opacity:0.3} }
-
-        /* ── QUESTION BLOCK ── */
-        .question-block {
-            border-bottom: 1px solid var(--border);
-            padding: 18px 0;
-        }
+        .question-block { border-bottom: 1px solid var(--border); padding: 18px 0; }
         .question-block:last-child { border-bottom: none; padding-bottom: 0; }
-
-        .question-num {
-            font-size: 11px;
-            font-weight: 700;
-            letter-spacing: 2px;
-            color: var(--muted);
-            text-transform: uppercase;
-            margin-bottom: 8px;
-        }
-
-        .question-text {
-            font-size: 15px;
-            font-weight: 600;
-            line-height: 1.6;
-            margin-bottom: 12px;
-        }
-
-        /* KaTeX rendering fix */
+        .question-num { font-size: 11px; font-weight: 700; letter-spacing: 2px; color: var(--muted); text-transform: uppercase; margin-bottom: 8px; }
+        .question-text { font-size: 15px; font-weight: 600; line-height: 1.6; margin-bottom: 12px; }
         .question-text .katex, .option-text .katex { font-size: 1em; }
-
         .options-grid { display: flex; flex-direction: column; gap: 8px; }
-
-        .option-label {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            background: rgba(255,255,255,0.03);
-            border: 1px solid var(--border);
-            padding: 12px 14px;
-            border-radius: 10px;
-            cursor: pointer;
-            transition: all 0.15s;
-        }
+        .option-label { display: flex; align-items: center; gap: 12px; background: rgba(255,255,255,0.03); border: 1px solid var(--border); padding: 12px 14px; border-radius: 10px; cursor: pointer; transition: all 0.15s; }
         .option-label:hover { background: rgba(0,212,255,0.05); border-color: rgba(0,212,255,0.3); }
-        .option-label.selected {
-            background: rgba(0,212,255,0.1);
-            border-color: var(--accent);
-            box-shadow: 0 0 0 1px var(--accent) inset;
-        }
-        .option-label.correct { background: rgba(52,211,153,0.15); border-color: var(--success); }
-        .option-label.wrong   { background: rgba(248,113,113,0.1); border-color: var(--danger); }
-
-        .option-key {
-            font-family: 'Orbitron', monospace;
-            font-size: 12px;
-            font-weight: 700;
-            color: var(--accent);
-            min-width: 20px;
-        }
-
+        .option-label.selected { background: rgba(0,212,255,0.1); border-color: var(--accent); }
+        .option-key { font-family: 'Orbitron', monospace; font-size: 12px; font-weight: 700; color: var(--accent); min-width: 20px; }
         .option-label input[type="radio"] { display: none; }
-
-        /* ── CHAT ── */
-        .chat-box {
-            background: rgba(0,0,0,0.25);
-            border: 1px solid var(--border);
-            border-radius: 10px;
-            height: 160px;
-            overflow-y: auto;
-            padding: 10px;
-            display: flex;
-            flex-direction: column;
-            gap: 6px;
-            margin-bottom: 10px;
-        }
-
-        .chat-msg {
-            font-size: 13px;
-            padding: 7px 12px;
-            border-radius: 12px;
-            max-width: 85%;
-            line-height: 1.4;
-            background: rgba(255,255,255,0.06);
-            align-self: flex-start;
-        }
+        .chat-box { background: rgba(0,0,0,0.25); border: 1px solid var(--border); border-radius: 10px; height: 160px; overflow-y: auto; padding: 10px; display: flex; flex-direction: column; gap: 6px; margin-bottom: 10px; }
+        .chat-msg { font-size: 13px; padding: 7px 12px; border-radius: 12px; max-width: 85%; line-height: 1.4; background: rgba(255,255,255,0.06); align-self: flex-start; }
         .chat-msg.me { background: rgba(0,212,255,0.12); align-self: flex-end; border: 1px solid rgba(0,212,255,0.2); }
         .chat-msg strong { font-weight: 700; color: var(--accent); }
         .chat-msg.me strong { color: var(--success); }
-
-        .chat-row {
-            display: flex;
-            gap: 8px;
-        }
-        .chat-input {
-            flex: 1;
-            padding: 10px 12px;
-            background: rgba(0,0,0,0.3);
-            border: 1px solid var(--border);
-            border-radius: 8px;
-            color: var(--text);
-            font-size: 14px;
-            font-family: 'IBM Plex Sans', sans-serif;
-            outline: none;
-        }
+        .chat-row { display: flex; gap: 8px; }
+        .chat-input { flex: 1; padding: 10px 12px; background: rgba(0,0,0,0.3); border: 1px solid var(--border); border-radius: 8px; color: var(--text); font-size: 14px; font-family: 'IBM Plex Sans', sans-serif; outline: none; }
         .chat-input:focus { border-color: var(--accent); }
-
-        /* ── LEADERBOARD ── */
         .leaderboard { width: 100%; border-collapse: collapse; }
-        .leaderboard th {
-            font-family: 'Orbitron', monospace;
-            font-size: 10px;
-            letter-spacing: 2px;
-            color: var(--accent);
-            padding: 8px 10px;
-            text-align: center;
-            border-bottom: 1px solid var(--border);
-        }
-        .leaderboard td {
-            padding: 8px 10px;
-            text-align: center;
-            font-size: 13px;
-            border-bottom: 1px solid rgba(30,58,95,0.4);
-        }
-
-        /* ── SCORES (INTERMISSION) ── */
-        .scores-mini {
-            display: flex;
-            justify-content: space-around;
-            padding: 14px;
-            background: rgba(0,0,0,0.2);
-            border-radius: 10px;
-            margin-bottom: 14px;
-        }
+        .leaderboard th { font-family: 'Orbitron', monospace; font-size: 10px; letter-spacing: 2px; color: var(--accent); padding: 8px 10px; text-align: center; border-bottom: 1px solid var(--border); }
+        .leaderboard td { padding: 8px 10px; text-align: center; font-size: 13px; border-bottom: 1px solid rgba(30,58,95,0.4); }
+        .scores-mini { display: flex; justify-content: space-around; padding: 14px; background: rgba(0,0,0,0.2); border-radius: 10px; margin-bottom: 14px; }
         .score-mini-team { text-align: center; }
         .score-mini-label { font-size: 11px; letter-spacing: 2px; color: var(--muted); margin-bottom: 4px; }
         .score-mini-val { font-family: 'Orbitron', monospace; font-size: 28px; font-weight: 900; }
-
-        /* ── FINAL PHASE ── */
-        .spy-fund-box {
-            text-align: center;
-            padding: 20px;
-            background: rgba(167,139,250,0.08);
-            border: 1px dashed var(--spy);
-            border-radius: 12px;
-            margin-bottom: 16px;
-        }
-        .spy-fund-val {
-            font-family: 'Orbitron', monospace;
-            font-size: 44px;
-            font-weight: 900;
-            color: var(--spy);
-        }
-
-        .task-section {
-            border-radius: 12px;
-            padding: 16px;
-            margin-bottom: 14px;
-        }
+        .spy-fund-box { text-align: center; padding: 20px; background: rgba(167,139,250,0.08); border: 1px dashed var(--spy); border-radius: 12px; margin-bottom: 16px; }
+        .spy-fund-val { font-family: 'Orbitron', monospace; font-size: 44px; font-weight: 900; color: var(--spy); }
+        .task-section { border-radius: 12px; padding: 16px; margin-bottom: 14px; }
         .task-section.team-b { background: rgba(56,189,248,0.06); border: 1px solid rgba(56,189,248,0.25); }
         .task-section.team-a { background: rgba(255,77,109,0.06); border: 1px solid rgba(255,77,109,0.25); }
-
-        .select-input {
-            width: 100%;
-            padding: 12px 14px;
-            background: rgba(0,0,0,0.3);
-            border: 1px solid var(--border);
-            border-radius: 8px;
-            color: var(--text);
-            font-size: 15px;
-            margin: 10px 0 12px;
-            appearance: none;
-            cursor: pointer;
-        }
-
-        /* ── WINNER SCREEN ── */
-        .winner-box {
-            text-align: center;
-            padding: 28px;
-            border-radius: 16px;
-            margin-bottom: 18px;
-        }
-        .winner-label {
-            font-size: 13px;
-            letter-spacing: 3px;
-            color: var(--muted);
-            text-transform: uppercase;
-            margin-bottom: 10px;
-        }
-        .winner-name {
-            font-family: 'Orbitron', monospace;
-            font-size: 40px;
-            font-weight: 900;
-            text-shadow: 0 0 40px currentColor;
-        }
-
-        .top-player-row {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 10px 14px;
-            border-radius: 8px;
-            background: rgba(255,255,255,0.04);
-            border: 1px solid var(--border);
-            margin-bottom: 8px;
-            font-size: 14px;
-        }
+        .select-input { width: 100%; padding: 12px 14px; background: rgba(0,0,0,0.3); border: 1px solid var(--border); border-radius: 8px; color: var(--text); font-size: 15px; margin: 10px 0 12px; appearance: none; cursor: pointer; }
+        .winner-box { text-align: center; padding: 28px; border-radius: 16px; margin-bottom: 18px; }
+        .winner-label { font-size: 13px; letter-spacing: 3px; color: var(--muted); text-transform: uppercase; margin-bottom: 10px; }
+        .winner-name { font-family: 'Orbitron', monospace; font-size: 40px; font-weight: 900; text-shadow: 0 0 40px currentColor; }
+        .top-player-row { display: flex; justify-content: space-between; align-items: center; padding: 10px 14px; border-radius: 8px; background: rgba(255,255,255,0.04); border: 1px solid var(--border); margin-bottom: 8px; font-size: 14px; }
         .top-player-score { font-family: 'Orbitron', monospace; color: var(--gold); font-weight: 700; }
-
-        .spy-reveal {
-            background: rgba(167,139,250,0.08);
-            border: 1px solid rgba(167,139,250,0.3);
-            border-radius: 10px;
-            padding: 14px;
-            text-align: center;
-            font-size: 14px;
-            margin-top: 14px;
-            line-height: 1.6;
-        }
-
-        /* ── UTILITY ── */
+        .spy-reveal { background: rgba(167,139,250,0.08); border: 1px solid rgba(167,139,250,0.3); border-radius: 10px; padding: 14px; text-align: center; font-size: 14px; margin-top: 14px; line-height: 1.6; }
         .text-center { text-align: center; }
         .text-muted { color: var(--muted); font-size: 13px; }
         .mt-10 { margin-top: 10px; }
@@ -442,9 +106,7 @@
 </head>
 <body>
 
-<!-- ══════════════════════════════════
-     MÀN HÌNH 1: THAM GIA PHÒNG
-══════════════════════════════════ -->
+<!-- MÀN HÌNH 1: THAM GIA PHÒNG -->
 <div id="screen-join" class="screen">
     <h1 class="page-title" style="margin-top:16px;">⚛ VẬT LÍ 11</h1>
     <div class="panel">
@@ -463,9 +125,7 @@
     </div>
 </div>
 
-<!-- ══════════════════════════════════
-     MÀN HÌNH 2: LOBBY
-══════════════════════════════════ -->
+<!-- MÀN HÌNH 2: LOBBY -->
 <div id="screen-lobby" class="screen hidden">
     <div class="panel" style="text-align:center;">
         <div class="panel-title">Phòng chờ</div>
@@ -476,15 +136,12 @@
     </div>
 </div>
 
-<!-- ══════════════════════════════════
-     MÀN HÌNH 3: PHÂN ĐỘI & VAI TRÒ
-══════════════════════════════════ -->
+<!-- MÀN HÌNH 3: PHÂN ĐỘI & VAI TRÒ -->
 <div id="screen-role" class="screen hidden">
     <div class="panel" style="text-align:center;">
         <div class="panel-title">Vai trò của bạn</div>
         <p style="font-size:14px; color:var(--muted); margin-bottom:12px;">ĐỘI CỦA BẠN</p>
         <div id="team-badge" class="badge">ĐANG TÍNH...</div>
-
         <div id="spy-alert" class="hidden" style="margin-top:20px; padding:16px; background:rgba(167,139,250,0.1); border:1px solid var(--spy); border-radius:12px;">
             <div style="font-size:26px; margin-bottom:8px;">🕵️‍♂️</div>
             <div class="badge badge-spy" style="margin-bottom:10px;">MẬT LỆNH GIÁN ĐIỆP</div>
@@ -492,18 +149,14 @@
                 Bạn là <strong>Gián điệp ẩn</strong>! Hãy âm thầm trả lời đúng để tích điểm vào Quỹ Tình Báo — sau đó xem Đội B cướp quỹ còn Đội A tìm ra bạn!
             </p>
         </div>
-
         <hr style="border:none; border-top:1px solid var(--border); margin:20px 0;">
         <p class="text-muted">Bắt đầu Cửa 1 sau:</p>
         <div class="role-countdown" id="role-countdown">3</div>
     </div>
 </div>
 
-<!-- ══════════════════════════════════
-     MÀN HÌNH 4: LÀM BÀI
-══════════════════════════════════ -->
+<!-- MÀN HÌNH 4: LÀM BÀI -->
 <div id="screen-game" class="screen hidden">
-
     <div class="sticky-header">
         <div>
             <div class="header-stage" id="display-stage-title">Cửa 1</div>
@@ -511,34 +164,27 @@
         </div>
         <div class="header-timer" id="game-timer">01:30</div>
     </div>
-
     <div class="panel">
         <div id="questions-container"></div>
     </div>
-
     <button id="btn-submit-answers" class="btn btn-success" onclick="submitAnswers()">
         ✅ NỘP BÀI (CỬA NÀY)
     </button>
-
 </div>
 
-<!-- ══════════════════════════════════
-     MÀN HÌNH 5: CHỜ SAU NỘP BÀI
-══════════════════════════════════ -->
+<!-- MÀN HÌNH 5: CHỜ SAU NỘP BÀI -->
 <div id="screen-waiting" class="screen hidden">
     <div class="panel" style="text-align:center;">
         <div style="font-size:32px; margin-bottom:10px;">👌</div>
         <p style="font-weight:700; font-size:16px; color:var(--success);">ĐÃ NỘP BÀI THÀNH CÔNG!</p>
         <p class="text-muted mt-10">Đang chờ các bạn khác hoàn thành cửa này...</p>
-
         <div style="background:rgba(0,0,0,0.2); border:1px solid var(--border); border-radius:10px; padding:12px; margin-top:14px;">
             <span style="font-size:13px;">Kết quả tạm tính: </span>
             <strong id="early-result-text" style="color:var(--accent);">Đang xử lý...</strong>
         </div>
     </div>
-
     <div class="panel">
-        <div class="panel-title">💬 Chat Nội Bộ Đội (Xong sớm giao tiếp)</div>
+        <div class="panel-title">💬 Chat Nội Bộ Đội</div>
         <div class="chat-box" id="team-chat-msgs"></div>
         <div class="chat-row">
             <input type="text" id="team-chat-input" class="chat-input"
@@ -549,9 +195,7 @@
     </div>
 </div>
 
-<!-- ══════════════════════════════════
-     MÀN HÌNH 6: TRẠM NGHỈ
-══════════════════════════════════ -->
+<!-- MÀN HÌNH 6: TRẠM NGHỈ -->
 <div id="screen-intermission" class="screen hidden">
     <div class="panel" style="text-align:center;">
         <div style="font-size:24px; margin-bottom:6px;">⏳</div>
@@ -569,17 +213,13 @@
             </div>
         </div>
     </div>
-
     <div class="panel">
         <div class="panel-title">🏆 Top 5 BXH Cá Nhân</div>
         <table class="leaderboard">
-            <thead>
-                <tr><th>HẠNG</th><th>TÊN</th><th>ĐỘI</th><th>ĐIỂM</th></tr>
-            </thead>
+            <thead><tr><th>HẠNG</th><th>TÊN</th><th>ĐỘI</th><th>ĐIỂM</th></tr></thead>
             <tbody id="intermission-leaderboard-body"></tbody>
         </table>
     </div>
-
     <div class="panel">
         <div class="panel-title">🗣️ Chat Toàn Phòng</div>
         <div class="chat-box" id="global-chat-msgs"></div>
@@ -592,20 +232,16 @@
     </div>
 </div>
 
-<!-- ══════════════════════════════════
-     MÀN HÌNH 7: PHÁN QUYẾT CUỐI
-══════════════════════════════════ -->
+<!-- MÀN HÌNH 7: PHÁN QUYẾT CUỐI -->
 <div id="screen-final" class="screen hidden">
     <div class="panel">
         <div class="panel-title text-center">⚖️ Phán Quyết Cuối Game</div>
-
         <div class="spy-fund-box">
             <p class="text-muted mb-10">🕵️ Quỹ Tình Báo</p>
             <div class="spy-fund-val" id="final-spy-fund">0</div>
             <p class="text-muted" style="margin-top:4px;">điểm</p>
         </div>
-
-        <!-- Nhiệm vụ Đội B -->
+        <!-- Đội B -->
         <div id="final-task-team-b" class="task-section team-b hidden">
             <p style="font-family:'Orbitron',monospace; font-size:12px; letter-spacing:2px; color:var(--team-b); margin-bottom:10px;">
                 🔑 NHIỆM VỤ ĐỘI B — CÂU HỎI CHÌA KHÓA (60s)
@@ -614,8 +250,7 @@
             <div class="options-grid mb-10" id="key-question-options"></div>
             <button class="btn btn-b" onclick="submitKeyAnswer()">NỘP ĐÁP ÁN CHÌA KHÓA</button>
         </div>
-
-        <!-- Nhiệm vụ Đội A -->
+        <!-- Đội A -->
         <div id="final-task-team-a" class="task-section team-a hidden">
             <p style="font-family:'Orbitron',monospace; font-size:12px; letter-spacing:2px; color:var(--team-a); margin-bottom:8px;">
                 🕵️ NHIỆM VỤ ĐỘI A — TRUY TÌM GIÁN ĐIỆP (60s)
@@ -626,59 +261,49 @@
             </select>
             <button class="btn btn-danger" onclick="submitSpyVote()">BỎ PHIẾU BÌNH CHỌN</button>
         </div>
-
-        <!-- Đang xử lý -->
         <div id="final-waiting-status" class="hidden text-center" style="padding:20px; color:var(--muted); font-style:italic;">
             <div class="spinner"></div>
-            Đang xử lý phán quyết của các tổ đội...
+            Đang xử lý phán quyết...
         </div>
     </div>
 </div>
 
-<!-- ══════════════════════════════════
-     MÀN HÌNH 8: VINH DANH
-══════════════════════════════════ -->
+<!-- MÀN HÌNH 8: VINH DANH -->
 <div id="screen-winner" class="screen hidden">
     <div class="panel" style="text-align:center;">
         <div style="font-size:40px; margin-bottom:10px;">👑</div>
         <div class="panel-title text-center" style="border:none;">VINH DANH KẾT QUẢ</div>
-
         <div class="winner-box" id="winner-box">
             <p class="winner-label">ĐỘI CHIẾN THẮNG CHUNG CUỘC</p>
             <div class="winner-name" id="winner-team-display">...</div>
         </div>
-
         <div style="text-align:left; margin-top:10px;">
             <p style="font-family:'Orbitron',monospace; font-size:11px; letter-spacing:3px; color:var(--muted); margin-bottom:10px;">🏆 TOP 3 CÁ NHÂN XUẤT SẮC</p>
             <div id="top-individual-list"></div>
         </div>
-
         <div class="spy-reveal" id="spy-reveal-box"></div>
     </div>
 </div>
 
-<!-- ══════════════════════════════════
-     JAVASCRIPT
-══════════════════════════════════ -->
 <script>
-// ═══════════════════════
-// KaTeX helpers
-// ═══════════════════════
+// ── KaTeX helpers ──
 let katexReady = false;
 const pendingRenderTargets = [];
 
 function maybeRenderMath() {
     if (!katexReady) return;
     pendingRenderTargets.forEach(el => {
-        renderMathInElement(el, {
-            delimiters: [
-                { left: '$$', right: '$$', display: true },
-                { left: '$', right: '$', display: false },
-                { left: '\\(', right: '\\)', display: false },
-                { left: '\\[', right: '\\]', display: true }
-            ],
-            throwOnError: false
-        });
+        if (typeof renderMathInElement === 'function') {
+            renderMathInElement(el, {
+                delimiters: [
+                    { left: '$$', right: '$$', display: true },
+                    { left: '$', right: '$', display: false },
+                    { left: '\\(', right: '\\)', display: false },
+                    { left: '\\[', right: '\\]', display: true }
+                ],
+                throwOnError: false
+            });
+        }
     });
     pendingRenderTargets.length = 0;
 }
@@ -700,26 +325,22 @@ function renderMathIn(el) {
     }
 }
 
-// ═══════════════════════
-// State
-// ═══════════════════════
+// ── State ──
 const socket = io();
-let myName     = '';
-let myRoomId   = '';
-let myTeam     = '';
+let myName      = '';
+let myRoomId    = '';
+let myTeam      = '';
 let isSpyPlayer = false;
+let submitted   = false; // track nộp bài để tránh submit kép
 
-// ═══════════════════════
-// Screen management
-// ═══════════════════════
+// ── Screen management ──
 function showScreen(id) {
     document.querySelectorAll('.screen').forEach(s => s.classList.add('hidden'));
     document.getElementById(id).classList.remove('hidden');
+    window.scrollTo(0, 0);
 }
 
-// ═══════════════════════
-// Auto-fill room from URL
-// ═══════════════════════
+// ── Auto-fill room từ URL ──
 window.addEventListener('load', () => {
     const params = new URLSearchParams(window.location.search);
     const room = params.get('room');
@@ -729,9 +350,7 @@ window.addEventListener('load', () => {
     }
 });
 
-// ═══════════════════════
-// LOBBY
-// ═══════════════════════
+// ── JOIN ROOM ──
 function joinRoom() {
     myRoomId = document.getElementById('input-room-id').value.trim().toUpperCase();
     myName   = document.getElementById('input-name').value.trim();
@@ -740,14 +359,19 @@ function joinRoom() {
 
     document.getElementById('player-display-name').innerText = myName;
     showScreen('screen-lobby');
+
+    // FIX: dùng đúng event 'playerJoinRoom' khớp với server
     socket.emit('playerJoinRoom', { roomId: myRoomId, name: myName });
 }
 
-// ═══════════════════════
-// ROLE ASSIGNMENT
-// ═══════════════════════
+socket.on('errorMsg', (msg) => {
+    alert('Lỗi: ' + msg);
+    showScreen('screen-join');
+});
+
+// ── ROLE ASSIGNMENT ──
+// FIX: lắng nghe 'roleAssignment' (server gửi sau adminStartGame)
 socket.on('roleAssignment', (data) => {
-    // data: { team: 'A'|'B', isSpy: bool }
     myTeam      = data.team;
     isSpyPlayer = data.isSpy;
 
@@ -755,9 +379,12 @@ socket.on('roleAssignment', (data) => {
     if (myTeam === 'A') {
         badge.className = 'badge badge-a';
         badge.innerText = '⚔️ ĐỘI A';
-    } else {
+    } else if (myTeam === 'B') {
         badge.className = 'badge badge-b';
         badge.innerText = '🛡️ ĐỘI B';
+    } else {
+        badge.className = 'badge';
+        badge.innerText = '🎮 SOLO';
     }
 
     document.getElementById('display-my-team').innerHTML =
@@ -777,13 +404,13 @@ socket.on('roleAssignment', (data) => {
     }, 1000);
 });
 
-// ═══════════════════════
-// STAGE — CÂU HỎI
-// ═══════════════════════
+// ── STAGE — CÂU HỎI ──
+// FIX: server gửi 'startStage' với format { stageNum, isDouble, questions:[{id, text, choices:[{key,text}]}] }
 socket.on('startStage', (data) => {
-    // data: { stageNum, questions: [{id, text, choices:[{key,text}]}] }
+    submitted = false;
     showScreen('screen-game');
-    document.getElementById('display-stage-title').innerText = `Cửa ${data.stageNum} / 10`;
+    document.getElementById('display-stage-title').innerText =
+        `Cửa ${data.stageNum} / 10` + (data.isDouble ? ' ⚡ x2' : '');
 
     const container = document.getElementById('questions-container');
     container.innerHTML = '';
@@ -793,25 +420,49 @@ socket.on('startStage', (data) => {
         block.className = 'question-block';
         block.setAttribute('data-qid', q.id);
 
-        let choicesHtml = '';
+        // FIX: dùng DOM API (textContent) để giữ nguyên ký tự $...$ cho KaTeX
+        // Không dùng escHtml/innerHTML vì sẽ escape ký tự toán học
+        const numDiv = document.createElement('div');
+        numDiv.className = 'question-num';
+        numDiv.textContent = 'CÂU ' + (index + 1);
+
+        const textDiv = document.createElement('div');
+        textDiv.className = 'question-text';
+        textDiv.textContent = q.text; // giữ $...$ nguyên vẹn
+
+        const gridDiv = document.createElement('div');
+        gridDiv.className = 'options-grid';
+
         q.choices.forEach(c => {
-            choicesHtml += `
-                <label class="option-label" onclick="selectOption(this)">
-                    <input type="radio" name="q_${q.id}" value="${c.key}">
-                    <span class="option-key">${c.key}</span>
-                    <span class="option-text">${escHtml(c.text)}</span>
-                </label>`;
+            const lbl = document.createElement('label');
+            lbl.className = 'option-label';
+            lbl.addEventListener('click', function() { selectOption(this); });
+
+            const radio = document.createElement('input');
+            radio.type = 'radio';
+            radio.name = 'q_' + q.id;
+            radio.value = c.key;
+
+            const keySpan = document.createElement('span');
+            keySpan.className = 'option-key';
+            keySpan.textContent = c.key;
+
+            const txtSpan = document.createElement('span');
+            txtSpan.className = 'option-text';
+            txtSpan.textContent = c.text; // giữ $...$ nguyên vẹn
+
+            lbl.appendChild(radio);
+            lbl.appendChild(keySpan);
+            lbl.appendChild(txtSpan);
+            gridDiv.appendChild(lbl);
         });
 
-        block.innerHTML = `
-            <div class="question-num">CÂU ${index + 1}</div>
-            <div class="question-text">${escHtml(q.text)}</div>
-            <div class="options-grid">${choicesHtml}</div>
-        `;
+        block.appendChild(numDiv);
+        block.appendChild(textDiv);
+        block.appendChild(gridDiv);
         container.appendChild(block);
     });
 
-    // Render KaTeX trong câu hỏi
     renderMathIn(container);
 });
 
@@ -835,25 +486,27 @@ socket.on('timerUpdate', (seconds) => {
 
 // Nộp bài
 function submitAnswers() {
+    if (submitted) return;
+    submitted = true;
+
     const answers = {};
     document.querySelectorAll('.question-block').forEach(block => {
-        const qid  = block.getAttribute('data-qid');
-        const chk  = block.querySelector('input[type="radio"]:checked');
+        const qid = block.getAttribute('data-qid');
+        const chk = block.querySelector('input[type="radio"]:checked');
         answers[qid] = chk ? chk.value : '';
     });
+
+    // FIX: gửi đúng format { roomId, answers }
     socket.emit('submitAnswers', { roomId: myRoomId, answers });
     showScreen('screen-waiting');
     document.getElementById('team-chat-msgs').innerHTML = '';
 }
 
-// Kết quả sớm
 socket.on('earlyResult', (data) => {
-    document.getElementById('early-result-text').innerText = `Đúng ${data.correct}/5 câu.`;
+    document.getElementById('early-result-text').innerText = `Đúng ${data.correct}/${data.total} câu.`;
 });
 
-// ═══════════════════════
-// CHAT TEAM (CHỜ)
-// ═══════════════════════
+// ── CHAT TEAM ──
 function sendTeamMessage() {
     const input = document.getElementById('team-chat-input');
     const msg = input.value.trim();
@@ -866,23 +519,22 @@ socket.on('receiveTeamMessage', (data) => {
     appendChat('team-chat-msgs', data.name, data.msg, data.name === myName);
 });
 
-// ═══════════════════════
-// TRẠM NGHỈ
-// ═══════════════════════
+// ── TRẠM NGHỈ ──
+// FIX: field 'teamA_score' / 'teamB_score'
 socket.on('intermissionStart', (data) => {
-    // Auto-submit nếu chưa nộp
-    const gameActive = !document.getElementById('screen-game').classList.contains('hidden');
-    if (gameActive) submitAnswers();
-
+    // Auto-submit nếu đang ở màn game và chưa nộp
+    if (!document.getElementById('screen-game').classList.contains('hidden') && !submitted) {
+        submitAnswers();
+    }
     showScreen('screen-intermission');
     document.getElementById('global-chat-msgs').innerHTML = '';
-    document.getElementById('intermission-score-a').innerText = data.teamA_score;
-    document.getElementById('intermission-score-b').innerText = data.teamB_score;
+    document.getElementById('intermission-score-a').innerText = data.teamA_score || 0;
+    document.getElementById('intermission-score-b').innerText = data.teamB_score || 0;
 
     const tbody = document.getElementById('intermission-leaderboard-body');
     const medals = ['🥇', '🥈', '🥉', '4.', '5.'];
     tbody.innerHTML = '';
-    data.leaderboard.slice(0, 5).forEach((p, i) => {
+    (data.leaderboard || []).slice(0, 5).forEach((p, i) => {
         tbody.innerHTML += `
             <tr>
                 <td>${medals[i]}</td>
@@ -893,9 +545,7 @@ socket.on('intermissionStart', (data) => {
     });
 });
 
-// ═══════════════════════
-// CHAT GLOBAL (TRẠM NGHỈ)
-// ═══════════════════════
+// ── CHAT GLOBAL ──
 function sendGlobalMessage() {
     const input = document.getElementById('global-chat-input');
     const msg = input.value.trim();
@@ -908,13 +558,10 @@ socket.on('receiveGlobalMessage', (data) => {
     appendChat('global-chat-msgs', data.name, data.msg, data.name === myName);
 });
 
-// ═══════════════════════
-// FINAL PHASE
-// ═══════════════════════
+// ── FINAL PHASE ──
 socket.on('finalPhaseStart', (data) => {
-    // data: { spyFund, teamAPlayers: [{id,name}] }
     showScreen('screen-final');
-    document.getElementById('final-spy-fund').innerText = data.spyFund;
+    document.getElementById('final-spy-fund').innerText = data.spyFund || 0;
 
     if (myTeam === 'B') {
         document.getElementById('final-task-team-b').classList.remove('hidden');
@@ -922,7 +569,7 @@ socket.on('finalPhaseStart', (data) => {
         document.getElementById('final-task-team-a').classList.remove('hidden');
         const sel = document.getElementById('spy-vote-select');
         sel.innerHTML = '<option value="">— Chọn người nghi vấn —</option>';
-        data.teamAPlayers.forEach(p => {
+        (data.teamAPlayers || []).forEach(p => {
             if (p.name !== myName) {
                 sel.innerHTML += `<option value="${p.id}">${escHtml(p.name)}</option>`;
             }
@@ -930,20 +577,38 @@ socket.on('finalPhaseStart', (data) => {
     }
 });
 
+// FIX: event 'teamBKeyQuestion' (server gửi riêng cho team B)
 socket.on('teamBKeyQuestion', (data) => {
     if (myTeam !== 'B') return;
-    document.getElementById('key-question-text').innerHTML = escHtml(data.text);
-    renderMathIn(document.getElementById('key-question-text'));
+    // FIX: dùng textContent để giữ $...$ cho KaTeX
+    const qEl = document.getElementById('key-question-text');
+    qEl.textContent = data.text;
+    renderMathIn(qEl);
 
     const grid = document.getElementById('key-question-options');
     grid.innerHTML = '';
     data.choices.forEach(c => {
-        grid.innerHTML += `
-            <label class="option-label" onclick="selectOption(this)">
-                <input type="radio" name="final_key_ans" value="${c.key}">
-                <span class="option-key">${c.key}</span>
-                <span class="option-text">${escHtml(c.text)}</span>
-            </label>`;
+        const lbl = document.createElement('label');
+        lbl.className = 'option-label';
+        lbl.addEventListener('click', function() { selectOption(this); });
+
+        const radio = document.createElement('input');
+        radio.type = 'radio';
+        radio.name = 'final_key_ans';
+        radio.value = c.key;
+
+        const keySpan = document.createElement('span');
+        keySpan.className = 'option-key';
+        keySpan.textContent = c.key;
+
+        const txtSpan = document.createElement('span');
+        txtSpan.className = 'option-text';
+        txtSpan.textContent = c.text;
+
+        lbl.appendChild(radio);
+        lbl.appendChild(keySpan);
+        lbl.appendChild(txtSpan);
+        grid.appendChild(lbl);
     });
     renderMathIn(grid);
 });
@@ -964,16 +629,16 @@ function submitSpyVote() {
     document.getElementById('final-waiting-status').classList.remove('hidden');
 }
 
-// ═══════════════════════
-// GAME OVER — VINH DANH
-// ═══════════════════════
+// ── GAME OVER ──
 socket.on('gameOver', (data) => {
-    // data: { winningTeam, topPlayers:[{name,team,score}], spyName }
     showScreen('screen-winner');
 
     const disp = document.getElementById('winner-team-display');
     const box  = document.getElementById('winner-box');
-    if (data.winningTeam === 'A') {
+    if (data.winningTeam === 'draw') {
+        disp.innerText = '🤝 HÒA!';
+        disp.style.color = 'var(--gold)';
+    } else if (data.winningTeam === 'A') {
         disp.innerText = '⚔️ ĐỘI A';
         disp.style.color = 'var(--team-a)';
         box.style.background = 'rgba(255,77,109,0.08)';
@@ -988,11 +653,11 @@ socket.on('gameOver', (data) => {
     const topList = document.getElementById('top-individual-list');
     topList.innerHTML = '';
     const medals = ['🥇 Hạng 1', '🥈 Hạng 2', '🥉 Hạng 3'];
-    data.topPlayers.slice(0, 3).forEach((p, i) => {
+    (data.topPlayers || []).slice(0, 3).forEach((p, i) => {
         const row = document.createElement('div');
         row.className = 'top-player-row';
         row.innerHTML = `
-            <span>${medals[i]}: ${escHtml(p.name)} 
+            <span>${medals[i]}: ${escHtml(p.name)}
                 <span style="color:${p.team==='A'?'var(--team-a)':'var(--team-b)'}; font-size:12px;">(Đội ${p.team})</span>
             </span>
             <span class="top-player-score">${p.score}đ</span>`;
@@ -1001,15 +666,14 @@ socket.on('gameOver', (data) => {
 
     const revealBox = document.getElementById('spy-reveal-box');
     if (data.spyName) {
-        revealBox.innerHTML = `🕵️‍♂️ Gián Điệp của trận đấu này là: <strong style="color:var(--spy); font-size:16px;">${escHtml(data.spyName)}</strong>`;
+        revealBox.innerHTML = `🕵️‍♂️ Gián Điệp của trận đấu này là: <strong style="color:var(--spy); font-size:16px;">${escHtml(data.spyName)}</strong>`
+            + (data.spyCaught ? '<br>✅ Đã bị bắt!' : '<br>🏃 Đã tẩu thoát!');
     } else {
         revealBox.innerHTML = 'Trận đấu này không kích hoạt cơ chế Gián điệp ẩn.';
     }
 });
 
-// ═══════════════════════
-// HELPERS
-// ═══════════════════════
+// ── HELPERS ──
 function appendChat(boxId, name, msg, isMe) {
     const box = document.getElementById(boxId);
     if (!box) return;
@@ -1022,10 +686,8 @@ function appendChat(boxId, name, msg, isMe) {
 
 function escHtml(str) {
     return String(str)
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;');
+        .replace(/&/g, '&amp;').replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 }
 </script>
 </body>
