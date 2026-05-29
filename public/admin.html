@@ -3,225 +3,98 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin - Tro Choi Vat Li 11</title>
-
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/katex.min.css">
-    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/katex.min.js"></script>
-    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/contrib/auto-render.min.js"
-        onload="renderMathInDocument()"></script>
-
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <title>Admin - Vat Li</title>
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=IBM+Plex+Sans:wght@400;600;700&display=swap" rel="stylesheet">
     <script src="/socket.io/socket.io.js"></script>
-
     <style>
         :root {
-            --bg: #0a0e1a;
-            --panel: #111827;
-            --border: #1e3a5f;
-            --accent: #00d4ff;
-            --team-a: #ff4d6d;
-            --team-b: #38bdf8;
-            --team-c: #a78bfa;
-            --gold: #ffd700;
-            --success: #34d399;
-            --danger: #f87171;
-            --text: #e2e8f0;
-            --muted: #64748b;
+            --bg: #0a0e1a; --panel: #111827; --border: #1e3a5f;
+            --accent: #00d4ff; --team-a: #ff4d6d; --team-b: #38bdf8; --team-c: #a78bfa;
+            --gold: #ffd700; --success: #34d399; --danger: #f87171;
+            --text: #e2e8f0; --muted: #64748b;
         }
-
         * { box-sizing: border-box; margin: 0; padding: 0; }
-        body { font-family: 'IBM Plex Sans', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; padding: 20px; }
+        body { font-family: 'IBM Plex Sans', sans-serif; background: var(--bg); color: var(--text); padding: 20px; }
         .hidden { display: none !important; }
         .container { max-width: 1000px; margin: 0 auto; }
-        .page-title { font-family: 'Orbitron', monospace; font-size: clamp(18px, 3vw, 28px); font-weight: 900; text-align: center; color: var(--accent); letter-spacing: 4px; text-transform: uppercase; margin-bottom: 24px; text-shadow: 0 0 30px rgba(0,212,255,0.5); }
-        .panel { background: var(--panel); border: 1px solid var(--border); border-radius: 16px; padding: 24px; margin-bottom: 20px; box-shadow: 0 4px 24px rgba(0,0,0,0.4); }
-        .panel-title { font-family: 'Orbitron', monospace; font-size: 14px; letter-spacing: 3px; color: var(--accent); text-transform: uppercase; margin-bottom: 16px; padding-bottom: 10px; border-bottom: 1px solid var(--border); }
-        
-        .btn { display: block; width: 100%; padding: 14px 24px; font-family: 'Orbitron', monospace; font-size: 14px; font-weight: 700; letter-spacing: 2px; color: var(--bg); background: var(--accent); border: none; border-radius: 10px; cursor: pointer; text-align: center; transition: all 0.2s; box-shadow: 0 0 20px rgba(0,212,255,0.3); margin-top: 16px; }
-        .btn:hover { transform: translateY(-2px); box-shadow: 0 0 30px rgba(0,212,255,0.6); }
-        .btn-danger { background: var(--danger); box-shadow: 0 0 20px rgba(248,113,113,0.3); color: #fff; }
-        
-        .room-code { text-align: center; font-family: 'Orbitron', monospace; font-size: 52px; font-weight: 900; color: var(--gold); letter-spacing: 12px; text-shadow: 0 0 40px rgba(255,215,0,0.5); margin: 16px 0; }
-        .qr-wrapper { display: flex; flex-direction: column; align-items: center; gap: 12px; margin: 20px 0; }
-        #qrcode { background: #fff; padding: 12px; border-radius: 12px; }
-        .player-count-badge { text-align: center; font-size: 24px; font-weight: 700; color: var(--accent); margin: 16px 0 12px; }
-        .player-grid { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; list-style: none; min-height: 40px; padding: 10px; background: rgba(0,0,0,0.2); border-radius: 10px; border: 1px dashed var(--border); }
-        .player-chip { background: rgba(0,212,255,0.1); border: 1px solid rgba(0,212,255,0.3); color: var(--accent); padding: 6px 14px; border-radius: 20px; font-size: 13px; font-weight: 600; }
-        
-        .game-header { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 16px; margin-bottom: 20px; }
-        .stage-label { font-family: 'Orbitron', monospace; font-size: 18px; font-weight: 700; color: var(--text); }
-        .timer-display { font-family: 'Orbitron', monospace; font-size: 56px; font-weight: 900; color: var(--danger); text-align: center; text-shadow: 0 0 30px rgba(248,113,113,0.5); line-height: 1; }
-        .status-badge { text-align: right; font-size: 13px; color: var(--muted); font-style: italic; }
-        
+        .panel { background: var(--panel); border: 1px solid var(--border); border-radius: 16px; padding: 24px; margin-bottom: 20px; }
+        .panel-title { font-family: 'Orbitron', monospace; font-size: 14px; letter-spacing: 3px; color: var(--accent); margin-bottom: 16px; padding-bottom: 10px; border-bottom: 1px solid var(--border); }
+        .btn { padding: 14px 24px; font-family: 'Orbitron', monospace; font-weight: 700; background: var(--accent); border: none; border-radius: 10px; cursor: pointer; margin-top: 16px; width: 100%; }
+        .btn-danger { background: var(--danger); color: #fff; }
+        .room-code { text-align: center; font-family: 'Orbitron', monospace; font-size: 52px; font-weight: 900; color: var(--gold); margin: 16px 0; }
         .scores-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 16px; margin-bottom: 20px; }
-        .score-card { border-radius: 14px; padding: 20px; text-align: center; border: 2px solid; }
-        .score-card.team-a { border-color: var(--team-a); background: rgba(255,77,109,0.08); }
-        .score-card.team-b { border-color: var(--team-b); background: rgba(56,189,248,0.08); }
-        .score-card.team-c { border-color: var(--team-c); background: rgba(167,139,250,0.08); }
-        .score-team-name { font-family: 'Orbitron', monospace; font-size: 14px; letter-spacing: 3px; margin-bottom: 8px; opacity: 0.8; }
+        .score-card { border-radius: 14px; padding: 20px; text-align: center; border: 2px solid var(--border); }
         .score-value { font-family: 'Orbitron', monospace; font-size: 36px; font-weight: 900; }
-        .score-card.team-a .score-value { color: var(--team-a); }
-        .score-card.team-b .score-value { color: var(--team-b); }
-        .score-card.team-c .score-value { color: var(--team-c); }
-        
         .leaderboard { width: 100%; border-collapse: collapse; margin-top: 12px; }
-        .leaderboard th { background: rgba(0,212,255,0.1); color: var(--accent); font-family: 'Orbitron', monospace; font-size: 11px; letter-spacing: 1px; padding: 10px; text-align: center; border-bottom: 1px solid var(--border); }
-        .leaderboard td { padding: 10px; text-align: center; font-size: 14px; border-bottom: 1px solid rgba(30,58,95,0.5); }
-        
-        .player-status-list { display: flex; flex-direction: column; gap: 8px; margin-top: 15px; }
-        .player-status-item { background: rgba(255,255,255,0.05); padding: 10px 15px; border-radius: 8px; display: flex; justify-content: space-between; font-size: 14px; border-left: 4px solid var(--border); }
-        .status-a { border-left-color: var(--team-a); }
-        .status-b { border-left-color: var(--team-b); }
-        .status-c { border-left-color: var(--team-c); }
-        
-        .text-success { color: var(--success); font-weight: bold; }
-        .text-danger { color: var(--danger); font-weight: bold; }
-        .text-muted { color: var(--muted); font-size: 13px; }
-        .text-center { text-align: center; }
-        
-        .essay-log-box { background: rgba(0,0,0,0.3); border: 1px solid var(--border); border-radius: 8px; padding: 15px; min-height: 100px; margin-top: 15px; font-family: monospace; }
-        
-        .stage-dots { display: flex; justify-content: center; gap: 6px; margin-bottom: 20px; }
-        .stage-dot { width: 10px; height: 10px; border-radius: 50%; background: var(--border); transition: all 0.3s; }
-        .stage-dot.active { background: var(--accent); box-shadow: 0 0 8px var(--accent); }
-        .stage-dot.done { background: var(--success); }
+        .leaderboard th, .leaderboard td { padding: 10px; text-align: center; border-bottom: 1px solid var(--border); }
+        .text-success { color: var(--success); }
+        .text-danger { color: var(--danger); }
     </style>
 </head>
 <body>
 <div class="container">
-    <h1 class="page-title">Admin Control - Vat Li 11</h1>
-
     <div id="lobby-screen">
         <div class="panel">
             <div class="panel-title">PHONG CHO</div>
-            <div class="qr-wrapper">
-                <p class="text-muted">Ma phong</p>
-                <div class="room-code" id="room-id-display">- - - -</div>
-                <div id="qrcode"></div>
-                <p class="text-muted" id="join-url-text" style="font-size:12px; word-break:break-all;"></p>
-            </div>
-            <div class="player-count-badge">
-                So nguoi: <span id="player-count-num">0</span>
-            </div>
-            <ul class="player-grid" id="player-list"></ul>
+            <div class="room-code" id="room-id-display">- - - -</div>
+            <p style="text-align: center; font-size: 20px;">So nguoi tham gia: <strong id="player-count-num">0</strong></p>
             <button class="btn" onclick="startGame()">BAT DAU TRO CHOI</button>
         </div>
     </div>
 
     <div id="game-screen" class="hidden">
-        <div class="stage-dots" id="stage-dots"></div>
-
         <div class="panel">
-            <div class="game-header">
-                <div class="stage-label" id="stage-title">Vong 1</div>
-                <div class="timer-display" id="timer">01:00</div>
-                <div class="status-badge" id="status-text">Dang lam bai...</div>
-            </div>
-
-            <div class="scores-row" id="scores-container">
-                <div class="score-card team-a">
-                    <div class="score-team-name">DOI A</div>
-                    <div class="score-value" id="score-team-a">0</div>
-                </div>
-                <div class="score-card team-b">
-                    <div class="score-team-name">DOI B</div>
-                    <div class="score-value" id="score-team-b">0</div>
-                </div>
+            <div style="display:flex; justify-content: space-between; align-items:center; margin-bottom: 20px;">
+                <div style="font-family:'Orbitron', monospace; font-size:20px;" id="stage-title">Vong 1</div>
+                <div style="font-family:'Orbitron', monospace; font-size:40px; color:var(--danger)" id="timer">60</div>
             </div>
             
-            <div class="panel-title" style="margin-top: 20px;">Trang thai tung nguoi</div>
-            <div class="player-status-list" id="player-status-container"></div>
-        </div>
+            <div class="scores-row" id="scores-container">
+                <div class="score-card"><div style="color:var(--team-a)">DOI A</div><div class="score-value" id="score-a">0</div></div>
+                <div class="score-card"><div style="color:var(--team-b)">DOI B</div><div class="score-value" id="score-b">0</div></div>
+            </div>
 
-        <div id="intermission-screen" class="hidden">
-            <div class="panel">
-                <div class="panel-title text-center">BANG XEP HANG KET QUA VONG</div>
-                <div id="leaderboard-container"></div>
-            </div>
+            <table class="leaderboard" id="realtime-leaderboard">
+                <thead><tr><th>Ten</th><th>Doi</th><th>Diem</th><th>Hanh Dong Truoc</th><th>Tg Hoan Thanh Cau</th><th>Tong Thoi Gian</th></tr></thead>
+                <tbody id="leaderboard-body"></tbody>
+            </table>
         </div>
-        
-        <div id="essay-screen" class="hidden">
-            <div class="panel">
-                <div class="panel-title text-center" id="game-stage-title">VONG TU LUAN DAC BIET</div>
-                <p id="game-status-announcement" style="text-align: center; margin-bottom: 15px; font-size: 16px;"></p>
-                <div class="essay-log-box" id="essay-answers-log"></div>
-            </div>
+    </div>
+
+    <div id="essay-screen" class="hidden">
+        <div class="panel text-center">
+            <h2 style="color:var(--accent); font-family: 'Orbitron', monospace; text-align:center;">VONG TU LUAN (DOI C)</h2>
+            <p id="essay-status" style="text-align:center; margin-top: 20px; font-size: 18px;">Dang cho Doi C dat cau hoi...</p>
+            <div id="essay-answers-log" style="margin-top: 20px;"></div>
         </div>
     </div>
 
     <div id="final-screen" class="hidden">
-        <div class="panel">
-            <div class="panel-title text-center">KET QUA CHUNG CUOC</div>
-            <div id="victory-screen" style="text-align: center;"></div>
+        <div class="panel" style="text-align: center;">
+            <div class="panel-title">KET QUA CHUNG CUOC</div>
+            <div id="victory-screen"></div>
+            <button id="btnResetRoom" class="btn btn-danger" style="max-width: 300px; margin: 20px auto;">RESET KHOI DONG LAI GAME</button>
         </div>
     </div>
 </div>
 
 <script>
-function renderMathInDocument() {
-    if (typeof renderMathInElement !== 'function') return;
-    renderMathInElement(document.body, {
-        delimiters: [
-            { left: '$$', right: '$$', display: true },
-            { left: '$', right: '$', display: false },
-            { left: '\\(', right: '\\)', display: false },
-            { left: '\\[', right: '\\]', display: true }
-        ],
-        throwOnError: false
-    });
-}
-
 const socket = io();
 let currentRoomId = '';
-let playersData = [];
-
-(function buildDots() {
-    const container = document.getElementById('stage-dots');
-    for (let i = 1; i <= 10; i++) {
-        const d = document.createElement('div');
-        d.className = 'stage-dot';
-        d.id = `dot-${i}`;
-        container.appendChild(d);
-    }
-})();
 
 socket.emit('adminCreateRoom');
-
 socket.on('roomCreated', (roomId) => {
     currentRoomId = roomId;
     document.getElementById('room-id-display').innerText = roomId;
-
-    const playUrl = window.location.origin + '/play?room=' + roomId;
-    document.getElementById('join-url-text').innerText = playUrl;
-
-    document.getElementById('qrcode').innerHTML = '';
-    new QRCode(document.getElementById('qrcode'), {
-        text: playUrl,
-        width: 200, height: 200,
-        colorDark: '#000000', colorLight: '#ffffff',
-        correctLevel: QRCode.CorrectLevel.H
-    });
 });
 
 socket.on('updatePlayerList', (players) => {
-    playersData = players;
-    const list = document.getElementById('player-list');
-    list.innerHTML = '';
-    players.forEach(p => {
-        const li = document.createElement('li');
-        li.className = 'player-chip';
-        li.innerText = p.name;
-        list.appendChild(li);
-    });
     document.getElementById('player-count-num').innerText = players.length;
 });
 
 function startGame() {
     if (!currentRoomId) return alert('Chua co phong!');
-    if (confirm('Bat dau tro choi? He thong se chia doi (Huy co che gian diep).')) {
-        socket.emit('adminStartGame', currentRoomId);
-    }
+    if (confirm('Bat dau tro choi?')) socket.emit('adminStartGame', currentRoomId);
 }
 
 socket.on('gameStarted', () => {
@@ -230,147 +103,93 @@ socket.on('gameStarted', () => {
 });
 
 socket.on('stageUpdate', (data) => {
-    document.getElementById('stage-title').innerText = `Vong ${data.stageNum} / 10`;
-    document.getElementById('intermission-screen').classList.add('hidden');
-    document.getElementById('essay-screen').classList.add('hidden');
-    document.getElementById('status-text').innerText = data.isDouble ? 'VONG 10 NHAN DOI DIEM (+20)!' : 'Dang lam bai...';
-
-    for (let i = 1; i <= 10; i++) {
-        const dot = document.getElementById(`dot-${i}`);
-        if (!dot) continue;
-        dot.className = 'stage-dot' + (i < data.stageNum ? ' done' : i === data.stageNum ? ' active' : '');
-    }
-    updateScores(data.teamA_score, data.teamB_score, data.teamC_score);
+    document.getElementById('stage-title').innerText = `Vong ${data.stageNum} / 10 ` + (data.isDouble ? '(X2 DIEM)' : '');
+    document.getElementById('score-a').innerText = data.teamA_score || 0;
+    document.getElementById('score-b').innerText = data.teamB_score || 0;
     
-    document.getElementById('player-status-container').innerHTML = '';
-    playersData.forEach(p => {
-        const el = document.createElement('div');
-        el.className = `player-status-item status-${(p.team || 'a').toLowerCase()}`;
-        el.id = `admin-status-${p.id}`;
-        el.innerHTML = `<span><strong>${p.name}</strong> (Doi ${p.team})</span> <span class="text-muted">Dang tra loi...</span>`;
-        document.getElementById('player-status-container').appendChild(el);
-    });
+    if (data.teamC_score !== undefined && !document.getElementById('score-c')) {
+        const container = document.getElementById('scores-container');
+        container.innerHTML += `<div class="score-card"><div style="color:var(--team-c)">DOI C</div><div class="score-value" id="score-c">${data.teamC_score}</div></div>`;
+    } else if (document.getElementById('score-c')) {
+        document.getElementById('score-c').innerText = data.teamC_score;
+    }
+    updateLeaderboardTable(data.players);
 });
 
 socket.on('timerUpdate', (seconds) => {
-    const m = Math.floor(seconds / 60).toString().padStart(2, '0');
-    const s = (seconds % 60).toString().padStart(2, '0');
-    const el = document.getElementById('timer');
-    el.innerText = `${m}:${s}`;
+    document.getElementById('timer').innerText = seconds;
 });
 
 socket.on('playerSubmittedUpdate', (data) => {
-    const el = document.getElementById(`admin-status-${data.id}`);
-    if (el) {
-        let deltaText = data.lastDelta >= 0 ? `+${data.lastDelta}` : `${data.lastDelta}`;
-        let deltaClass = data.lastDelta >= 0 ? 'text-success' : 'text-danger';
-        el.innerHTML = `<span><strong>${data.name}</strong> (Doi ${data.team})</span> 
-                        <span>
-                            Thoi gian: <strong>${data.lastCompletionTime}s</strong> | 
-                            Bien dong: <span class="${deltaClass}">${deltaText}</span> | 
-                            Tong: <strong>${data.score}</strong>
-                        </span>`;
+    document.getElementById('score-a').innerText = data.teamA_score;
+    document.getElementById('score-b').innerText = data.teamB_score;
+    if(document.getElementById('score-c')) document.getElementById('score-c').innerText = data.teamC_score;
+    
+    const row = document.getElementById(`row-${data.id}`);
+    if (row) {
+        let dClass = data.lastDelta > 0 ? 'text-success' : 'text-danger';
+        let dText = data.lastDelta > 0 ? `+${data.lastDelta}` : data.lastDelta;
+        row.querySelector('.td-score').innerText = data.score;
+        row.querySelector('.td-delta').innerHTML = `<span class="${dClass}">${dText}</span>`;
+        row.querySelector('.td-last-time').innerText = `${data.lastCompletionTime}s`;
     }
 });
 
 socket.on('intermissionStart', (data) => {
-    document.getElementById('status-text').innerText = 'Ket thuc vong. Xem bang xep hang.';
-    document.getElementById('intermission-screen').classList.remove('hidden');
-    updateScores(data.teamA_score, data.teamB_score, data.teamC_score);
-    
-    let html = '<table class="leaderboard"><tr><th>Hang</th><th>Ten</th><th>Doi</th><th>Diem</th><th>Bien Dong</th><th>Tg Vong Vua Qua</th><th>Tong Thoi Gian</th></tr>';
-    data.leaderboard.forEach(p => {
-        let deltaText = p.lastDelta >= 0 ? `+${p.lastDelta}` : `${p.lastDelta}`;
-        let deltaClass = p.lastDelta >= 0 ? 'text-success' : 'text-danger';
-        html += `<tr>
-            <td>${p.rank}</td>
-            <td>${escHtml(p.name)}</td>
-            <td>${p.team}</td>
-            <td><strong>${p.score}</strong></td>
-            <td class="${deltaClass}">${deltaText}</td>
-            <td>${p.lastCompletionTime}s</td>
-            <td>${p.totalCompletionTime}s</td>
-        </tr>`;
-    });
-    html += '</table>';
-    document.getElementById('leaderboard-container').innerHTML = html;
+    document.getElementById('stage-title').innerText = 'GIAI LAO';
+    updateLeaderboardTable(data.leaderboard);
 });
 
-// Essay Round Updates
-socket.on('essayRoundStart', (data) => {
+socket.on('essayRoundStart', () => {
+    document.getElementById('game-screen').classList.add('hidden');
     document.getElementById('essay-screen').classList.remove('hidden');
-    document.getElementById('intermission-screen').classList.add('hidden');
-    document.getElementById('game-stage-title').innerText = "VONG TU LUAN (Doi C le)";
-    document.getElementById('game-status-announcement').innerHTML = `Dang cho nguoi choi <strong>${data.creatorName}</strong> (Doi C) tao cau hoi. Nguoi tra loi dung nhanh nhat se duoc cong <strong>${data.scoreC} diem</strong>.`;
-    document.getElementById('essay-answers-log').innerHTML = '';
 });
 
 socket.on('essayRoundBroadcastQuestion', (data) => {
-    document.getElementById('game-status-announcement').innerHTML = `Cau hoi tu Doi C: <strong style="font-size: 18px; color: var(--accent);">${data.questionText}</strong><br>Doi A va B dang tra loi...`;
+    document.getElementById('essay-status').innerHTML = `Cau hoi tu Doi C: <strong style="color:var(--accent)">${data.questionText}</strong>`;
 });
 
 socket.on('essayRoundNewAnswer', (data) => {
-    const container = document.getElementById('essay-answers-log');
-    container.innerHTML += `<div style="margin-bottom: 8px; padding-bottom: 8px; border-bottom: 1px dashed var(--border);"><strong>${data.name} (Doi ${data.team}):</strong> ${data.answerText}</div>`;
+    document.getElementById('essay-answers-log').innerHTML += `<div style="padding: 10px; border-bottom: 1px dashed var(--border);"><strong>${data.name} (Doi ${data.team}):</strong> ${data.answerText}</div>`;
 });
 
-// Game Over
 socket.on('gameOver', (data) => {
     document.getElementById('game-screen').classList.add('hidden');
+    document.getElementById('essay-screen').classList.add('hidden');
     document.getElementById('final-screen').classList.remove('hidden');
     
-    let winContainer = document.getElementById('victory-screen');
-    let bonusInfo = data.essayBonusDetails ? `<br><br><span style="color:var(--success); font-size:18px;">Doi ${data.essayBonusDetails.winningTeam} da nhan them ${data.essayBonusDetails.bonusPoints} diem tu ${data.essayBonusDetails.winnerName}!</span>` : '';
-    
-    let winnerText = data.winningTeam === 'draw' ? 'HOA NHAU!' : `DOI WIN: DOI ${data.winningTeam}`;
-    
-    winContainer.innerHTML = `
-        <h2 style="font-size: 32px; color: var(--gold); margin-bottom: 10px;">${winnerText}</h2>
-        <div style="font-size: 20px; margin-bottom: 20px;">
-            Doi A: <strong>${data.scoreA}</strong> | Doi B: <strong>${data.scoreB}</strong>
-        </div>
-        ${bonusInfo}
-        
-        <h3 style="margin-top: 30px; margin-bottom: 15px; color: var(--accent);">TOP 3 XUAT SAC NHAT (Diem / Thoi Gian)</h3>
-        <div style="text-align: left; max-width: 400px; margin: 0 auto 30px;">
-            ${(data.topPlayers || []).map((p, i) => `
-                <div style="display: flex; justify-content: space-between; padding: 10px; background: rgba(255,255,255,0.05); margin-bottom: 5px; border-radius: 5px;">
-                    <span>${i+1}. ${escHtml(p.name)} (Doi ${p.team})</span>
-                    <strong style="color: var(--gold)">${p.score} diem</strong>
-                </div>
-            `).join('')}
-        </div>
-        
-        <button id="btnResetRoom" class="btn btn-danger" style="max-width: 300px; margin: 0 auto;">RESET GAME VA TAO PHONG MOI</button>
+    let bonus = data.essayBonusDetails ? `<p style="color:var(--success); margin-top:10px;">${data.essayBonusDetails.winnerName} doat them ${data.essayBonusDetails.bonusPoints} diem tu Doi C!</p>` : '';
+    document.getElementById('victory-screen').innerHTML = `
+        <h2 style="font-size:30px; color:var(--gold);">${data.winningTeam === 'HOA' ? 'HOA NHAU' : 'DOI CHIEN THANG: DOI ' + data.winningTeam}</h2>
+        <p style="font-size: 20px; margin-top:15px;">Doi A: <strong>${data.scoreA}</strong> | Doi B: <strong>${data.scoreB}</strong></p>
+        ${bonus}
     `;
-
-    document.getElementById('btnResetRoom').addEventListener('click', () => {
-        socket.emit('resetGame', currentRoomId);
-        window.location.reload();
-    });
 });
 
-function updateScores(scoreA, scoreB, scoreC) {
-    document.getElementById('score-team-a').innerText = (scoreA || 0);
-    document.getElementById('score-team-b').innerText = (scoreB || 0);
-    
-    if (scoreC !== undefined && scoreC > 0 && !document.getElementById('score-team-c-card')) {
-        const container = document.getElementById('scores-container');
-        const card = document.createElement('div');
-        card.className = 'score-card team-c';
-        card.id = 'score-team-c-card';
-        card.innerHTML = `
-            <div class="score-team-name">DOI C (Le)</div>
-            <div class="score-value" id="score-team-c">${scoreC}</div>
-        `;
-        container.appendChild(card);
-    } else if (document.getElementById('score-team-c')) {
-        document.getElementById('score-team-c').innerText = (scoreC || 0);
-    }
-}
+document.getElementById('btnResetRoom').addEventListener('click', () => {
+    socket.emit('resetGame', currentRoomId);
+    window.location.reload();
+});
 
-function escHtml(str) {
-    return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+function updateLeaderboardTable(players) {
+    const tbody = document.getElementById('leaderboard-body');
+    tbody.innerHTML = '';
+    // Sắp xếp lại
+    let sorted = [...players].sort((a,b) => b.score - a.score || a.totalCompletionTime - b.totalCompletionTime);
+    sorted.forEach(p => {
+        let dClass = p.lastDelta > 0 ? 'text-success' : (p.lastDelta < 0 ? 'text-danger' : '');
+        let dText = p.lastDelta > 0 ? `+${p.lastDelta}` : (p.lastDelta || '-');
+        tbody.innerHTML += `
+            <tr id="row-${p.id}">
+                <td><strong>${p.name}</strong></td>
+                <td>${p.team}</td>
+                <td class="td-score"><strong>${p.score}</strong></td>
+                <td class="td-delta"><span class="${dClass}">${dText}</span></td>
+                <td class="td-last-time">${p.lastCompletionTime || 0}s</td>
+                <td>${p.totalCompletionTime || 0}s</td>
+            </tr>
+        `;
+    });
 }
 </script>
 </body>
