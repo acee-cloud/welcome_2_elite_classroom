@@ -7,13 +7,12 @@ const app = express();
 const server = http.createServer(app);
 const io = new Server(server);
 
-// Cấu hình thư mục chứa các file static (html, css, js client)
 app.use(express.static(path.join(__dirname, 'public')));
 
 app.get('/admin', (req, res) => { res.sendFile(path.join(__dirname, 'public', 'admin.html')); });
 app.get('/play', (req, res) => { res.sendFile(path.join(__dirname, 'public', 'player.html')); });
 
-// Tải ngân hàng câu hỏi (đảm bảo bạn đã có file này trong thư mục data)
+// Tải ngân hàng câu hỏi gốc
 const questionsData = require('./data/questions.js');
 
 function buildFlatQuestions(data) {
@@ -33,7 +32,6 @@ function buildFlatQuestions(data) {
 const allQuestions = buildFlatQuestions(questionsData);
 const rooms = {};
 
-// Sinh mã phòng ngẫu nhiên 4 ký tự
 function generateRoomId() {
   const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
   let id = '';
@@ -41,7 +39,6 @@ function generateRoomId() {
   return id;
 }
 
-// Lấy tổng điểm các đội
 function getScores(room) {
   const scoreA = room.teamA.reduce((s, p) => s + p.score, 0) + room.bonusTeamA;
   const scoreB = room.teamB.reduce((s, p) => s + p.score, 0) + room.bonusTeamB;
@@ -49,12 +46,11 @@ function getScores(room) {
   return { scoreA, scoreB, scoreC };
 }
 
-// Bảng xếp hạng realtime cho Admin
 function getLeaderboard(room) {
   return [...room.players]
     .sort((a, b) => {
       if (b.score !== a.score) return b.score - a.score;
-      return a.totalTimeTaken - b.totalTimeTaken;
+      return a.totalTimeTaken - b.totalTimeTaken; // Ai hoàn thành nhanh hơn xếp trên
     })
     .map((p) => ({
       id: p.id,
@@ -69,9 +65,7 @@ function getLeaderboard(room) {
 
 io.on('connection', (socket) => {
 
-  // ==========================================
-  // ADMIN: TẠO PHÒNG
-  // ==========================================
+  // ADMIN: Tạo phòng mới
   socket.on('adminCreateRoom', () => {
     const roomId = generateRoomId();
     rooms[roomId] = {
@@ -85,21 +79,19 @@ io.on('connection', (socket) => {
     socket.emit('roomCreated', roomId);
   });
 
-  // ==========================================
-  // PLAYER: VÀO PHÒNG & CHIA ĐỘI RANDOM
-  // ==========================================
+  // PLAYER: Tham gia phòng chơi (Nhận thêm avatar từ việc quét QR/nhập form)
   socket.on('playerJoinRoom', ({ roomId, name, avatar }) => {
     const rId = roomId.toUpperCase();
     const room = rooms[rId];
-    
     if (!room || room.status !== 'lobby') {
       return socket.emit('errorMsg', 'Phòng không tồn tại hoặc trận đấu đã bắt đầu!');
     }
-    
     const playerName = (name || '').trim().substring(0, 20);
     if (!playerName) return socket.emit('errorMsg', 'Tên không hợp lệ!');
     
-    // Thuật toán chia đội: Cân bằng tuyệt đối (Chênh lệch tối đa 1 người)
+    const playerAvatar = avatar || { emoji: '🐾', name: 'Mặc định' };
+
+    // Thuật toán chia đội tự động & cân bằng tuyệt đối ngay khi vào sảnh
     let assignedTeam = 'A';
     const countA = room.teamA.length;
     const countB = room.teamB.length;
@@ -109,22 +101,13 @@ io.on('connection', (socket) => {
     } else if (countB < countA) {
       assignedTeam = 'B';
     } else {
-      // Bằng nhau thì random 50/50
       assignedTeam = Math.random() < 0.5 ? 'A' : 'B';
     }
 
     const player = {
-      id: socket.id, 
-      name: playerName, 
-      avatar: avatar, // Chứa cả .emoji và .name (ví dụ: 🦁 Sư Tử)
-      score: 0, 
-      team: assignedTeam,
-      submittedCurrentStage: false, 
-      _stageAnswers: {}, 
-      _answeredCount: 0,
-      totalTimeTaken: 0, 
-      lastDelta: 0, 
-      history: []
+      id: socket.id, name: playerName, avatar: playerAvatar, score: 0, team: assignedTeam,
+      submittedCurrentStage: false, _stageAnswers: {}, _answeredCount: 0,
+      totalTimeTaken: 0, lastDelta: 0, history: []
     };
     
     room.players.push(player);
@@ -137,69 +120,47 @@ io.on('connection', (socket) => {
     socket.join('room_' + rId);
     socket.data.roomId = rId;
 
-    // Phản hồi cá nhân
-    socket.emit('joinedRoom', { roomId: room.roomId });
+    socket.emit('joinedRoom', { roomId: room.roomId, team: assignedTeam });
     socket.emit('roleAssignment', { team: assignedTeam });
 
-    // Đồng bộ danh sách hiển thị cho mọi người trong sảnh
-    broadcastLobbyUpdate(rId);
+    // Gửi thông tin sảnh chờ tới mọi người
+    io.to('room_' + rId).emit('lobbyUpdate', {
+      players: room.players.map(p => ({
+        id: p.id, name: p.name, avatar: p.avatar, team: p.team
+      }))
+    });
+
+    // Cập nhật riêng cho Admin
+    io.to('admin_' + rId).emit('updatePlayerList', room.players.map(p => ({
+      id: p.id, name: p.name, avatar: p.avatar, team: p.team
+    })));
   });
 
-  // ==========================================
-  // KÊNH CHAT SẢNH CHỜ VÀ GIẢI LAO
-  // ==========================================
+  // Gửi tin nhắn ở sảnh chờ
   socket.on('sendLobbyMessage', ({ roomId, msg }) => {
     const room = rooms[roomId];
     if (!room || room.status !== 'lobby' || !msg || !msg.trim()) return;
-    
     const player = room.players.find(p => p.id === socket.id);
     if (!player) return;
 
-    const chatData = {
-      name: player.name,
-      msg: msg.trim().substring(0, 150),
-      team: player.team
-    };
-
-    // Gửi chat cho player (hiển thị UI sảnh chờ dưới)
-    io.to('room_' + roomId).emit('receiveLobbyMessage', chatData);
-    
-    // Gửi chat cho admin (hiển thị màn hình monitor)
-    io.to('admin_' + roomId).emit('receiveGlobalMessage', chatData);
-  });
-
-  socket.on('sendGlobalMessage', ({ roomId, msg }) => {
-    const room = rooms[roomId];
-    if (!room || room.status !== 'intermission' || !msg || !msg.trim()) return;
-    
-    const player = room.players.find(p => p.id === socket.id);
-    if (!player) return;
-
-    io.to('room_' + roomId).emit('receiveGlobalMessage', {
-      name: player.name,
-      msg: msg.trim().substring(0, 150),
-      team: player.team
+    io.to('room_' + roomId).emit('receiveLobbyMessage', {
+      name: player.name, msg: msg.trim().substring(0, 150), team: player.team
     });
   });
 
-  // ==========================================
-  // ADMIN: KÍCH HOẠT GAME
-  // ==========================================
+  // ADMIN: Khởi chạy trận đấu công bằng
   socket.on('adminStartGame', (roomId) => {
     const room = rooms[roomId];
     if (!room || room.players.length === 0) return;
     
     room.status = 'playing';
-    
+
     io.to('admin_' + roomId).emit('gameStarted');
     io.to('room_' + roomId).emit('gameStart');
-    
     startStage(roomId, 1);
   });
 
-  // ==========================================
-  // PLAYER: XỬ LÝ TRẢ LỜI CÂU HỎI
-  // ==========================================
+  // PLAYER: Trả lời cuốn chiếu từng câu
   socket.on('submitSingleAnswer', ({ roomId, questionId, answer }) => {
     const room = rooms[roomId];
     if (!room || room.status !== 'playing') return;
@@ -219,21 +180,14 @@ io.on('connection', (socket) => {
     player.lastDelta = points;
 
     player.history.push({
-      questionText: currentQData.text,
-      choices: currentQData.choices,
-      chosenAnswer: answer,
-      correctAnswer: currentQData.correctKey,
-      isCorrect: isCorrect,
-      pointsDelta: points
+      questionText: currentQData.text, choices: currentQData.choices, chosenAnswer: answer,
+      correctAnswer: currentQData.correctKey, isCorrect: isCorrect, pointsDelta: points
     });
 
     player._answeredCount++;
 
     socket.emit('singleAnswerResult', {
-      questionId, 
-      isCorrect,
-      points: points >= 0 ? `+${points}` : `${points}`,
-      currentScore: player.score
+      questionId, isCorrect, points: points >= 0 ? `+${points}` : `${points}`, currentScore: player.score
     });
 
     const { scoreA, scoreB, scoreC } = getScores(room);
@@ -252,9 +206,18 @@ io.on('connection', (socket) => {
     }
   });
 
-  // ==========================================
-  // VÒNG CHẶNG CÂU HỎI TỰ LUẬN NHANH
-  // ==========================================
+  // PHÒNG CHAT TÍCH HỢP TOÀN SẢNH CHỜ VÀ GIẢI LAO TRỰC TUYẾN
+  socket.on('sendGlobalMessage', ({ roomId, msg }) => {
+    const room = rooms[roomId];
+    if (!room || room.status !== 'intermission' || !msg || !msg.trim()) return;
+    const player = room.players.find(p => p.id === socket.id);
+    if (!player) return;
+    io.to('room_' + roomId).emit('receiveGlobalMessage', {
+      name: player.name, msg: msg.trim().substring(0, 150), team: player.team
+    });
+  });
+
+  // LỚP VÒNG CHẶNG CÂU HỎI TỰ LUẬN NHANH (HOSTED BY TEAM C)
   socket.on('hostSubmitFastQuestion', ({ roomId, questionText }) => {
     const room = rooms[roomId];
     if (!room || !room.teamC || room.teamC.id !== socket.id) return;
@@ -264,8 +227,7 @@ io.on('connection', (socket) => {
     room.fastPhase.submissions = [];
 
     io.to('room_' + roomId).emit('fastQuestionBroadcast', {
-      questionText,
-      hostName: room.teamC.name
+      questionText, hostName: room.teamC.name
     });
   });
 
@@ -292,18 +254,14 @@ io.on('connection', (socket) => {
       if (winner.team === 'B') room.bonusTeamB += rewardPoints;
       
       io.to('room_' + roomId).emit('fastPhaseEnded', {
-        winnerName: winner.name,
-        winningTeam: winner.team,
-        pointsAwarded: rewardPoints
+        winnerName: winner.name, winningTeam: winner.team, pointsAwarded: rewardPoints
       });
     }
     room.fastPhase.active = false;
     endGameFinal(roomId);
   });
 
-  // ==========================================
-  // ADMIN: RESET PHÒNG
-  // ==========================================
+  // ADMIN: Reset và tái cấu trúc lại phòng chơi mới
   socket.on('adminResetGame', (roomId) => {
     const room = rooms[roomId];
     if (!room) return;
@@ -319,9 +277,7 @@ io.on('connection', (socket) => {
     io.to('room_' + roomId).emit('roomResetByAdmin');
   });
 
-  // ==========================================
-  // DISCONNECT
-  // ==========================================
+  // Xử lý khi có người chơi ngắt kết nối
   socket.on('disconnect', () => {
     const roomId = socket.data.roomId;
     if (!roomId || !rooms[roomId]) return;
@@ -333,33 +289,19 @@ io.on('connection', (socket) => {
     room.teamB = room.teamB.filter(p => p.id !== socket.id);
     if (room.teamC && room.teamC.id === socket.id) room.teamC = null;
 
-    if (room.status === 'lobby') {
-      broadcastLobbyUpdate(roomId);
+    if(room.status === 'lobby') {
+      io.to('room_' + roomId).emit('lobbyUpdate', {
+        players: room.players.map(p => ({
+          id: p.id, name: p.name, avatar: p.avatar, team: p.team
+        }))
+      });
+      io.to('admin_' + roomId).emit('updatePlayerList', room.players.map(p => ({
+        id: p.id, name: p.name, avatar: p.avatar, team: p.team
+      })));
     }
   });
-
-  // Helper broadcast
-  function broadcastLobbyUpdate(roomId) {
-    const room = rooms[roomId];
-    if (!room) return;
-    
-    const simplifiedPlayers = room.players.map(p => ({
-      id: p.id,
-      name: p.name,
-      avatar: p.avatar,
-      team: p.team
-    }));
-
-    // Gửi cho Admin hiển thị
-    io.to('admin_' + roomId).emit('updatePlayerList', simplifiedPlayers);
-    // Gửi cho Player hiển thị (đồng bộ team 2 bên và sân trung tâm)
-    io.to('room_' + roomId).emit('lobbyUpdate', { players: simplifiedPlayers });
-  }
 });
 
-// ==========================================
-// VÒNG ĐỜI GAME LOGIC
-// ==========================================
 function startStage(roomId, stageNum) {
   const room = rooms[roomId];
   if (!room) return;
@@ -411,12 +353,9 @@ function startIntermission(roomId) {
   room.players.forEach(p => p.submittedCurrentStage = true);
 
   const { scoreA, scoreB, scoreC } = getScores(room);
-  
   io.to('room_' + roomId).emit('intermissionStart', {
     scoreA, scoreB, scoreC, leaderboard: getLeaderboard(room)
   });
-  
-  io.to('admin_' + roomId).emit('intermissionStart');
 
   let timeLeft = 15;
   clearInterval(room.timer);
@@ -449,12 +388,10 @@ function endGameFinal(roomId) {
     io.to(p.id).emit('gameSummaryReport', p.history);
   });
 
-  const gameOverData = {
+  io.to('room_' + roomId).emit('gameOver', {
     winningTeam: scoreA === scoreB ? 'Hòa' : (scoreA > scoreB ? 'A' : 'B'),
     topPlayers: getLeaderboard(room).slice(0, 5)
-  };
-
-  io.to('room_' + roomId).emit('gameOver', gameOverData);
+  });
 }
 
 const PORT = process.env.PORT || 3000;
