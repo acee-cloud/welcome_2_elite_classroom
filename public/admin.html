@@ -5,9 +5,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Admin – Trò Chơi Vật Lí 11</title>
 
-    <!-- KaTeX (CDN đầy đủ, đúng) -->
+    <!-- KaTeX -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/katex.min.css">
     <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/katex.min.js"></script>
+    <!-- FIX: dùng onload đúng cách, không gọi trước khi katex.min.js load xong -->
     <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/contrib/auto-render.min.js"
         onload="renderMathInDocument()"></script>
 
@@ -17,7 +18,7 @@
     <!-- Google Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=IBM+Plex+Sans:wght@400;600;700&display=swap" rel="stylesheet">
 
-    <!-- Socket.IO (đảm bảo chạy cùng server) -->
+    <!-- Socket.IO -->
     <script src="/socket.io/socket.io.js"></script>
 
     <style>
@@ -34,7 +35,6 @@
             --danger: #f87171;
             --text: #e2e8f0;
             --muted: #64748b;
-            --glow: 0 0 20px rgba(0,212,255,0.3);
         }
 
         * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -52,11 +52,7 @@
 
         .hidden { display: none !important; }
 
-        /* ── LAYOUT ── */
-        .container {
-            max-width: 960px;
-            margin: 0 auto;
-        }
+        .container { max-width: 960px; margin: 0 auto; }
 
         .page-title {
             font-family: 'Orbitron', monospace;
@@ -70,7 +66,6 @@
             text-shadow: 0 0 30px rgba(0,212,255,0.5);
         }
 
-        /* ── PANEL ── */
         .panel {
             background: var(--panel);
             border: 1px solid var(--border);
@@ -91,7 +86,6 @@
             border-bottom: 1px solid var(--border);
         }
 
-        /* ── BUTTON ── */
         .btn {
             display: block;
             width: 100%;
@@ -111,11 +105,9 @@
             margin-top: 16px;
         }
         .btn:hover { transform: translateY(-2px); box-shadow: 0 0 30px rgba(0,212,255,0.6); }
-        .btn-danger { background: var(--danger); box-shadow: 0 0 20px rgba(248,113,113,0.3); }
+        .btn-danger { background: var(--danger); box-shadow: 0 0 20px rgba(248,113,113,0.3); color: #fff; }
         .btn-danger:hover { box-shadow: 0 0 30px rgba(248,113,113,0.6); }
-        .btn-success { background: var(--success); box-shadow: 0 0 20px rgba(52,211,153,0.3); color: #000; }
 
-        /* ── LOBBY ── */
         .room-code {
             text-align: center;
             font-family: 'Orbitron', monospace;
@@ -139,14 +131,9 @@
             background: #fff;
             padding: 12px;
             border-radius: 12px;
-            box-shadow: 0 0 30px rgba(0,212,255,0.2);
         }
 
-        .scan-hint {
-            font-size: 13px;
-            color: var(--muted);
-            letter-spacing: 1px;
-        }
+        .scan-hint { font-size: 13px; color: var(--muted); letter-spacing: 1px; }
 
         .player-count-badge {
             text-align: center;
@@ -182,7 +169,6 @@
 
         @keyframes fadeIn { from { opacity:0; transform: scale(0.8); } to { opacity:1; transform: scale(1); } }
 
-        /* ── GAME SCREEN ── */
         .game-header {
             display: grid;
             grid-template-columns: 1fr auto 1fr;
@@ -207,85 +193,29 @@
             text-shadow: 0 0 30px rgba(248,113,113,0.5);
             line-height: 1;
         }
-
         .timer-display.warning { animation: blinkTimer 0.5s infinite; }
         @keyframes blinkTimer { 0%,100% { opacity:1; } 50% { opacity:0.4; } }
 
-        .status-badge {
-            text-align: right;
-            font-size: 13px;
-            color: var(--muted);
-            font-style: italic;
-        }
+        .status-badge { text-align: right; font-size: 13px; color: var(--muted); font-style: italic; }
 
-        /* ── SCORE CARDS ── */
-        .scores-row {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 16px;
-            margin-bottom: 20px;
-        }
+        .scores-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 20px; }
 
         .score-card {
             border-radius: 14px;
             padding: 20px;
             text-align: center;
             border: 2px solid;
-            position: relative;
-            overflow: hidden;
         }
+        .score-card.team-a { border-color: var(--team-a); background: rgba(255,77,109,0.08); }
+        .score-card.team-b { border-color: var(--team-b); background: rgba(56,189,248,0.08); }
 
-        .score-card::before {
-            content: '';
-            position: absolute;
-            inset: 0;
-            opacity: 0.07;
-            border-radius: inherit;
-        }
-
-        .score-card.team-a {
-            border-color: var(--team-a);
-            background: rgba(255,77,109,0.08);
-        }
-        .score-card.team-a::before { background: var(--team-a); }
-
-        .score-card.team-b {
-            border-color: var(--team-b);
-            background: rgba(56,189,248,0.08);
-        }
-        .score-card.team-b::before { background: var(--team-b); }
-
-        .score-team-name {
-            font-family: 'Orbitron', monospace;
-            font-size: 12px;
-            letter-spacing: 3px;
-            margin-bottom: 8px;
-            opacity: 0.7;
-        }
-
-        .score-value {
-            font-family: 'Orbitron', monospace;
-            font-size: 40px;
-            font-weight: 900;
-            transition: all 0.4s;
-        }
-
+        .score-team-name { font-family: 'Orbitron', monospace; font-size: 12px; letter-spacing: 3px; margin-bottom: 8px; opacity: 0.7; }
+        .score-value { font-family: 'Orbitron', monospace; font-size: 40px; font-weight: 900; transition: all 0.4s; }
         .score-card.team-a .score-value { color: var(--team-a); }
         .score-card.team-b .score-value { color: var(--team-b); }
+        .score-note { font-size: 11px; opacity: 0.5; margin-top: 4px; }
 
-        .score-note {
-            font-size: 11px;
-            opacity: 0.5;
-            margin-top: 4px;
-        }
-
-        /* ── LEADERBOARD ── */
-        .leaderboard {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 12px;
-        }
-
+        .leaderboard { width: 100%; border-collapse: collapse; margin-top: 12px; }
         .leaderboard th {
             background: rgba(0,212,255,0.1);
             color: var(--accent);
@@ -296,19 +226,9 @@
             text-align: center;
             border-bottom: 1px solid var(--border);
         }
-
-        .leaderboard td {
-            padding: 10px 12px;
-            text-align: center;
-            font-size: 14px;
-            border-bottom: 1px solid rgba(30,58,95,0.5);
-        }
-
-        .leaderboard tr:hover td { background: rgba(0,212,255,0.03); }
-
+        .leaderboard td { padding: 10px 12px; text-align: center; font-size: 14px; border-bottom: 1px solid rgba(30,58,95,0.5); }
         .rank-medal { font-size: 20px; }
 
-        /* ── FINAL PHASE ── */
         .spy-fund-display {
             text-align: center;
             padding: 24px;
@@ -317,7 +237,6 @@
             border-radius: 14px;
             margin-bottom: 20px;
         }
-
         .spy-fund-value {
             font-family: 'Orbitron', monospace;
             font-size: 48px;
@@ -326,32 +245,15 @@
             text-shadow: 0 0 30px rgba(255,107,53,0.5);
         }
 
-        .final-task {
-            border-radius: 12px;
-            padding: 18px;
-            margin-bottom: 16px;
-        }
-
+        .final-task { border-radius: 12px; padding: 18px; margin-bottom: 16px; }
         .task-a { background: rgba(255,77,109,0.08); border: 1px solid rgba(255,77,109,0.3); }
         .task-b { background: rgba(56,189,248,0.08); border: 1px solid rgba(56,189,248,0.3); }
-
-        .task-label {
-            font-family: 'Orbitron', monospace;
-            font-size: 12px;
-            letter-spacing: 2px;
-            margin-bottom: 8px;
-        }
-
-        .task-result {
-            font-size: 20px;
-            font-weight: 700;
-        }
-
+        .task-label { font-family: 'Orbitron', monospace; font-size: 12px; letter-spacing: 2px; margin-bottom: 8px; }
+        .task-result { font-size: 20px; font-weight: 700; }
         .task-result.success { color: var(--success); }
         .task-result.fail { color: var(--danger); }
         .task-result.pending { color: var(--muted); font-style: italic; font-size: 15px; }
 
-        /* ── INTERMISSION PANEL ── */
         .intermission-header {
             text-align: center;
             padding: 16px;
@@ -360,44 +262,13 @@
             border-radius: 12px;
             margin-bottom: 16px;
         }
+        .intermission-title { font-family: 'Orbitron', monospace; font-size: 16px; letter-spacing: 4px; color: var(--gold); }
 
-        .intermission-title {
-            font-family: 'Orbitron', monospace;
-            font-size: 16px;
-            letter-spacing: 4px;
-            color: var(--gold);
-        }
-
-        /* ── PROGRESS DOTS ── */
-        .stage-dots {
-            display: flex;
-            justify-content: center;
-            gap: 6px;
-            margin-bottom: 20px;
-        }
-
-        .stage-dot {
-            width: 10px; height: 10px;
-            border-radius: 50%;
-            background: var(--border);
-            transition: all 0.3s;
-        }
-
-        .stage-dot.active {
-            background: var(--accent);
-            box-shadow: 0 0 8px var(--accent);
-        }
-
+        .stage-dots { display: flex; justify-content: center; gap: 6px; margin-bottom: 20px; }
+        .stage-dot { width: 10px; height: 10px; border-radius: 50%; background: var(--border); transition: all 0.3s; }
+        .stage-dot.active { background: var(--accent); box-shadow: 0 0 8px var(--accent); }
         .stage-dot.done { background: var(--success); }
 
-        /* ── DIVIDER ── */
-        .divider {
-            border: none;
-            border-top: 1px solid var(--border);
-            margin: 20px 0;
-        }
-
-        /* ── UTILITY ── */
         .text-center { text-align: center; }
         .text-muted { color: var(--muted); font-size: 13px; }
         .mt-8 { margin-top: 8px; }
@@ -408,13 +279,10 @@
 <div class="container">
     <h1 class="page-title">⚛ Admin Control — Vật Lí 11</h1>
 
-    <!-- ══════════════════════════════════
-         GIAI ĐOẠN 1: LOBBY
-    ══════════════════════════════════ -->
+    <!-- LOBBY -->
     <div id="lobby-screen">
         <div class="panel">
             <div class="panel-title">🚪 Phòng Chờ</div>
-
             <div class="qr-wrapper">
                 <p class="text-muted">Mã phòng</p>
                 <div class="room-code" id="room-id-display">— — — —</div>
@@ -422,28 +290,17 @@
                 <p class="scan-hint">📱 Học sinh quét QR hoặc nhập mã để tham gia</p>
                 <p class="text-muted" id="join-url-text" style="font-size:12px; word-break:break-all;"></p>
             </div>
-
             <div class="player-count-badge">
                 👥 Số người: <span id="player-count-num">0</span>
             </div>
-
             <ul class="player-grid" id="player-list"></ul>
-
-            <button class="btn" id="start-game-btn" onclick="startGame()">
-                🚀 BẮT ĐẦU TRÒ CHƠI
-            </button>
+            <button class="btn" onclick="startGame()">🚀 BẮT ĐẦU TRÒ CHƠI</button>
         </div>
     </div>
 
-    <!-- ══════════════════════════════════
-         GIAI ĐOẠN 2: THI ĐẤU
-    ══════════════════════════════════ -->
+    <!-- GAME SCREEN -->
     <div id="game-screen" class="hidden">
-
-        <!-- Progress dots (10 cửa) -->
-        <div class="stage-dots" id="stage-dots">
-            <!-- JS sẽ tạo các dot -->
-        </div>
+        <div class="stage-dots" id="stage-dots"></div>
 
         <div class="panel">
             <div class="game-header">
@@ -466,23 +323,17 @@
             </div>
         </div>
 
-        <!-- Trạm nghỉ (ẩn ban đầu) -->
+        <!-- Trạm nghỉ -->
         <div id="intermission-screen" class="hidden">
             <div class="intermission-header">
                 <div class="intermission-title">⏳ TRẠM NGHỈ</div>
                 <p class="text-muted mt-8">Chuẩn bị bước sang cửa tiếp theo...</p>
             </div>
-
             <div class="panel">
                 <div class="panel-title">🏆 Top 5 Bảng Xếp Hạng Cá Nhân</div>
                 <table class="leaderboard">
                     <thead>
-                        <tr>
-                            <th>HẠNG</th>
-                            <th>TÊN NGƯỜI CHƠI</th>
-                            <th>ĐỘI</th>
-                            <th>ĐIỂM</th>
-                        </tr>
+                        <tr><th>HẠNG</th><th>TÊN NGƯỜI CHƠI</th><th>ĐỘI</th><th>ĐIỂM</th></tr>
                     </thead>
                     <tbody id="leaderboard-body"></tbody>
                 </table>
@@ -490,38 +341,31 @@
         </div>
     </div>
 
-    <!-- ══════════════════════════════════
-         GIAI ĐOẠN 3: PHÁN QUYẾT
-    ══════════════════════════════════ -->
+    <!-- FINAL SCREEN -->
     <div id="final-screen" class="hidden">
         <div class="panel">
             <div class="panel-title text-center">⚖️ PHÁN QUYẾT CUỐI GAME</div>
-
             <div class="spy-fund-display">
                 <p class="text-muted mb-0">🕵️ Quỹ Tình Báo thu được</p>
                 <div class="spy-fund-value" id="spy-fund">0</div>
                 <p class="text-muted" style="margin-top:4px;">điểm</p>
             </div>
-
             <div class="final-task task-b">
                 <div class="task-label" style="color: var(--team-b);">🔑 NHIỆM VỤ ĐỘI B – CÂU HỎI CHÌA KHÓA (60s)</div>
                 <div class="task-result pending" id="b-task-status">Đang chờ kết quả...</div>
             </div>
-
             <div class="final-task task-a">
                 <div class="task-label" style="color: var(--team-a);">🕵️ NHIỆM VỤ ĐỘI A – TRUY TÌM GIÁN ĐIỆP (60s)</div>
                 <div class="task-result pending" id="a-task-status">Đang chờ kết quả...</div>
             </div>
         </div>
     </div>
-
-</div><!-- /container -->
+</div>
 
 <script>
-// ════════════════════════════════════════
-// KaTeX render helper
-// ════════════════════════════════════════
+// ── KaTeX: đảm bảo renderMathInDocument được định nghĩa trước khi onload gọi ──
 function renderMathInDocument() {
+    if (typeof renderMathInElement !== 'function') return;
     renderMathInElement(document.body, {
         delimiters: [
             { left: '$$', right: '$$', display: true },
@@ -533,14 +377,11 @@ function renderMathInDocument() {
     });
 }
 
-// ════════════════════════════════════════
-// Socket.IO & room
-// ════════════════════════════════════════
+// ── Socket.IO ──
 const socket = io();
 let currentRoomId = '';
-let currentStage = 0;
 
-// Tạo progress dots (10 cửa)
+// Tạo progress dots
 (function buildDots() {
     const container = document.getElementById('stage-dots');
     for (let i = 1; i <= 10; i++) {
@@ -551,9 +392,7 @@ let currentStage = 0;
     }
 })();
 
-// ════════════════════════════════════════
-// LOBBY
-// ════════════════════════════════════════
+// ── LOBBY ──
 socket.emit('adminCreateRoom');
 
 socket.on('roomCreated', (roomId) => {
@@ -563,18 +402,16 @@ socket.on('roomCreated', (roomId) => {
     const playUrl = window.location.origin + '/play?room=' + roomId;
     document.getElementById('join-url-text').innerText = playUrl;
 
-    // Xoá QR cũ nếu có
     document.getElementById('qrcode').innerHTML = '';
     new QRCode(document.getElementById('qrcode'), {
         text: playUrl,
-        width: 200,
-        height: 200,
-        colorDark: '#000000',
-        colorLight: '#ffffff',
+        width: 200, height: 200,
+        colorDark: '#000000', colorLight: '#ffffff',
         correctLevel: QRCode.CorrectLevel.H
     });
 });
 
+// FIX: lắng nghe đúng tên event 'updatePlayerList' khớp với server
 socket.on('updatePlayerList', (players) => {
     const list = document.getElementById('player-list');
     list.innerHTML = '';
@@ -594,31 +431,27 @@ function startGame() {
     }
 }
 
-// ════════════════════════════════════════
-// GAME IN PROGRESS
-// ════════════════════════════════════════
+// ── GAME ──
 socket.on('gameStarted', () => {
     document.getElementById('lobby-screen').classList.add('hidden');
     document.getElementById('game-screen').classList.remove('hidden');
 });
 
+// FIX: event tên 'stageUpdate' với field 'stageNum', 'teamA_score', 'teamB_score'
 socket.on('stageUpdate', (data) => {
-    // data: { stageNum, timer, isIntermission, teamA_score, teamB_score }
-    currentStage = data.stageNum;
     document.getElementById('stage-title').innerText = `Cửa ${data.stageNum} / 10`;
     document.getElementById('intermission-screen').classList.add('hidden');
-    document.getElementById('status-text').innerText = 'Đang làm bài (chat đã khoá)';
+    document.getElementById('status-text').innerText = data.isDouble ? '⚡ CỬA NHÂN ĐÔI!' : 'Đang làm bài...';
 
-    // Update progress dots
     for (let i = 1; i <= 10; i++) {
         const dot = document.getElementById(`dot-${i}`);
         if (!dot) continue;
         dot.className = 'stage-dot' + (i < data.stageNum ? ' done' : i === data.stageNum ? ' active' : '');
     }
-
     updateScores(data.teamA_score, data.teamB_score);
 });
 
+// FIX: event tên 'timerUpdate' (không phải 'tick')
 socket.on('timerUpdate', (seconds) => {
     const m = Math.floor(seconds / 60).toString().padStart(2, '0');
     const s = (seconds % 60).toString().padStart(2, '0');
@@ -627,26 +460,22 @@ socket.on('timerUpdate', (seconds) => {
     el.classList.toggle('warning', seconds <= 10);
 });
 
+// FIX: field 'teamA_score' / 'teamB_score'
 socket.on('intermissionStart', (data) => {
-    // data: { leaderboard, teamA_score, teamB_score }
-    document.getElementById('status-text').innerText = 'Trạm nghỉ 15s — chat toàn phòng đã mở!';
+    document.getElementById('status-text').innerText = 'Trạm nghỉ 15s — chat toàn phòng mở!';
     document.getElementById('intermission-screen').classList.remove('hidden');
     updateScores(data.teamA_score, data.teamB_score);
     renderLeaderboard(data.leaderboard);
 });
 
-// ════════════════════════════════════════
-// FINAL PHASE
-// ════════════════════════════════════════
+// ── FINAL ──
 socket.on('finalPhaseStart', (data) => {
-    // data: { spyFund }
     document.getElementById('game-screen').classList.add('hidden');
     document.getElementById('final-screen').classList.remove('hidden');
-    document.getElementById('spy-fund').innerText = data.spyFund.toLocaleString('vi-VN');
+    document.getElementById('spy-fund').innerText = (data.spyFund || 0).toLocaleString('vi-VN');
 });
 
 socket.on('finalPhaseResult', (data) => {
-    // data: { teamB_success, teamA_success }
     const bEl = document.getElementById('b-task-status');
     bEl.innerText = data.teamB_success ? '✅ Thành công — cướp quỹ tình báo!' : '❌ Thất bại — mất trắng!';
     bEl.className = 'task-result ' + (data.teamB_success ? 'success' : 'fail');
@@ -656,19 +485,17 @@ socket.on('finalPhaseResult', (data) => {
     aEl.className = 'task-result ' + (data.teamA_success ? 'success' : 'fail');
 });
 
-// ════════════════════════════════════════
-// HELPERS
-// ════════════════════════════════════════
+// ── HELPERS ──
 function updateScores(scoreA, scoreB) {
-    document.getElementById('score-team-a').innerText = scoreA.toLocaleString('vi-VN');
-    document.getElementById('score-team-b').innerText = scoreB.toLocaleString('vi-VN');
+    document.getElementById('score-team-a').innerText = (scoreA || 0).toLocaleString('vi-VN');
+    document.getElementById('score-team-b').innerText = (scoreB || 0).toLocaleString('vi-VN');
 }
 
 function renderLeaderboard(players) {
     const medals = ['🥇', '🥈', '🥉', '4', '5'];
     const tbody = document.getElementById('leaderboard-body');
     tbody.innerHTML = '';
-    players.slice(0, 5).forEach((p, i) => {
+    (players || []).slice(0, 5).forEach((p, i) => {
         const row = document.createElement('tr');
         row.innerHTML = `
             <td><span class="rank-medal">${medals[i] || i+1}</span></td>
@@ -678,10 +505,6 @@ function renderLeaderboard(players) {
         `;
         tbody.appendChild(row);
     });
-    // Re-render KaTeX if any math in leaderboard
-    if (typeof renderMathInElement === 'function') {
-        renderMathInElement(tbody, { delimiters: [{left:'$',right:'$',display:false}], throwOnError:false });
-    }
 }
 
 function escHtml(str) {
