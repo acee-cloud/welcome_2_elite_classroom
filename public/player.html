@@ -3,476 +3,1030 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Giao Diện Người Chơi - Vật Lí 11</title>
+    <title>Người Chơi – Vật Lí 11</title>
+
+    <!-- KaTeX (CDN đầy đủ, đúng) -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/katex.min.css">
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/katex.min.js"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/contrib/auto-render.min.js"
+        onload="katexReady = true; maybeRenderMath()"></script>
+
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=IBM+Plex+Sans:wght@400;600;700&display=swap" rel="stylesheet">
+
+    <!-- Socket.IO -->
+    <script src="/socket.io/socket.io.js"></script>
+
     <style>
         :root {
-            --primary: #3498db;
-            --success: #2ecc71;
-            --danger: #e74c3c;
-            --dark: #2c3e50;
-            --team-a: #ff7675;
-            --team-b: #74b9ff;
-            --spy: #6c5ce7;
+            --bg: #0a0e1a;
+            --panel: #111827;
+            --border: #1e3a5f;
+            --accent: #00d4ff;
+            --accent2: #ff6b35;
+            --team-a: #ff4d6d;
+            --team-b: #38bdf8;
+            --gold: #ffd700;
+            --success: #34d399;
+            --danger: #f87171;
+            --spy: #a78bfa;
+            --text: #e2e8f0;
+            --muted: #64748b;
         }
-        body { font-family: 'Segoe UI', Arial, sans-serif; background-color: #f5f6fa; margin: 0; padding: 15px; color: #2c3e50; box-sizing: border-box; }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: 'IBM Plex Sans', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+            padding: 16px;
+            padding-bottom: 40px;
+        }
+
         .hidden { display: none !important; }
-        .card { background: white; border-radius: 12px; padding: 20px; box-shadow: 0 4px 10px rgba(0,0,0,0.05); margin-bottom: 15px; }
-        .btn { width: 100%; padding: 12px; border: none; border-radius: 8px; font-size: 16px; font-weight: bold; cursor: pointer; color: white; background: var(--primary); transition: 0.2s; }
-        .btn:hover { opacity: 0.9; }
-        
-        /* Giao diện Đội / Vai trò */
-        .badge { display: inline-block; padding: 5px 12px; border-radius: 20px; font-weight: bold; color: white; margin-top: 5px; }
-        .badge-a { background-color: var(--team-a); }
-        .badge-b { background-color: var(--team-b); }
-        .badge-spy { background-color: var(--spy); animation: pulse 1.5s infinite; }
-        
-        /* Bộ câu hỏi trắc nghiệm */
-        .question-block { border-bottom: 1px solid #eee; padding: 15px 0; }
-        .question-text { font-weight: bold; margin-bottom: 10px; font-size: 16px; }
-        .options-grid { display: grid; grid-template-columns: 1fr; gap: 8px; }
-        .option-label { display: flex; align-items: center; background: #f1f2f6; padding: 10px; border-radius: 6px; cursor: pointer; border: 2px solid transparent; transition: 0.2s; }
-        .option-label input { margin-right: 10px; transform: scale(1.2); }
-        .option-label:hover { background: #e4e7eb; }
-        .option-label.selected { background: #dcdde1; border-color: var(--primary); }
 
-        /* Khung chat */
-        .chat-box { border: 1px solid #ccc; border-radius: 8px; height: 180px; overflow-y: auto; padding: 10px; background: #fafafa; margin-bottom: 10px; display: flex; flex-direction: column; gap: 5px; }
-        .chat-msg { font-size: 14px; background: #e1e8ed; padding: 6px 10px; border-radius: 15px; align-self: flex-start; max-width: 80%; }
-        .chat-msg.me { background: #d1e7dd; align-self: flex-end; }
-        .chat-input-group { display: flex; gap: 5px; }
-        .chat-input { flex: 1; padding: 10px; border: 1px solid #ccc; border-radius: 6px; }
-        
-        /* BXH trạm nghỉ */
-        .leaderboard { width: 100%; border-collapse: collapse; margin-top: 10px; }
-        .leaderboard th, .leaderboard td { padding: 8px; border: 1px solid #ddd; text-align: center; font-size: 14px; }
-        .leaderboard th { background-color: #f1f2f6; }
+        /* ── SCREENS ── */
+        .screen { max-width: 600px; margin: 0 auto; }
 
-        @keyframes pulse {
-            0% { transform: scale(1); }
-            50% { transform: scale(1.05); }
-            100% { transform: scale(1); }
+        /* ── PANEL ── */
+        .panel {
+            background: var(--panel);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 20px;
+            margin-bottom: 14px;
         }
+
+        .panel-title {
+            font-family: 'Orbitron', monospace;
+            font-size: 12px;
+            letter-spacing: 3px;
+            color: var(--accent);
+            text-transform: uppercase;
+            margin-bottom: 14px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        /* ── PAGE TITLE ── */
+        .page-title {
+            font-family: 'Orbitron', monospace;
+            font-size: 18px;
+            font-weight: 900;
+            text-align: center;
+            color: var(--accent);
+            letter-spacing: 3px;
+            margin-bottom: 20px;
+            text-shadow: 0 0 20px rgba(0,212,255,0.4);
+        }
+
+        /* ── INPUT ── */
+        .field { margin-bottom: 14px; }
+        .field label {
+            display: block;
+            font-size: 12px;
+            font-weight: 700;
+            letter-spacing: 1px;
+            color: var(--muted);
+            text-transform: uppercase;
+            margin-bottom: 6px;
+        }
+        .input {
+            width: 100%;
+            padding: 12px 14px;
+            background: rgba(0,0,0,0.3);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            color: var(--text);
+            font-size: 16px;
+            font-family: 'IBM Plex Sans', sans-serif;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+        .input:focus { border-color: var(--accent); }
+        .input::placeholder { color: var(--muted); }
+
+        /* ── BUTTON ── */
+        .btn {
+            display: block;
+            width: 100%;
+            padding: 14px;
+            font-family: 'Orbitron', monospace;
+            font-size: 13px;
+            font-weight: 700;
+            letter-spacing: 2px;
+            color: #000;
+            background: var(--accent);
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            text-align: center;
+            transition: all 0.2s;
+            box-shadow: 0 0 20px rgba(0,212,255,0.2);
+            margin-top: 8px;
+        }
+        .btn:hover { transform: translateY(-2px); box-shadow: 0 0 30px rgba(0,212,255,0.5); }
+        .btn:active { transform: translateY(0); }
+        .btn-a { background: var(--team-a); box-shadow: 0 0 20px rgba(255,77,109,0.2); }
+        .btn-b { background: var(--team-b); }
+        .btn-danger { background: var(--danger); }
+        .btn-success { background: var(--success); }
+        .btn-spy { background: var(--spy); color: #fff; }
+        .btn-inline { width: auto; padding: 10px 18px; display: inline-block; margin: 0; }
+
+        /* ── BADGES ── */
+        .badge {
+            display: inline-block;
+            padding: 6px 16px;
+            border-radius: 20px;
+            font-weight: 700;
+            font-size: 15px;
+            letter-spacing: 1px;
+        }
+        .badge-a { background: rgba(255,77,109,0.15); color: var(--team-a); border: 1px solid var(--team-a); }
+        .badge-b { background: rgba(56,189,248,0.15); color: var(--team-b); border: 1px solid var(--team-b); }
+        .badge-spy {
+            background: rgba(167,139,250,0.15);
+            color: var(--spy);
+            border: 1px solid var(--spy);
+            animation: pulseSpy 1.5s infinite;
+        }
+        @keyframes pulseSpy {
+            0%,100% { box-shadow: 0 0 0 0 rgba(167,139,250,0.4); }
+            50%      { box-shadow: 0 0 0 8px rgba(167,139,250,0); }
+        }
+
+        /* ── LOBBY SPINNER ── */
+        .spinner {
+            width: 36px; height: 36px;
+            border: 3px solid var(--border);
+            border-top-color: var(--accent);
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            margin: 20px auto;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        /* ── ROLE SCREEN ── */
+        .role-countdown {
+            font-family: 'Orbitron', monospace;
+            font-size: 64px;
+            font-weight: 900;
+            color: var(--danger);
+            text-align: center;
+            text-shadow: 0 0 30px rgba(248,113,113,0.5);
+            margin: 16px 0;
+        }
+
+        /* ── STICKY HEADER (GAME) ── */
+        .sticky-header {
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            background: var(--panel);
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            padding: 12px 16px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 14px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+        }
+
+        .header-stage {
+            font-family: 'Orbitron', monospace;
+            font-size: 15px;
+            font-weight: 700;
+        }
+
+        .header-team {
+            font-size: 12px;
+            font-weight: 600;
+            margin-top: 3px;
+        }
+
+        .header-timer {
+            font-family: 'Orbitron', monospace;
+            font-size: 28px;
+            font-weight: 900;
+            color: var(--danger);
+        }
+        .header-timer.warning { animation: blinkTimer 0.5s infinite; }
+        @keyframes blinkTimer { 0%,100%{opacity:1} 50%{opacity:0.3} }
+
+        /* ── QUESTION BLOCK ── */
+        .question-block {
+            border-bottom: 1px solid var(--border);
+            padding: 18px 0;
+        }
+        .question-block:last-child { border-bottom: none; padding-bottom: 0; }
+
+        .question-num {
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: 2px;
+            color: var(--muted);
+            text-transform: uppercase;
+            margin-bottom: 8px;
+        }
+
+        .question-text {
+            font-size: 15px;
+            font-weight: 600;
+            line-height: 1.6;
+            margin-bottom: 12px;
+        }
+
+        /* KaTeX rendering fix */
+        .question-text .katex, .option-text .katex { font-size: 1em; }
+
+        .options-grid { display: flex; flex-direction: column; gap: 8px; }
+
+        .option-label {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            background: rgba(255,255,255,0.03);
+            border: 1px solid var(--border);
+            padding: 12px 14px;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.15s;
+        }
+        .option-label:hover { background: rgba(0,212,255,0.05); border-color: rgba(0,212,255,0.3); }
+        .option-label.selected {
+            background: rgba(0,212,255,0.1);
+            border-color: var(--accent);
+            box-shadow: 0 0 0 1px var(--accent) inset;
+        }
+        .option-label.correct { background: rgba(52,211,153,0.15); border-color: var(--success); }
+        .option-label.wrong   { background: rgba(248,113,113,0.1); border-color: var(--danger); }
+
+        .option-key {
+            font-family: 'Orbitron', monospace;
+            font-size: 12px;
+            font-weight: 700;
+            color: var(--accent);
+            min-width: 20px;
+        }
+
+        .option-label input[type="radio"] { display: none; }
+
+        /* ── CHAT ── */
+        .chat-box {
+            background: rgba(0,0,0,0.25);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            height: 160px;
+            overflow-y: auto;
+            padding: 10px;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            margin-bottom: 10px;
+        }
+
+        .chat-msg {
+            font-size: 13px;
+            padding: 7px 12px;
+            border-radius: 12px;
+            max-width: 85%;
+            line-height: 1.4;
+            background: rgba(255,255,255,0.06);
+            align-self: flex-start;
+        }
+        .chat-msg.me { background: rgba(0,212,255,0.12); align-self: flex-end; border: 1px solid rgba(0,212,255,0.2); }
+        .chat-msg strong { font-weight: 700; color: var(--accent); }
+        .chat-msg.me strong { color: var(--success); }
+
+        .chat-row {
+            display: flex;
+            gap: 8px;
+        }
+        .chat-input {
+            flex: 1;
+            padding: 10px 12px;
+            background: rgba(0,0,0,0.3);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            color: var(--text);
+            font-size: 14px;
+            font-family: 'IBM Plex Sans', sans-serif;
+            outline: none;
+        }
+        .chat-input:focus { border-color: var(--accent); }
+
+        /* ── LEADERBOARD ── */
+        .leaderboard { width: 100%; border-collapse: collapse; }
+        .leaderboard th {
+            font-family: 'Orbitron', monospace;
+            font-size: 10px;
+            letter-spacing: 2px;
+            color: var(--accent);
+            padding: 8px 10px;
+            text-align: center;
+            border-bottom: 1px solid var(--border);
+        }
+        .leaderboard td {
+            padding: 8px 10px;
+            text-align: center;
+            font-size: 13px;
+            border-bottom: 1px solid rgba(30,58,95,0.4);
+        }
+
+        /* ── SCORES (INTERMISSION) ── */
+        .scores-mini {
+            display: flex;
+            justify-content: space-around;
+            padding: 14px;
+            background: rgba(0,0,0,0.2);
+            border-radius: 10px;
+            margin-bottom: 14px;
+        }
+        .score-mini-team { text-align: center; }
+        .score-mini-label { font-size: 11px; letter-spacing: 2px; color: var(--muted); margin-bottom: 4px; }
+        .score-mini-val { font-family: 'Orbitron', monospace; font-size: 28px; font-weight: 900; }
+
+        /* ── FINAL PHASE ── */
+        .spy-fund-box {
+            text-align: center;
+            padding: 20px;
+            background: rgba(167,139,250,0.08);
+            border: 1px dashed var(--spy);
+            border-radius: 12px;
+            margin-bottom: 16px;
+        }
+        .spy-fund-val {
+            font-family: 'Orbitron', monospace;
+            font-size: 44px;
+            font-weight: 900;
+            color: var(--spy);
+        }
+
+        .task-section {
+            border-radius: 12px;
+            padding: 16px;
+            margin-bottom: 14px;
+        }
+        .task-section.team-b { background: rgba(56,189,248,0.06); border: 1px solid rgba(56,189,248,0.25); }
+        .task-section.team-a { background: rgba(255,77,109,0.06); border: 1px solid rgba(255,77,109,0.25); }
+
+        .select-input {
+            width: 100%;
+            padding: 12px 14px;
+            background: rgba(0,0,0,0.3);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            color: var(--text);
+            font-size: 15px;
+            margin: 10px 0 12px;
+            appearance: none;
+            cursor: pointer;
+        }
+
+        /* ── WINNER SCREEN ── */
+        .winner-box {
+            text-align: center;
+            padding: 28px;
+            border-radius: 16px;
+            margin-bottom: 18px;
+        }
+        .winner-label {
+            font-size: 13px;
+            letter-spacing: 3px;
+            color: var(--muted);
+            text-transform: uppercase;
+            margin-bottom: 10px;
+        }
+        .winner-name {
+            font-family: 'Orbitron', monospace;
+            font-size: 40px;
+            font-weight: 900;
+            text-shadow: 0 0 40px currentColor;
+        }
+
+        .top-player-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 14px;
+            border-radius: 8px;
+            background: rgba(255,255,255,0.04);
+            border: 1px solid var(--border);
+            margin-bottom: 8px;
+            font-size: 14px;
+        }
+        .top-player-score { font-family: 'Orbitron', monospace; color: var(--gold); font-weight: 700; }
+
+        .spy-reveal {
+            background: rgba(167,139,250,0.08);
+            border: 1px solid rgba(167,139,250,0.3);
+            border-radius: 10px;
+            padding: 14px;
+            text-align: center;
+            font-size: 14px;
+            margin-top: 14px;
+            line-height: 1.6;
+        }
+
+        /* ── UTILITY ── */
+        .text-center { text-align: center; }
+        .text-muted { color: var(--muted); font-size: 13px; }
+        .mt-10 { margin-top: 10px; }
+        .mb-10 { margin-bottom: 10px; }
+        .fw-bold { font-weight: 700; }
     </style>
-    <script src="/socket.io/socket.io.js"></script>
 </head>
 <body>
 
-    <div id="screen-join" class="card">
-        <h2 style="text-align: center; margin-top: 0;">THAM GIA PHÒNG CHƠI</h2>
-        <div style="margin-bottom: 15px;">
-            <label style="font-weight: bold; display: block; margin-bottom: 5px;">Mã Phòng:</label>
-            <input type="text" id="input-room-id" class="chat-input" style="width: 93%; text-transform: uppercase;" placeholder="Nhập mã gồm 4 kí tự...">
+<!-- ══════════════════════════════════
+     MÀN HÌNH 1: THAM GIA PHÒNG
+══════════════════════════════════ -->
+<div id="screen-join" class="screen">
+    <h1 class="page-title" style="margin-top:16px;">⚛ VẬT LÍ 11</h1>
+    <div class="panel">
+        <div class="panel-title">Tham gia phòng chơi</div>
+        <div class="field">
+            <label>Mã Phòng</label>
+            <input type="text" id="input-room-id" class="input"
+                style="text-transform:uppercase; font-family:'Orbitron',monospace; font-size:20px; letter-spacing:6px; text-align:center;"
+                placeholder="XXXX" maxlength="6">
         </div>
-        <div style="margin-bottom: 20px;">
-            <label style="font-weight: bold; display: block; margin-bottom: 5px;">Tên của bạn:</label>
-            <input type="text" id="input-name" class="chat-input" style="width: 93%;" placeholder="Nhập họ và tên...">
+        <div class="field">
+            <label>Họ và Tên</label>
+            <input type="text" id="input-name" class="input" placeholder="Nhập tên của bạn...">
         </div>
         <button class="btn" onclick="joinRoom()">VÀO PHÒNG CHỜ</button>
     </div>
+</div>
 
-    <div id="screen-lobby" class="card hidden" style="text-align: center;">
-        <h3>Đã vào phòng thành công!</h3>
-        <p>Xin chào: <strong id="player-display-name">...</strong></p>
-        <p style="color: #7f8c8d; font-style: italic;">Vui lòng đợi Giáo viên (Admin) bắt đầu trận đấu...</p>
-        <div style="margin: 20px auto; border: 4px solid #f3f3f3; border-top: 4px solid var(--primary); border-radius: 50%; width: 30px; height: 30px; animation: spin 1s linear infinite;"></div>
+<!-- ══════════════════════════════════
+     MÀN HÌNH 2: LOBBY
+══════════════════════════════════ -->
+<div id="screen-lobby" class="screen hidden">
+    <div class="panel" style="text-align:center;">
+        <div class="panel-title">Phòng chờ</div>
+        <p style="font-size:15px;">Xin chào, <strong id="player-display-name" style="color:var(--accent);">...</strong>!</p>
+        <p class="text-muted mt-10">Đang chờ giáo viên bắt đầu trận đấu...</p>
+        <div class="spinner"></div>
+        <p class="text-muted" style="font-size:12px;">Khi game bắt đầu, bạn sẽ được phân đội tự động.</p>
     </div>
+</div>
 
-    <div id="screen-role" class="card hidden" style="text-align: center;">
-        <h2>BẮT ĐẦU TRẬN ĐẤU</h2>
-        <div style="font-size: 18px; margin: 15px 0;">Đội của bạn: <span id="team-badge" class="badge">ĐANG TÍNH</span></div>
-        <div id="spy-alert" class="hidden">
-            <span class="badge badge-spy">MẬT LỆNH GIÁN ĐIỆP 🕵️‍♂️</span>
-            <p style="color: var(--danger); font-weight: bold; margin-top: 10px; font-size: 14px;">Bạn là Gián điệp! Hãy âm thầm trả lời đúng thật nhiều để tích lũy điểm vào Quỹ tình báo ẩn nhằm tuồn điểm cho Đội B!</p>
-        </div>
-        <hr style="margin: 20px 0; border: 0; border-top: 1px solid #eee;">
-        <p>Hệ thống tự động chuyển vào Cửa 1 sau:</p>
-        <div id="role-countdown" style="font-size: 45px; font-weight: bold; color: var(--danger);">3</div>
-    </div>
+<!-- ══════════════════════════════════
+     MÀN HÌNH 3: PHÂN ĐỘI & VAI TRÒ
+══════════════════════════════════ -->
+<div id="screen-role" class="screen hidden">
+    <div class="panel" style="text-align:center;">
+        <div class="panel-title">Vai trò của bạn</div>
+        <p style="font-size:14px; color:var(--muted); margin-bottom:12px;">ĐỘI CỦA BẠN</p>
+        <div id="team-badge" class="badge">ĐANG TÍNH...</div>
 
-    <div id="screen-game" class="hidden">
-        <div class="card" style="position: sticky; top: 0; z-index: 100; background: #fff; border-left: 5px solid var(--primary); display: flex; justify-content: space-between; align-items: center; padding: 12px 20px;">
-            <div>
-                <strong id="display-stage-title" style="font-size: 18px;">Cửa 1</strong><br>
-                <span id="display-my-team" style="font-size: 12px; font-weight: bold;"></span>
-            </div>
-            <div id="game-timer" style="font-size: 26px; font-weight: bold; color: var(--danger);">01:30</div>
-        </div>
-
-        <div id="questions-container" class="card">
-            </div>
-
-        <button id="btn-submit-answers" class="btn" style="background-color: var(--success); margin-bottom: 30px;" onclick="submitAnswers()">NỘP BÀI (CỬA NÀY)</button>
-    </div>
-
-    <div id="screen-waiting" class="card hidden">
-        <h3 style="text-align: center; color: var(--success); margin-top: 0;">ĐÃ NỘP BÀI THÀNH CÔNG! 👌</h3>
-        <p style="text-align: center; font-size: 14px; color: #7f8c8d;">Hệ thống đang chờ các bạn khác hoàn thành cửa này.</p>
-        
-        <div style="background: #f8f9fa; padding: 10px; border-radius: 8px; text-align: center; margin-bottom: 15px;">
-            <strong>Kết quả tạm tính:</strong> <span id="early-result-text" style="font-weight: bold;">Đang xử lý...</span>
+        <div id="spy-alert" class="hidden" style="margin-top:20px; padding:16px; background:rgba(167,139,250,0.1); border:1px solid var(--spy); border-radius:12px;">
+            <div style="font-size:26px; margin-bottom:8px;">🕵️‍♂️</div>
+            <div class="badge badge-spy" style="margin-bottom:10px;">MẬT LỆNH GIÁN ĐIỆP</div>
+            <p style="color:var(--spy); font-size:13px; line-height:1.6; margin-top:8px;">
+                Bạn là <strong>Gián điệp ẩn</strong>! Hãy âm thầm trả lời đúng để tích điểm vào Quỹ Tình Báo — sau đó xem Đội B cướp quỹ còn Đội A tìm ra bạn!
+            </p>
         </div>
 
-        <h4>💬 Chat Nội Bộ Đội (Xong sớm giao tiếp)</h4>
+        <hr style="border:none; border-top:1px solid var(--border); margin:20px 0;">
+        <p class="text-muted">Bắt đầu Cửa 1 sau:</p>
+        <div class="role-countdown" id="role-countdown">3</div>
+    </div>
+</div>
+
+<!-- ══════════════════════════════════
+     MÀN HÌNH 4: LÀM BÀI
+══════════════════════════════════ -->
+<div id="screen-game" class="screen hidden">
+
+    <div class="sticky-header">
+        <div>
+            <div class="header-stage" id="display-stage-title">Cửa 1</div>
+            <div class="header-team" id="display-my-team"></div>
+        </div>
+        <div class="header-timer" id="game-timer">01:30</div>
+    </div>
+
+    <div class="panel">
+        <div id="questions-container"></div>
+    </div>
+
+    <button id="btn-submit-answers" class="btn btn-success" onclick="submitAnswers()">
+        ✅ NỘP BÀI (CỬA NÀY)
+    </button>
+
+</div>
+
+<!-- ══════════════════════════════════
+     MÀN HÌNH 5: CHỜ SAU NỘP BÀI
+══════════════════════════════════ -->
+<div id="screen-waiting" class="screen hidden">
+    <div class="panel" style="text-align:center;">
+        <div style="font-size:32px; margin-bottom:10px;">👌</div>
+        <p style="font-weight:700; font-size:16px; color:var(--success);">ĐÃ NỘP BÀI THÀNH CÔNG!</p>
+        <p class="text-muted mt-10">Đang chờ các bạn khác hoàn thành cửa này...</p>
+
+        <div style="background:rgba(0,0,0,0.2); border:1px solid var(--border); border-radius:10px; padding:12px; margin-top:14px;">
+            <span style="font-size:13px;">Kết quả tạm tính: </span>
+            <strong id="early-result-text" style="color:var(--accent);">Đang xử lý...</strong>
+        </div>
+    </div>
+
+    <div class="panel">
+        <div class="panel-title">💬 Chat Nội Bộ Đội (Xong sớm giao tiếp)</div>
         <div class="chat-box" id="team-chat-msgs"></div>
-        <div class="chat-input-group">
-            <input type="text" id="team-chat-input" class="chat-input" placeholder="Nhập tin nhắn với đồng đội...">
-            <button class="btn" style="width: auto; padding: 0 15px;" onclick="sendTeamMessage()">Gửi</button>
+        <div class="chat-row">
+            <input type="text" id="team-chat-input" class="chat-input"
+                placeholder="Nhắn với đồng đội..."
+                onkeydown="if(event.key==='Enter') sendTeamMessage()">
+            <button class="btn btn-inline" onclick="sendTeamMessage()">Gửi</button>
         </div>
     </div>
+</div>
 
-    <div id="screen-intermission" class="hidden">
-        <div class="card" style="text-align: center; border-bottom: 4px solid gold;">
-            <h2 style="margin: 0; color: #f39c12;">⏳ TRẠM NGHỈ (15 giây)</h2>
-            <p>Chuẩn bị bước sang cửa tiếp theo...</p>
-            <div style="display: flex; justify-content: space-around; margin: 15px 0; font-weight: bold; font-size: 16px;">
-                <div style="color: var(--team-a);">Đội A: <span id="intermission-score-a">0</span> đ</div>
-                <div style="color: var(--team-b);">Đội B: <span id="intermission-score-b">0</span> đ</div>
+<!-- ══════════════════════════════════
+     MÀN HÌNH 6: TRẠM NGHỈ
+══════════════════════════════════ -->
+<div id="screen-intermission" class="screen hidden">
+    <div class="panel" style="text-align:center;">
+        <div style="font-size:24px; margin-bottom:6px;">⏳</div>
+        <div style="font-family:'Orbitron',monospace; font-size:16px; letter-spacing:4px; color:var(--gold);">TRẠM NGHỈ</div>
+        <p class="text-muted mt-10">Chuẩn bị bước sang cửa tiếp theo...</p>
+        <div class="scores-mini mt-10">
+            <div class="score-mini-team">
+                <div class="score-mini-label">ĐỘI A</div>
+                <div class="score-mini-val" style="color:var(--team-a);" id="intermission-score-a">0</div>
             </div>
-        </div>
-
-        <div class="card">
-            <h4 style="margin-top: 0;">🏆 Top 5 BXH Cá Nhân Tạm Thời</h4>
-            <table class="leaderboard">
-                <thead>
-                    <tr><th>Hạng</th><th>Tên</th><th>Đội</th><th>Điểm</th></tr>
-                </thead>
-                <tbody id="intermission-leaderboard-body"></tbody>
-            </table>
-        </div>
-
-        <div class="card">
-            <h4>🗣️ Khung Chat Toàn Phòng (Mở khóa liên thông)</h4>
-            <div class="chat-box" id="global-chat-msgs"></div>
-            <div class="chat-input-group">
-                <input type="text" id="global-chat-input" class="chat-input" placeholder="Gáy toàn phòng tại đây...">
-                <button class="btn" style="width: auto; padding: 0 15px;" onclick="sendGlobalMessage()">Gửi</button>
+            <div style="border-left:1px solid var(--border);"></div>
+            <div class="score-mini-team">
+                <div class="score-mini-label">ĐỘI B</div>
+                <div class="score-mini-val" style="color:var(--team-b);" id="intermission-score-b">0</div>
             </div>
         </div>
     </div>
 
-    <div id="screen-final" class="card hidden">
-        <h2 style="text-align: center; color: var(--danger); margin-top: 0;">⚖️ PHÁN QUYẾT CUỐI GAME</h2>
-        <div style="text-align: center; background: #f1f2f6; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
-            <span style="font-size: 16px; font-weight: bold;">Tổng Quỹ Tình Báo thu được:</span>
-            <div id="final-spy-fund" style="font-size: 30px; font-weight: bold; color: var(--spy); margin-top: 5px;">0 Điểm</div>
-        </div>
-
-        <div id="final-task-team-b" class="hidden">
-            <h3 style="color: var(--team-b);">🔑 NHIỆM VỤ ĐỘI B: CÂU HỎI CHÌA KHÓA (60s)</h3>
-            <p id="key-question-text" style="font-weight: bold; background: #e3faf2; padding: 10px; border-radius: 6px;"></p>
-            <div class="options-grid" id="key-question-options" style="margin-bottom: 15px;"></div>
-            <button class="btn" style="background-color: var(--success);" onclick="submitKeyAnswer()">NỘP ĐÁP ÁN CHÌA KHÓA</button>
-        </div>
-
-        <div id="final-task-team-a" class="hidden">
-            <h3 style="color: var(--team-a);">🕵️‍♂️ NHIỆM VỤ ĐỘI A: TRUY TÌM GIÁN ĐIỆP (60s)</h3>
-            <p>Bình chọn thành viên bạn nghi ngờ là Gián điệp để đòi lại số điểm bị tuồn đi:</p>
-            <select id="spy-vote-select" class="chat-input" style="width: 100%; height: 45px; margin-bottom: 15px; font-size: 16px;">
-                </select>
-            <button class="btn" style="background-color: var(--danger);" onclick="submitSpyVote()">BỎ PHIẾU BÌNH CHỌN</button>
-        </div>
-
-        <div id="final-waiting-status" class="hidden" style="text-align: center; color: #7f8c8d; font-style: italic;">
-            Đang xử lý tác vụ phán quyết của các tổ đội...
-        </div>
+    <div class="panel">
+        <div class="panel-title">🏆 Top 5 BXH Cá Nhân</div>
+        <table class="leaderboard">
+            <thead>
+                <tr><th>HẠNG</th><th>TÊN</th><th>ĐỘI</th><th>ĐIỂM</th></tr>
+            </thead>
+            <tbody id="intermission-leaderboard-body"></tbody>
+        </table>
     </div>
 
-    <div id="screen-winner" class="card hidden" style="text-align: center;">
-        <h1 style="color: #f1c40f; margin-top: 0;">👑 VINH DANH KẾT QUẢ</h1>
-        <div style="background: #e8f4fd; padding: 20px; border-radius: 12px; margin-bottom: 20px; border: 2px dashed var(--primary);">
-            <h2 style="margin: 0; font-size: 22px;">ĐỘI CHIẾN THẮNG CHUNG CUỘC</h2>
-            <div id="winner-team-display" style="font-size: 32px; font-weight: bold; margin-top: 10px;">...</div>
+    <div class="panel">
+        <div class="panel-title">🗣️ Chat Toàn Phòng</div>
+        <div class="chat-box" id="global-chat-msgs"></div>
+        <div class="chat-row">
+            <input type="text" id="global-chat-input" class="chat-input"
+                placeholder="Gáy toàn phòng tại đây..."
+                onkeydown="if(event.key==='Enter') sendGlobalMessage()">
+            <button class="btn btn-inline" onclick="sendGlobalMessage()">Gửi</button>
+        </div>
+    </div>
+</div>
+
+<!-- ══════════════════════════════════
+     MÀN HÌNH 7: PHÁN QUYẾT CUỐI
+══════════════════════════════════ -->
+<div id="screen-final" class="screen hidden">
+    <div class="panel">
+        <div class="panel-title text-center">⚖️ Phán Quyết Cuối Game</div>
+
+        <div class="spy-fund-box">
+            <p class="text-muted mb-10">🕵️ Quỹ Tình Báo</p>
+            <div class="spy-fund-val" id="final-spy-fund">0</div>
+            <p class="text-muted" style="margin-top:4px;">điểm</p>
         </div>
 
-        <h3>🏆 TOP 3 CÁ NHÂN XUẤT SẮC NHẤT</h3>
-        <div id="top-individual-list" style="display: flex; flex-direction: column; gap: 8px; font-weight: bold;">
-            </div>
-        
-        <div id="spy-reveal-box" style="margin-top: 25px; padding: 10px; background: #fdf1f1; border-radius: 8px; font-size: 14px;">
-            </div>
-    </div>
+        <!-- Nhiệm vụ Đội B -->
+        <div id="final-task-team-b" class="task-section team-b hidden">
+            <p style="font-family:'Orbitron',monospace; font-size:12px; letter-spacing:2px; color:var(--team-b); margin-bottom:10px;">
+                🔑 NHIỆM VỤ ĐỘI B — CÂU HỎI CHÌA KHÓA (60s)
+            </p>
+            <div id="key-question-text" class="fw-bold mb-10" style="background:rgba(56,189,248,0.06); padding:12px; border-radius:8px; line-height:1.6;"></div>
+            <div class="options-grid mb-10" id="key-question-options"></div>
+            <button class="btn btn-b" onclick="submitKeyAnswer()">NỘP ĐÁP ÁN CHÌA KHÓA</button>
+        </div>
 
+        <!-- Nhiệm vụ Đội A -->
+        <div id="final-task-team-a" class="task-section team-a hidden">
+            <p style="font-family:'Orbitron',monospace; font-size:12px; letter-spacing:2px; color:var(--team-a); margin-bottom:8px;">
+                🕵️ NHIỆM VỤ ĐỘI A — TRUY TÌM GIÁN ĐIỆP (60s)
+            </p>
+            <p style="font-size:14px; color:var(--muted);">Bỏ phiếu người bạn nghi ngờ là Gián điệp ẩn:</p>
+            <select id="spy-vote-select" class="select-input">
+                <option value="">— Chọn người nghi vấn —</option>
+            </select>
+            <button class="btn btn-danger" onclick="submitSpyVote()">BỎ PHIẾU BÌNH CHỌN</button>
+        </div>
+
+        <!-- Đang xử lý -->
+        <div id="final-waiting-status" class="hidden text-center" style="padding:20px; color:var(--muted); font-style:italic;">
+            <div class="spinner"></div>
+            Đang xử lý phán quyết của các tổ đội...
+        </div>
+    </div>
+</div>
+
+<!-- ══════════════════════════════════
+     MÀN HÌNH 8: VINH DANH
+══════════════════════════════════ -->
+<div id="screen-winner" class="screen hidden">
+    <div class="panel" style="text-align:center;">
+        <div style="font-size:40px; margin-bottom:10px;">👑</div>
+        <div class="panel-title text-center" style="border:none;">VINH DANH KẾT QUẢ</div>
+
+        <div class="winner-box" id="winner-box">
+            <p class="winner-label">ĐỘI CHIẾN THẮNG CHUNG CUỘC</p>
+            <div class="winner-name" id="winner-team-display">...</div>
+        </div>
+
+        <div style="text-align:left; margin-top:10px;">
+            <p style="font-family:'Orbitron',monospace; font-size:11px; letter-spacing:3px; color:var(--muted); margin-bottom:10px;">🏆 TOP 3 CÁ NHÂN XUẤT SẮC</p>
+            <div id="top-individual-list"></div>
+        </div>
+
+        <div class="spy-reveal" id="spy-reveal-box"></div>
+    </div>
+</div>
+
+<!-- ══════════════════════════════════
+     JAVASCRIPT
+══════════════════════════════════ -->
 <script>
-    const socket = io();
-    let myName = '';
-    let myRoomId = '';
-    let myTeam = '';
-    let isSpyPlayer = false;
+// ═══════════════════════
+// KaTeX helpers
+// ═══════════════════════
+let katexReady = false;
+const pendingRenderTargets = [];
 
-    // Tự động lấy RoomID từ mã QR (URL query string ?room=ABCD)
-    window.onload = function() {
-        const urlParams = new URLSearchParams(window.location.search);
-        const roomParam = urlParams.get('room');
-        if (roomParam) {
-            document.getElementById('input-room-id').value = roomParam.toUpperCase();
-        }
-    };
-
-    function showScreen(screenId) {
-        document.querySelectorAll('body > div').forEach(div => div.classList.add('hidden'));
-        document.getElementById(screenId).classList.remove('hidden');
-    }
-
-    // ==========================================
-    // GIAI ĐOẠN 1: LOBBY JOIN
-    // ==========================================
-    function joinRoom() {
-        myRoomId = document.getElementById('input-room-id').value.trim().toUpperCase();
-        myName = document.getElementById('input-name').value.trim();
-
-        if(!myRoomId || !myName) return alert("Vui lòng điền đầy đủ Mã phòng và Tên!");
-
-        document.getElementById('player-display-name').innerText = myName;
-        showScreen('screen-lobby');
-
-        // Gửi lệnh tham gia phòng lên Server Node.js
-        socket.emit('playerJoinRoom', { roomId: myRoomId, name: myName });
-    }
-
-    // Nhận phân bổ Đội và Vai trò từ Server
-    socket.on('roleAssignment', (data) => {
-        // data: { team: 'A' hoặc 'B', isSpy: true/false }
-        myTeam = data.team;
-        isSpyPlayer = data.isSpy;
-
-        const badge = document.getElementById('team-badge');
-        badge.className = 'badge ' + (myTeam === 'A' ? 'badge-a' : 'badge-b');
-        badge.innerText = `ĐỘI ${myTeam}`;
-        document.getElementById('display-my-team').innerText = `Đội ${myTeam}` + (isSpyPlayer ? ' | Gián Điệp 🕵️‍♂️' : '');
-
-        if (isSpyPlayer) {
-            document.getElementById('spy-alert').classList.remove('hidden');
-        }
-
-        showScreen('screen-role');
-
-        // Bắt đầu đếm ngược cục bộ 3 giây hiển thị vai trò trước khi vào game
-        let count = 3;
-        const interval = setInterval(() => {
-            count--;
-            document.getElementById('role-countdown').innerText = count;
-            if(count <= 0) clearInterval(interval);
-        }, 1000);
-    });
-
-    // ==========================================
-    // GIAI ĐOẠN 2: THI ĐẤU (BỘ 5 CÂU HỎI)
-    // ==========================================
-    socket.on('startStage', (data) => {
-        // data: { stageNum: 1..10, questions: [...] } -> Server đã đảo ngẫu nhiên câu hỏi & đáp án riêng cho từng bạn
-        showScreen('screen-game');
-        document.getElementById('display-stage-title').innerText = `Cửa ${data.stageNum}`;
-        
-        const container = document.getElementById('questions-container');
-        container.innerHTML = '';
-
-        data.questions.forEach((q, index) => {
-            let optionsHtml = '';
-            q.choices.forEach(c => {
-                optionsHtml += `
-                    <label class="option-label" onclick="selectOption(this)">
-                        <input type="radio" name="q_${q.id}" value="${c.key}">
-                        <span>${c.key}. ${c.text}</span>
-                    </label>
-                `;
-            });
-
-            container.innerHTML += `
-                <div class="question-block" data-qid="${q.id}">
-                    <div class="question-text">Câu ${index + 1}: ${q.text}</div>
-                    <div class="options-grid">${optionsHtml}</div>
-                </div>
-            `;
+function maybeRenderMath() {
+    if (!katexReady) return;
+    pendingRenderTargets.forEach(el => {
+        renderMathInElement(el, {
+            delimiters: [
+                { left: '$$', right: '$$', display: true },
+                { left: '$', right: '$', display: false },
+                { left: '\\(', right: '\\)', display: false },
+                { left: '\\[', right: '\\]', display: true }
+            ],
+            throwOnError: false
         });
     });
-
-    function selectOption(labelElement) {
-        const grid = labelElement.parentElement;
-        grid.querySelectorAll('.option-label').forEach(lbl => lbl.classList.remove('selected'));
-        labelElement.classList.add('selected');
-    }
-
-    // Đếm ngược đồng hồ thời gian thực từ Server gửi xuống
-    socket.on('timerUpdate', (seconds) => {
-        const m = Math.floor(seconds / 60).toString().padStart(2, '0');
-        const s = (seconds % 60).toString().padStart(2, '0');
-        const timerDiv = document.getElementById('game-timer');
-        if(timerDiv) timerDiv.innerText = `${m}:${s}`;
-    });
-
-    // Gửi cụm đáp án 5 câu lên Server
-    function submitAnswers() {
-        const answers = {};
-        document.querySelectorAll('.question-block').forEach(block => {
-            const qid = block.getAttribute('data-qid');
-            const checked = block.querySelector('input[type="radio"]:checked');
-            answers[qid] = checked ? checked.value : ""; // Bỏ trống tính ""
-        });
-
-        socket.emit('submitAnswers', { roomId: myRoomId, answers: answers });
-        showScreen('screen-waiting');
-        document.getElementById('team-chat-msgs').innerHTML = ''; // Reset chat cũ
-    }
-
-    // Nhận kết quả nhanh sau khi nộp bài sớm
-    socket.on('earlyResult', (data) => {
-        document.getElementById('early-result-text').innerText = `Đúng ${data.correct}/5 câu.`;
-    });
-
-    // Xử lý Chat nội bộ Đội (Khu vực chờ)
-    function sendTeamMessage() {
-        const input = document.getElementById('team-chat-input');
-        const msg = input.value.trim();
-        if(!msg) return;
-        socket.emit('sendTeamMessage', { roomId: myRoomId, msg: msg });
-        input.value = '';
-    }
-
-    socket.on('receiveTeamMessage', (data) => {
-        const box = document.getElementById('team-chat-msgs');
-        const isMe = data.name === myName;
-        box.innerHTML += `<div class="chat-msg ${isMe ? 'me' : ''}"><strong>${data.name}:</strong> ${data.msg}</div>`;
-        box.scrollTop = box.scrollHeight;
-    });
-
-    // ==========================================
-    // TRẠM NGHĨ (15 GIÂY GIỮA CÁC CỬA)
-    // ==========================================
-    socket.on('intermissionStart', (data) => {
-        // Ép nộp bài nếu học sinh hết giờ mà chưa bấm nộp
-        const gameScreenActive = !document.getElementById('screen-game').classList.contains('hidden');
-        if(gameScreenActive) {
-            submitAnswers();
-        }
-
-        showScreen('screen-intermission');
-        document.getElementById('global-chat-msgs').innerHTML = ''; // Clear chat toàn lớp cũ
-        
-        // Cập nhật điểm
-        document.getElementById('intermission-score-a').innerText = data.teamA_score;
-        document.getElementById('intermission-score-b').innerText = data.teamB_score;
-
-        // Render Top 5 cá nhân
-        const tbody = document.getElementById('intermission-leaderboard-body');
-        tbody.innerHTML = '';
-        data.leaderboard.forEach((p, index) => {
-            tbody.innerHTML += `<tr><td>${index+1}</td><td>${p.name}</td><td>${p.team}</td><td>${p.score}</td></tr>`;
-        });
-    });
-
-    // Xử lý Chat Toàn Phòng (Trạm nghỉ)
-    function sendGlobalMessage() {
-        const input = document.getElementById('global-chat-input');
-        const msg = input.value.trim();
-        if(!msg) return;
-        socket.emit('sendGlobalMessage', { roomId: myRoomId, msg: msg });
-        input.value = '';
-    }
-
-    socket.on('receiveGlobalMessage', (data) => {
-        const box = document.getElementById('global-chat-msgs');
-        const isMe = data.name === myName;
-        box.innerHTML += `<div class="chat-msg ${isMe ? 'me' : ''}"><strong>${data.name}:</strong> ${data.msg}</div>`;
-        box.scrollTop = box.scrollHeight;
-    });
-
-    // ==========================================
-    // GIAI ĐOẠN 3: PHÁN QUYẾT CUỐI GAME
-    // ==========================================
-    socket.on('finalPhaseStart', (data) => {
-        // data: { spyFund: điểm, teamAPlayers: [...] }
-        showScreen('screen-final');
-        document.getElementById('final-spy-fund').innerText = `${data.spyFund} Điểm`;
-
-        if(myTeam === 'B') {
-            document.getElementById('final-task-team-b').classList.remove('hidden');
-        } else if(myTeam === 'A') {
-            document.getElementById('final-task-team-a').classList.remove('hidden');
-            // Cập nhật danh sách đồng đội để vote
-            const select = document.getElementById('spy-vote-select');
-            select.innerHTML = '<option value="">-- Chọn người nghi vấn --</option>';
-            data.teamAPlayers.forEach(p => {
-                if(p.name !== myName) { // Không tự vote chính mình
-                    select.innerHTML += `<option value="${p.id}">${p.name}</option>`;
-                }
-            });
-        }
-    });
-
-    // Nhận câu hỏi chìa khóa của Đội B từ server
-    socket.on('teamBKeyQuestion', (data) => {
-        // data: { text: "...", choices: [...] }
-        if(myTeam !== 'B') return;
-        document.getElementById('key-question-text').innerText = data.text;
-        const grid = document.getElementById('key-question-options');
-        grid.innerHTML = '';
-        data.choices.forEach(c => {
-            grid.innerHTML += `
-                <label class="option-label" onclick="selectOption(this)">
-                    <input type="radio" name="final_key_ans" value="${c.key}">
-                    <span>${c.key}. ${c.text}</span>
-                </label>
-            `;
-        });
-    });
-
-    function submitKeyAnswer() {
-        const checked = document.querySelector('input[name="final_key_ans"]:checked');
-        if(!checked) return alert("Vui lòng chọn 1 đáp án!");
-        socket.emit('submitKeyAnswer', { roomId: myRoomId, answer: checked.value });
-        
-        document.getElementById('final-task-team-b').classList.add('hidden');
-        document.getElementById('final-waiting-status').classList.remove('hidden');
-    }
-
-    function submitSpyVote() {
-        const select = document.getElementById('spy-vote-select');
-        if(!select.value) return alert("Vui lòng lựa chọn 1 thành viên!");
-        socket.emit('submitSpyVote', { roomId: myRoomId, votedPlayerId: select.value });
-
-        document.getElementById('final-task-team-a').classList.add('hidden');
-        document.getElementById('final-waiting-status').classList.remove('hidden');
-    }
-
-    // ==========================================
-    // KẾT THÚC TOÀN TRÒ CHƠI (VINH DANH)
-    // ==========================================
-    socket.on('gameOver', (data) => {
-        // data: { winningTeam, topPlayers: [...], spyName }
-        showScreen('screen-winner');
-        
-        const winDisplay = document.getElementById('winner-team-display');
-        winDisplay.innerText = `ĐỘI ${data.winningTeam} 🎉`;
-        winDisplay.style.color = data.winningTeam === 'A' ? 'var(--team-a)' : 'var(--team-b)';
-
-        // Render Top 3 Cá nhân xuất sắc nhất
-        const topList = document.getElementById('top-individual-list');
-        topList.innerHTML = '';
-        const medals = ['🥇 Hạng 1', '🥈 Hạng 2', '🥉 Hạng 3'];
-        data.topPlayers.slice(0, 3).forEach((p, index) => {
-            topList.innerHTML += `
-                <div style="background: #fff; padding: 10px; border-radius: 6px; border: 1px solid #ddd; display: flex; justify-content: space-between;">
-                    <span>${medals[index]}: ${p.name} (Đội ${p.team})</span>
-                    <span style="color: var(--success);">${p.score}đ</span>
-                </div>
-            `;
-        });
-
-        // Hạ màn gián điệp
-        if (data.spyName) {
-            document.getElementById('spy-reveal-box').innerHTML = `🕵️‍♂️ Danh tính <strong>Gián Điệp</strong> của trận đấu này chính là: <strong style="color: var(--spy); font-size:16px;">${data.spyName}</strong>!`;
-        } else {
-            document.getElementById('spy-reveal-box').innerHTML = `Số lượng người chơi chẵn, trận đấu không kích hoạt cơ chế Gián điệp ẩn.`;
-        }
-    });
-</script>
-
-@keyframes spin {
-    0% { transform: rotate(0deg); }
-    100% { transform: rotate(360deg); }
+    pendingRenderTargets.length = 0;
 }
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css" />
-<script defer src=".../katex.min.js"></script>
-<script defer src=".../auto-render.min.js"></script>
+
+function renderMathIn(el) {
+    if (!el) return;
+    if (katexReady && typeof renderMathInElement === 'function') {
+        renderMathInElement(el, {
+            delimiters: [
+                { left: '$$', right: '$$', display: true },
+                { left: '$', right: '$', display: false },
+                { left: '\\(', right: '\\)', display: false },
+                { left: '\\[', right: '\\]', display: true }
+            ],
+            throwOnError: false
+        });
+    } else {
+        pendingRenderTargets.push(el);
+    }
+}
+
+// ═══════════════════════
+// State
+// ═══════════════════════
+const socket = io();
+let myName     = '';
+let myRoomId   = '';
+let myTeam     = '';
+let isSpyPlayer = false;
+
+// ═══════════════════════
+// Screen management
+// ═══════════════════════
+function showScreen(id) {
+    document.querySelectorAll('.screen').forEach(s => s.classList.add('hidden'));
+    document.getElementById(id).classList.remove('hidden');
+}
+
+// ═══════════════════════
+// Auto-fill room from URL
+// ═══════════════════════
+window.addEventListener('load', () => {
+    const params = new URLSearchParams(window.location.search);
+    const room = params.get('room');
+    if (room) {
+        document.getElementById('input-room-id').value = room.toUpperCase();
+        document.getElementById('input-name').focus();
+    }
+});
+
+// ═══════════════════════
+// LOBBY
+// ═══════════════════════
+function joinRoom() {
+    myRoomId = document.getElementById('input-room-id').value.trim().toUpperCase();
+    myName   = document.getElementById('input-name').value.trim();
+    if (!myRoomId) return alert('Vui lòng nhập Mã Phòng!');
+    if (!myName)   return alert('Vui lòng nhập tên của bạn!');
+
+    document.getElementById('player-display-name').innerText = myName;
+    showScreen('screen-lobby');
+    socket.emit('playerJoinRoom', { roomId: myRoomId, name: myName });
+}
+
+// ═══════════════════════
+// ROLE ASSIGNMENT
+// ═══════════════════════
+socket.on('roleAssignment', (data) => {
+    // data: { team: 'A'|'B', isSpy: bool }
+    myTeam      = data.team;
+    isSpyPlayer = data.isSpy;
+
+    const badge = document.getElementById('team-badge');
+    if (myTeam === 'A') {
+        badge.className = 'badge badge-a';
+        badge.innerText = '⚔️ ĐỘI A';
+    } else {
+        badge.className = 'badge badge-b';
+        badge.innerText = '🛡️ ĐỘI B';
+    }
+
+    document.getElementById('display-my-team').innerHTML =
+        `Đội ${myTeam}` + (isSpyPlayer ? ' &nbsp;·&nbsp; <span style="color:var(--spy);">Gián Điệp 🕵️‍♂️</span>' : '');
+
+    if (isSpyPlayer) {
+        document.getElementById('spy-alert').classList.remove('hidden');
+    }
+
+    showScreen('screen-role');
+
+    let count = 3;
+    const iv = setInterval(() => {
+        count--;
+        document.getElementById('role-countdown').innerText = count;
+        if (count <= 0) clearInterval(iv);
+    }, 1000);
+});
+
+// ═══════════════════════
+// STAGE — CÂU HỎI
+// ═══════════════════════
+socket.on('startStage', (data) => {
+    // data: { stageNum, questions: [{id, text, choices:[{key,text}]}] }
+    showScreen('screen-game');
+    document.getElementById('display-stage-title').innerText = `Cửa ${data.stageNum} / 10`;
+
+    const container = document.getElementById('questions-container');
+    container.innerHTML = '';
+
+    data.questions.forEach((q, index) => {
+        const block = document.createElement('div');
+        block.className = 'question-block';
+        block.setAttribute('data-qid', q.id);
+
+        let choicesHtml = '';
+        q.choices.forEach(c => {
+            choicesHtml += `
+                <label class="option-label" onclick="selectOption(this)">
+                    <input type="radio" name="q_${q.id}" value="${c.key}">
+                    <span class="option-key">${c.key}</span>
+                    <span class="option-text">${escHtml(c.text)}</span>
+                </label>`;
+        });
+
+        block.innerHTML = `
+            <div class="question-num">CÂU ${index + 1}</div>
+            <div class="question-text">${escHtml(q.text)}</div>
+            <div class="options-grid">${choicesHtml}</div>
+        `;
+        container.appendChild(block);
+    });
+
+    // Render KaTeX trong câu hỏi
+    renderMathIn(container);
+});
+
+function selectOption(label) {
+    const grid = label.closest('.options-grid');
+    grid.querySelectorAll('.option-label').forEach(l => l.classList.remove('selected'));
+    label.classList.add('selected');
+    label.querySelector('input').checked = true;
+}
+
+// Timer
+socket.on('timerUpdate', (seconds) => {
+    const m = Math.floor(seconds / 60).toString().padStart(2, '0');
+    const s = (seconds % 60).toString().padStart(2, '0');
+    const el = document.getElementById('game-timer');
+    if (el) {
+        el.innerText = `${m}:${s}`;
+        el.classList.toggle('warning', seconds <= 10);
+    }
+});
+
+// Nộp bài
+function submitAnswers() {
+    const answers = {};
+    document.querySelectorAll('.question-block').forEach(block => {
+        const qid  = block.getAttribute('data-qid');
+        const chk  = block.querySelector('input[type="radio"]:checked');
+        answers[qid] = chk ? chk.value : '';
+    });
+    socket.emit('submitAnswers', { roomId: myRoomId, answers });
+    showScreen('screen-waiting');
+    document.getElementById('team-chat-msgs').innerHTML = '';
+}
+
+// Kết quả sớm
+socket.on('earlyResult', (data) => {
+    document.getElementById('early-result-text').innerText = `Đúng ${data.correct}/5 câu.`;
+});
+
+// ═══════════════════════
+// CHAT TEAM (CHỜ)
+// ═══════════════════════
+function sendTeamMessage() {
+    const input = document.getElementById('team-chat-input');
+    const msg = input.value.trim();
+    if (!msg) return;
+    socket.emit('sendTeamMessage', { roomId: myRoomId, msg });
+    input.value = '';
+}
+
+socket.on('receiveTeamMessage', (data) => {
+    appendChat('team-chat-msgs', data.name, data.msg, data.name === myName);
+});
+
+// ═══════════════════════
+// TRẠM NGHỈ
+// ═══════════════════════
+socket.on('intermissionStart', (data) => {
+    // Auto-submit nếu chưa nộp
+    const gameActive = !document.getElementById('screen-game').classList.contains('hidden');
+    if (gameActive) submitAnswers();
+
+    showScreen('screen-intermission');
+    document.getElementById('global-chat-msgs').innerHTML = '';
+    document.getElementById('intermission-score-a').innerText = data.teamA_score;
+    document.getElementById('intermission-score-b').innerText = data.teamB_score;
+
+    const tbody = document.getElementById('intermission-leaderboard-body');
+    const medals = ['🥇', '🥈', '🥉', '4.', '5.'];
+    tbody.innerHTML = '';
+    data.leaderboard.slice(0, 5).forEach((p, i) => {
+        tbody.innerHTML += `
+            <tr>
+                <td>${medals[i]}</td>
+                <td>${escHtml(p.name)}</td>
+                <td style="color:${p.team==='A'?'var(--team-a)':'var(--team-b)'}; font-weight:700;">${p.team}</td>
+                <td style="font-family:'Orbitron',monospace; color:var(--gold);">${p.score}</td>
+            </tr>`;
+    });
+});
+
+// ═══════════════════════
+// CHAT GLOBAL (TRẠM NGHỈ)
+// ═══════════════════════
+function sendGlobalMessage() {
+    const input = document.getElementById('global-chat-input');
+    const msg = input.value.trim();
+    if (!msg) return;
+    socket.emit('sendGlobalMessage', { roomId: myRoomId, msg });
+    input.value = '';
+}
+
+socket.on('receiveGlobalMessage', (data) => {
+    appendChat('global-chat-msgs', data.name, data.msg, data.name === myName);
+});
+
+// ═══════════════════════
+// FINAL PHASE
+// ═══════════════════════
+socket.on('finalPhaseStart', (data) => {
+    // data: { spyFund, teamAPlayers: [{id,name}] }
+    showScreen('screen-final');
+    document.getElementById('final-spy-fund').innerText = data.spyFund;
+
+    if (myTeam === 'B') {
+        document.getElementById('final-task-team-b').classList.remove('hidden');
+    } else if (myTeam === 'A') {
+        document.getElementById('final-task-team-a').classList.remove('hidden');
+        const sel = document.getElementById('spy-vote-select');
+        sel.innerHTML = '<option value="">— Chọn người nghi vấn —</option>';
+        data.teamAPlayers.forEach(p => {
+            if (p.name !== myName) {
+                sel.innerHTML += `<option value="${p.id}">${escHtml(p.name)}</option>`;
+            }
+        });
+    }
+});
+
+socket.on('teamBKeyQuestion', (data) => {
+    if (myTeam !== 'B') return;
+    document.getElementById('key-question-text').innerHTML = escHtml(data.text);
+    renderMathIn(document.getElementById('key-question-text'));
+
+    const grid = document.getElementById('key-question-options');
+    grid.innerHTML = '';
+    data.choices.forEach(c => {
+        grid.innerHTML += `
+            <label class="option-label" onclick="selectOption(this)">
+                <input type="radio" name="final_key_ans" value="${c.key}">
+                <span class="option-key">${c.key}</span>
+                <span class="option-text">${escHtml(c.text)}</span>
+            </label>`;
+    });
+    renderMathIn(grid);
+});
+
+function submitKeyAnswer() {
+    const checked = document.querySelector('input[name="final_key_ans"]:checked');
+    if (!checked) return alert('Vui lòng chọn 1 đáp án!');
+    socket.emit('submitKeyAnswer', { roomId: myRoomId, answer: checked.value });
+    document.getElementById('final-task-team-b').classList.add('hidden');
+    document.getElementById('final-waiting-status').classList.remove('hidden');
+}
+
+function submitSpyVote() {
+    const sel = document.getElementById('spy-vote-select');
+    if (!sel.value) return alert('Vui lòng chọn 1 thành viên!');
+    socket.emit('submitSpyVote', { roomId: myRoomId, votedPlayerId: sel.value });
+    document.getElementById('final-task-team-a').classList.add('hidden');
+    document.getElementById('final-waiting-status').classList.remove('hidden');
+}
+
+// ═══════════════════════
+// GAME OVER — VINH DANH
+// ═══════════════════════
+socket.on('gameOver', (data) => {
+    // data: { winningTeam, topPlayers:[{name,team,score}], spyName }
+    showScreen('screen-winner');
+
+    const disp = document.getElementById('winner-team-display');
+    const box  = document.getElementById('winner-box');
+    if (data.winningTeam === 'A') {
+        disp.innerText = '⚔️ ĐỘI A';
+        disp.style.color = 'var(--team-a)';
+        box.style.background = 'rgba(255,77,109,0.08)';
+        box.style.border = '2px solid rgba(255,77,109,0.3)';
+    } else {
+        disp.innerText = '🛡️ ĐỘI B';
+        disp.style.color = 'var(--team-b)';
+        box.style.background = 'rgba(56,189,248,0.08)';
+        box.style.border = '2px solid rgba(56,189,248,0.3)';
+    }
+
+    const topList = document.getElementById('top-individual-list');
+    topList.innerHTML = '';
+    const medals = ['🥇 Hạng 1', '🥈 Hạng 2', '🥉 Hạng 3'];
+    data.topPlayers.slice(0, 3).forEach((p, i) => {
+        const row = document.createElement('div');
+        row.className = 'top-player-row';
+        row.innerHTML = `
+            <span>${medals[i]}: ${escHtml(p.name)} 
+                <span style="color:${p.team==='A'?'var(--team-a)':'var(--team-b)'}; font-size:12px;">(Đội ${p.team})</span>
+            </span>
+            <span class="top-player-score">${p.score}đ</span>`;
+        topList.appendChild(row);
+    });
+
+    const revealBox = document.getElementById('spy-reveal-box');
+    if (data.spyName) {
+        revealBox.innerHTML = `🕵️‍♂️ Gián Điệp của trận đấu này là: <strong style="color:var(--spy); font-size:16px;">${escHtml(data.spyName)}</strong>`;
+    } else {
+        revealBox.innerHTML = 'Trận đấu này không kích hoạt cơ chế Gián điệp ẩn.';
+    }
+});
+
+// ═══════════════════════
+// HELPERS
+// ═══════════════════════
+function appendChat(boxId, name, msg, isMe) {
+    const box = document.getElementById(boxId);
+    if (!box) return;
+    const div = document.createElement('div');
+    div.className = 'chat-msg' + (isMe ? ' me' : '');
+    div.innerHTML = `<strong>${escHtml(name)}:</strong> ${escHtml(msg)}`;
+    box.appendChild(div);
+    box.scrollTop = box.scrollHeight;
+}
+
+function escHtml(str) {
+    return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;');
+}
+</script>
 </body>
 </html>
