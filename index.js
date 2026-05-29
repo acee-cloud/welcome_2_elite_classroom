@@ -1,476 +1,431 @@
-const express = require('express');
-const http = require('http');
-const { Server } = require('socket.io');
-const path = require('path');
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nguoi Choi - Vat Li 11</title>
 
-const app = express();
-const server = http.createServer(app);
-const io = new Server(server);
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/katex.min.css">
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/katex.min.js"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/contrib/auto-render.min.js"
+        onload="katexReady = true; maybeRenderMath()"></script>
 
-app.use(express.static(path.join(__dirname, 'public')));
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=IBM+Plex+Sans:wght@400;600;700&display=swap" rel="stylesheet">
+    <script src="/socket.io/socket.io.js"></script>
 
-// Route admin và player
-app.get('/admin', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'admin.html'));
-});
-app.get('/play', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'player.html'));
-});
+    <style>
+        :root {
+            --bg: #0a0e1a; --panel: #111827; --border: #1e3a5f;
+            --accent: #00d4ff; --accent2: #ff6b35;
+            --team-a: #ff4d6d; --team-b: #38bdf8; --team-c: #a78bfa;
+            --gold: #ffd700; --success: #34d399; --danger: #f87171;
+            --text: #e2e8f0; --muted: #64748b;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: 'IBM Plex Sans', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; padding: 16px; padding-bottom: 40px; }
+        .hidden { display: none !important; }
+        .screen { max-width: 600px; margin: 0 auto; }
+        .panel { background: var(--panel); border: 1px solid var(--border); border-radius: 16px; padding: 20px; margin-bottom: 14px; }
+        .panel-title { font-family: 'Orbitron', monospace; font-size: 14px; letter-spacing: 2px; color: var(--accent); text-transform: uppercase; margin-bottom: 14px; padding-bottom: 8px; border-bottom: 1px solid var(--border); }
+        .page-title { font-family: 'Orbitron', monospace; font-size: 20px; font-weight: 900; text-align: center; color: var(--accent); letter-spacing: 3px; margin-bottom: 20px; text-shadow: 0 0 20px rgba(0,212,255,0.4); }
+        .field { margin-bottom: 14px; }
+        .field label { display: block; font-size: 12px; font-weight: 700; letter-spacing: 1px; color: var(--muted); text-transform: uppercase; margin-bottom: 6px; }
+        .input { width: 100%; padding: 12px 14px; background: rgba(0,0,0,0.3); border: 1px solid var(--border); border-radius: 10px; color: var(--text); font-size: 16px; outline: none; transition: border-color 0.2s; }
+        .input:focus { border-color: var(--accent); }
+        .btn { display: block; width: 100%; padding: 14px; font-family: 'Orbitron', monospace; font-size: 14px; font-weight: 700; letter-spacing: 2px; color: #000; background: var(--accent); border: none; border-radius: 10px; cursor: pointer; text-align: center; transition: all 0.2s; margin-top: 8px; }
+        .btn-success { background: var(--success); color: #000; }
+        .badge { display: inline-block; padding: 8px 20px; border-radius: 20px; font-weight: 700; font-size: 16px; letter-spacing: 1px; }
+        .badge-a { background: rgba(255,77,109,0.15); color: var(--team-a); border: 1px solid var(--team-a); }
+        .badge-b { background: rgba(56,189,248,0.15); color: var(--team-b); border: 1px solid var(--team-b); }
+        .badge-c { background: rgba(167,139,250,0.15); color: var(--team-c); border: 1px solid var(--team-c); }
+        
+        .sticky-header { position: sticky; top: 0; z-index: 100; background: var(--panel); border: 1px solid var(--border); border-radius: 14px; padding: 12px 16px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; box-shadow: 0 4px 20px rgba(0,0,0,0.5); }
+        .header-stage { font-family: 'Orbitron', monospace; font-size: 15px; font-weight: 700; }
+        .header-team { font-size: 13px; font-weight: 600; margin-top: 3px; color: var(--accent); }
+        .header-timer { font-family: 'Orbitron', monospace; font-size: 28px; font-weight: 900; color: var(--danger); }
+        
+        .question-block { border-bottom: 1px solid var(--border); padding: 18px 0; }
+        .question-block:last-child { border-bottom: none; padding-bottom: 0; }
+        .question-num { font-size: 12px; font-weight: 700; letter-spacing: 2px; color: var(--muted); text-transform: uppercase; margin-bottom: 8px; }
+        .question-text { font-size: 16px; font-weight: 600; line-height: 1.6; margin-bottom: 16px; }
+        .options-grid { display: flex; flex-direction: column; gap: 10px; }
+        .option-label { display: flex; align-items: center; gap: 12px; background: rgba(255,255,255,0.05); border: 1px solid var(--border); padding: 14px; border-radius: 10px; cursor: pointer; }
+        .option-label.selected { background: rgba(0,212,255,0.15); border-color: var(--accent); }
+        .option-key { font-family: 'Orbitron', monospace; font-size: 14px; font-weight: 700; color: var(--accent); min-width: 20px; }
+        .option-label input[type="radio"] { display: none; }
+        
+        .text-center { text-align: center; }
+        .text-success { color: var(--success); font-weight: bold; }
+        .text-danger { color: var(--danger); font-weight: bold; }
+        .score-up { color: var(--success); font-size: 20px; }
+        .score-down { color: var(--danger); font-size: 20px; }
+        .result-card { background: rgba(0,0,0,0.3); padding: 20px; border-radius: 12px; border: 1px solid var(--border); margin-top: 15px; }
+        
+        .essay-box { text-align: left; }
+        textarea.form-control, input.form-control { width: 100%; padding: 12px; background: rgba(0,0,0,0.5); border: 1px solid var(--border); color: white; border-radius: 8px; margin-bottom: 15px; font-family: inherit; font-size: 15px; }
+        textarea.form-control { min-height: 100px; resize: vertical; }
+        .answer-item { background: rgba(255,255,255,0.05); padding: 15px; border-radius: 8px; margin-bottom: 10px; border-left: 4px solid var(--accent); }
+        .btn-approve { background: var(--success); color: black; border: none; padding: 8px 15px; border-radius: 6px; cursor: pointer; font-weight: bold; margin-top: 10px; }
+    </style>
+</head>
+<body>
 
-// Load ngân hàng câu hỏi
-const questionsData = require('./data/questions.js');
+<div id="screen-join" class="screen">
+    <h1 class="page-title" style="margin-top:16px;">VAT LI 11</h1>
+    <div class="panel">
+        <div class="panel-title">Tham gia phong choi</div>
+        <div class="field">
+            <label>Ma Phong</label>
+            <input type="text" id="input-room-id" class="input"
+                style="text-transform:uppercase; font-family:'Orbitron',monospace; font-size:20px; letter-spacing:6px; text-align:center;"
+                placeholder="XXXX" maxlength="6">
+        </div>
+        <div class="field">
+            <label>Ho va Ten</label>
+            <input type="text" id="input-name" class="input" placeholder="Nhap ten cua ban...">
+        </div>
+        <button class="btn" onclick="joinRoom()">VAO PHONG</button>
+    </div>
+</div>
 
-// Gộp câu hỏi từ 4 chương thành mảng phẳng
-function buildFlatQuestions(data) {
-  const flat = [];
-  const chapterKeys = ['chapter1', 'chapter2', 'chapter3', 'chapter4'];
-  chapterKeys.forEach((key, chIdx) => {
-    const chapter = data[key];
-    if (!chapter) return;
-    chapter.stages.forEach((stageArr, sIdx) => {
-      const globalStage = chIdx * 10 + sIdx + 1;
-      stageArr.forEach(q => flat.push({ ...q, stage: globalStage }));
+<div id="screen-lobby" class="screen hidden">
+    <div class="panel text-center">
+        <div class="panel-title">Phong cho</div>
+        <p style="font-size:16px;">Xin chao, <strong id="player-display-name" style="color:var(--accent);">...</strong>!</p>
+        <p style="color:var(--muted); margin-top: 15px;">Dang cho giao vien bat dau...</p>
+    </div>
+</div>
+
+<div id="screen-role" class="screen hidden">
+    <div class="panel text-center">
+        <div class="panel-title">Phan doi hoan tat</div>
+        <p style="font-size:14px; color:var(--muted); margin-bottom:15px;">DOI CUA BAN LA</p>
+        <div id="team-badge" class="badge">DANG TINH...</div>
+        <p style="color:var(--muted); margin-top: 25px;">Chuan bi bat dau vong 1...</p>
+    </div>
+</div>
+
+<div id="screen-game" class="screen hidden">
+    <div class="sticky-header">
+        <div>
+            <div class="header-stage" id="display-stage-title">Vong 1</div>
+            <div class="header-team" id="display-my-team"></div>
+        </div>
+        <div class="header-timer" id="game-timer">01:00</div>
+    </div>
+    <div class="panel">
+        <div id="questions-container"></div>
+    </div>
+    <button id="btn-submit-answers" class="btn btn-success" onclick="submitAnswers()">NOP BAI</button>
+</div>
+
+<div id="screen-waiting" class="screen hidden">
+    <div class="panel text-center">
+        <h2 style="color:var(--success); margin-bottom: 10px;">DA NOP BAI THOI GIAN THUC</h2>
+        <div id="quiz-view"></div>
+    </div>
+</div>
+
+<div id="screen-essay" class="screen hidden">
+    <div class="panel" id="game-area-essay"></div>
+</div>
+
+<div id="screen-winner" class="screen hidden">
+    <div class="panel text-center">
+        <h2 style="color:var(--gold); margin-bottom: 20px; font-family: 'Orbitron', monospace;">KET THUC GAME</h2>
+        <div id="final-results"></div>
+    </div>
+</div>
+
+<script>
+let katexReady = false;
+const pendingRenderTargets = [];
+
+function maybeRenderMath() {
+    if (!katexReady) return;
+    pendingRenderTargets.forEach(el => {
+        if (typeof renderMathInElement === 'function') {
+            renderMathInElement(el, {
+                delimiters: [
+                    { left: '$$', right: '$$', display: true },
+                    { left: '$', right: '$', display: false },
+                    { left: '\\(', right: '\\)', display: false },
+                    { left: '\\[', right: '\\]', display: true }
+                ],
+                throwOnError: false
+            });
+        }
     });
-  });
-  return flat;
+    pendingRenderTargets.length = 0;
 }
 
-const allQuestions = buildFlatQuestions(questionsData);
-const keyQuestions = questionsData.keyQuestions || [];
-
-// =====================
-// Room Management
-// =====================
-const rooms = {}; // roomId -> gameState
-
-function generateRoomId() {
-  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
-  let id = '';
-  for (let i = 0; i < 4; i++) id += chars[Math.floor(Math.random() * chars.length)];
-  return id;
-}
-
-function createRoom() {
-  let roomId;
-  do { roomId = generateRoomId(); } while (rooms[roomId]);
-
-  rooms[roomId] = {
-    roomId,
-    adminSocketId: null,
-    status: 'lobby',
-    currentStage: 0,
-    players: [],
-    teamA: [],
-    teamB: [],
-    spy: null,
-    secretFund: 0,
-    timer: null,
-    currentKeyQuestion: null,
-    keyAnswers: {},
-    spyVotes: {},
-  };
-  return roomId;
-}
-
-function getRoom(roomId) {
-  return rooms[roomId] || null;
-}
-
-function shuffle(array) {
-  const a = [...array];
-  for (let i = a.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [a[i], a[j]] = [a[j], a[i]];
-  }
-  return a;
-}
-
-function getScores(room) {
-  const scoreA = room.teamA.reduce((s, p) => s + p.score, 0);
-  const scoreB = room.teamB.reduce((s, p) => s + p.score, 0);
-  return { scoreA, scoreB };
-}
-
-function getLeaderboard(room) {
-  return [...room.players]
-    .sort((a, b) => b.score - a.score)
-    .map((p, i) => ({ rank: i + 1, name: p.name, score: p.score, team: p.team }));
-}
-
-// =====================
-// Socket.IO
-// =====================
-io.on('connection', (socket) => {
-
-  // ── ADMIN: tạo phòng ──
-  socket.on('adminCreateRoom', () => {
-    const roomId = createRoom();
-    const room = getRoom(roomId);
-    room.adminSocketId = socket.id;
-    socket.join('room_' + roomId);
-    socket.join('admin_' + roomId);
-    socket.emit('roomCreated', roomId);
-  });
-
-  // ── PLAYER: join phòng ──
-  socket.on('playerJoinRoom', ({ roomId, name }) => {
-    const room = getRoom(roomId);
-    if (!room) { socket.emit('errorMsg', 'Phòng không tồn tại!'); return; }
-    if (room.status !== 'lobby') { socket.emit('errorMsg', 'Phòng đã khóa!'); return; }
-
-    const playerName = (name || '').trim().substring(0, 20);
-    if (!playerName) { socket.emit('errorMsg', 'Tên không hợp lệ!'); return; }
-
-    const player = {
-      id: socket.id,
-      name: playerName,
-      score: 0,
-      role: 'normal',
-      team: null,
-      submittedCurrentStage: false,
-    };
-    room.players.push(player);
-    socket.join('room_' + roomId);
-    socket.data.roomId = roomId;
-
-    // Thông báo danh sách player cho admin
-    io.to('admin_' + roomId).emit('updatePlayerList', room.players);
-    socket.emit('joinedRoom', { roomId });
-  });
-
-  // ── ADMIN: bắt đầu game ──
-  socket.on('adminStartGame', (roomId) => {
-    const room = getRoom(roomId);
-    if (!room || room.players.length === 0) return;
-
-    room.status = 'playing';
-    room.currentStage = 1;
-    room.teamA = [];
-    room.teamB = [];
-    room.spy = null;
-    room.secretFund = 0;
-
-    if (room.players.length === 1) {
-      room.players[0].team = 'solo';
-      io.to(room.players[0].id).emit('roleAssignment', { team: 'solo', isSpy: false });
+function renderMathIn(el) {
+    if (!el) return;
+    if (katexReady && typeof renderMathInElement === 'function') {
+        renderMathInElement(el, {
+            delimiters: [
+                { left: '$$', right: '$$', display: true },
+                { left: '$', right: '$', display: false },
+                { left: '\\(', right: '\\)', display: false },
+                { left: '\\[', right: '\\]', display: true }
+            ],
+            throwOnError: false
+        });
     } else {
-      let shuffled = shuffle([...room.players]);
-      if (shuffled.length % 2 !== 0) {
-        const spy = shuffled.pop();
-        spy.role = 'spy';
-        spy.team = 'A';
-        room.spy = spy;
-        room.teamA.push(spy);
-      }
-      const half = Math.floor(shuffled.length / 2);
-      shuffled.slice(0, half).forEach(p => { p.team = 'A'; room.teamA.push(p); });
-      shuffled.slice(half).forEach(p => { p.team = 'B'; room.teamB.push(p); });
-      room.players = [...room.teamA, ...room.teamB];
-
-      room.players.forEach(p => {
-        io.to(p.id).emit('roleAssignment', { team: p.team, isSpy: p.role === 'spy' });
-      });
+        pendingRenderTargets.push(el);
     }
+}
 
-    // Thông báo cho admin biết game đã bắt đầu
-    io.to('admin_' + roomId).emit('gameStarted');
-    startStage(roomId, 1);
-  });
+const socket = io();
+let myName = '';
+let myRoomId = '';
+let myTeam = '';
+let submitted = false;
 
-  // ── PLAYER: nộp bài ──
-  socket.on('submitAnswers', ({ roomId, answers }) => {
-    const room = getRoom(roomId);
-    if (!room) return;
-    const player = room.players.find(p => p.id === socket.id);
-    if (!player || player.submittedCurrentStage) return;
-    player.submittedCurrentStage = true;
+function showScreen(id) {
+    document.querySelectorAll('.screen').forEach(s => s.classList.add('hidden'));
+    document.getElementById(id).classList.remove('hidden');
+    window.scrollTo(0, 0);
+}
 
-    // Tính điểm: dùng _stageAnswers của player (đáp án đã xáo trộn riêng từng người)
-    const stageAnswers = player._stageAnswers || {};
-    let correct = 0, wrong = 0;
-
-    Object.keys(stageAnswers).forEach(qId => {
-      const submitted = answers[qId];
-      if (!submitted) return; // bỏ trống không trừ điểm
-      if (submitted === stageAnswers[qId]) correct++;
-      else wrong++;
-    });
-
-    const multiplier = (room.currentStage === 5) ? 2 : 1;
-    const earned = (correct * 10 - wrong * 2) * multiplier;
-    player.score += Math.max(0, earned);
-    if (player.role === 'spy') room.secretFund += Math.max(0, earned);
-
-    const total = Object.keys(stageAnswers).length;
-    socket.emit('earlyResult', { correct, total });
-
-    // Kiểm tra tất cả đã nộp chưa
-    if (room.players.every(p => p.submittedCurrentStage)) {
-      clearInterval(room.timer);
-      startIntermission(roomId);
+window.addEventListener('load', () => {
+    const params = new URLSearchParams(window.location.search);
+    const room = params.get('room');
+    if (room) {
+        document.getElementById('input-room-id').value = room.toUpperCase();
+        document.getElementById('input-name').focus();
     }
-  });
-
-  // ── CHAT ──
-  socket.on('sendTeamMessage', ({ roomId, msg }) => {
-    const room = getRoom(roomId);
-    if (!room || !msg || !msg.trim()) return;
-    const player = room.players.find(p => p.id === socket.id);
-    if (!player) return;
-    const data = { name: player.name, msg: msg.trim().substring(0, 200) };
-    room.players
-      .filter(p => p.team === player.team)
-      .forEach(p => io.to(p.id).emit('receiveTeamMessage', data));
-  });
-
-  socket.on('sendGlobalMessage', ({ roomId, msg }) => {
-    const room = getRoom(roomId);
-    if (!room || !msg || !msg.trim()) return;
-    const player = room.players.find(p => p.id === socket.id);
-    if (!player || room.status !== 'intermission') return;
-    const data = { name: player.name, msg: msg.trim().substring(0, 200) };
-    io.to('room_' + roomId).emit('receiveGlobalMessage', data);
-  });
-
-  // ── FINAL: câu hỏi chìa khóa ──
-  socket.on('submitKeyAnswer', ({ roomId, answer }) => {
-    const room = getRoom(roomId);
-    if (!room) return;
-    const player = room.players.find(p => p.id === socket.id);
-    if (!player || player.team !== 'B') return;
-    room.keyAnswers[socket.id] = answer;
-  });
-
-  // ── FINAL: vote gián điệp ──
-  socket.on('submitSpyVote', ({ roomId, votedPlayerId }) => {
-    const room = getRoom(roomId);
-    if (!room) return;
-    const voter = room.players.find(p => p.id === socket.id);
-    if (!voter || voter.team !== 'A') return;
-    room.spyVotes[socket.id] = votedPlayerId;
-  });
-
-  // ── RESET ──
-  socket.on('resetGame', (roomId) => {
-    const room = getRoom(roomId);
-    if (!room) return;
-    clearInterval(room.timer);
-    delete rooms[roomId];
-    io.to('room_' + roomId).emit('gameReset');
-  });
-
-  // ── DISCONNECT ──
-  socket.on('disconnect', () => {
-    const roomId = socket.data.roomId;
-    if (!roomId) return;
-    const room = getRoom(roomId);
-    if (!room) return;
-
-    room.players = room.players.filter(p => p.id !== socket.id);
-    room.teamA   = room.teamA.filter(p => p.id !== socket.id);
-    room.teamB   = room.teamB.filter(p => p.id !== socket.id);
-    if (room.spy && room.spy.id === socket.id) room.spy = null;
-    if (room.status === 'lobby') {
-      io.to('admin_' + roomId).emit('updatePlayerList', room.players);
-    }
-  });
 });
 
-// =====================
-// Game flow
-// =====================
-function startStage(roomId, stageNum) {
-  const room = getRoom(roomId);
-  if (!room) return;
+function joinRoom() {
+    myRoomId = document.getElementById('input-room-id').value.trim().toUpperCase();
+    myName = document.getElementById('input-name').value.trim();
+    if (!myRoomId || !myName) return alert('Vui long nhap day du Ma Phong va Ten!');
 
-  room.status = 'playing';
-  room.currentStage = stageNum;
-  room.players.forEach(p => { p.submittedCurrentStage = false; });
-
-  const stageQs = allQuestions.filter(q => q.stage === stageNum);
-  const letters = ['A', 'B', 'C', 'D'];
-
-  // Gắn id cho từng câu hỏi trong stage
-  stageQs.forEach((q, i) => { q._id = `s${stageNum}_${i}`; });
-
-  // Thông báo admin
-  io.to('admin_' + roomId).emit('stageUpdate', {
-    stageNum,
-    isDouble: stageNum === 5,
-    teamA_score: getScores(room).scoreA,
-    teamB_score: getScores(room).scoreB,
-  });
-
-  // Gửi câu hỏi cho từng player (shuffle riêng, đảo đáp án)
-  room.players.forEach(p => {
-    const personalQs = shuffle([...stageQs]).map(q => {
-      const entries = shuffle(Object.entries(q.options));
-      const newOptions = {};
-      let newAnswer = '';
-      entries.forEach(([origKey, val], i) => {
-        newOptions[letters[i]] = val;
-        if (origKey === q.answer) newAnswer = letters[i];
-      });
-      return {
-        id: q._id,
-        text: q.question,
-        choices: entries.map(([origKey, val], i) => ({ key: letters[i], text: val })),
-        _answer: newAnswer, // Không gửi cho client, chỉ dùng server-side
-      };
-    });
-
-    // Lưu đáp án đúng vào server để chấm điểm
-    p._stageAnswers = {};
-    personalQs.forEach(q => {
-      p._stageAnswers[q.id] = q._answer;
-      delete q._answer; // Xóa trước khi gửi xuống client
-    });
-
-    io.to(p.id).emit('startStage', {
-      stageNum,
-      isDouble: stageNum === 5,
-      questions: personalQs,
-    });
-  });
-
-  // Timer 90 giây
-  let timeLeft = 90;
-  room.timer = setInterval(() => {
-    io.to('room_' + roomId).emit('timerUpdate', timeLeft);
-    timeLeft--;
-    if (timeLeft < 0) {
-      clearInterval(room.timer);
-      startIntermission(roomId);
-    }
-  }, 1000);
+    document.getElementById('player-display-name').innerText = myName;
+    showScreen('screen-lobby');
+    socket.emit('playerJoinRoom', { roomId: myRoomId, name: myName });
 }
 
-function startIntermission(roomId) {
-  const room = getRoom(roomId);
-  if (!room || room.status === 'intermission') return;
-  room.status = 'intermission';
-  room.players.forEach(p => { p.submittedCurrentStage = true; });
+socket.on('errorMsg', (msg) => { alert(msg); showScreen('screen-join'); });
 
-  const { scoreA, scoreB } = getScores(room);
-  const leaderboard = getLeaderboard(room);
+socket.on('roleAssignment', (data) => {
+    myTeam = data.team;
+    const badge = document.getElementById('team-badge');
+    if (myTeam === 'A') { badge.className = 'badge badge-a'; badge.innerText = 'DOI A'; }
+    else if (myTeam === 'B') { badge.className = 'badge badge-b'; badge.innerText = 'DOI B'; }
+    else if (myTeam === 'C') { badge.className = 'badge badge-c'; badge.innerText = 'DOI C (Thanh vien le)'; }
+    else { badge.className = 'badge'; badge.innerText = 'SOLO'; }
 
-  io.to('room_' + roomId).emit('intermissionStart', {
-    teamA_score: scoreA,
-    teamB_score: scoreB,
-    leaderboard,
-  });
-
-  let timeLeft = 15;
-  room.timer = setInterval(() => {
-    io.to('room_' + roomId).emit('timerUpdate', timeLeft);
-    timeLeft--;
-    if (timeLeft < 0) {
-      clearInterval(room.timer);
-      const next = room.currentStage + 1;
-      if (next > 10) startEndgame(roomId);
-      else startStage(roomId, next);
-    }
-  }, 1000);
-}
-
-function startEndgame(roomId) {
-  const room = getRoom(roomId);
-  if (!room) return;
-  room.status = 'endgame';
-
-  const kq = shuffle([...keyQuestions])[0] || null;
-  room.currentKeyQuestion = kq;
-  room.keyAnswers = {};
-  room.spyVotes  = {};
-
-  const { scoreA, scoreB } = getScores(room);
-
-  // Admin
-  io.to('admin_' + roomId).emit('finalPhaseStart', {
-    spyFund: room.secretFund,
-    spyName: room.spy ? room.spy.name : null,
-    teamA_score: scoreA,
-    teamB_score: scoreB,
-    leaderboard: getLeaderboard(room),
-  });
-
-  // Player: thông báo phase final
-  room.players.forEach(p => {
-    io.to(p.id).emit('finalPhaseStart', {
-      spyFund: room.secretFund,
-      teamAPlayers: room.teamA.map(x => ({ id: x.id, name: x.name })),
-    });
-  });
-
-  // Gửi câu hỏi chìa khóa cho Đội B
-  if (kq) {
-    const letters = ['A', 'B', 'C', 'D'];
-    const choices = Object.entries(kq.options).map(([key, text]) => ({ key, text }));
-    room.players.filter(p => p.team === 'B').forEach(p => {
-      io.to(p.id).emit('teamBKeyQuestion', {
-        text: kq.question,
-        choices,
-      });
-    });
-  }
-
-  setTimeout(() => resolveEndgame(roomId), 61000);
-}
-
-function resolveEndgame(roomId) {
-  const room = getRoom(roomId);
-  if (!room) return;
-
-  const kq = room.currentKeyQuestion;
-  let teamBWon = false;
-
-  if (kq && room.secretFund > 0 && room.teamB.length > 0) {
-    const correct = room.teamB.filter(p => room.keyAnswers[p.id] === kq.answer).length;
-    if (correct > room.teamB.length / 2) {
-      teamBWon = true;
-      const bonus = Math.round(room.secretFund / room.teamB.length);
-      room.teamB.forEach(p => { p.score += bonus; });
-    }
-  }
-
-  let spyCaught = false;
-  if (room.spy) {
-    const votes = Object.values(room.spyVotes);
-    const counts = {};
-    votes.forEach(id => { counts[id] = (counts[id] || 0) + 1; });
-    const top = Object.entries(counts).sort((a, b) => b[1] - a[1])[0];
-    if (top && top[0] === room.spy.id) {
-      spyCaught = true;
-      const nonSpy = room.teamA.filter(p => p.role !== 'spy');
-      const bonus = nonSpy.length > 0 ? Math.round(room.secretFund / nonSpy.length) : 0;
-      nonSpy.forEach(p => { p.score += bonus; });
-    }
-  }
-
-  const { scoreA, scoreB } = getScores(room);
-  const winner = scoreA > scoreB ? 'A' : scoreB > scoreA ? 'B' : 'draw';
-
-  // Admin: kết quả cuối
-  io.to('admin_' + roomId).emit('finalPhaseResult', {
-    teamB_success: teamBWon,
-    teamA_success: spyCaught,
-  });
-
-  // Player: màn hình vinh danh
-  io.to('room_' + roomId).emit('gameOver', {
-    winningTeam: winner,
-    topPlayers: getLeaderboard(room).slice(0, 3),
-    spyName: room.spy ? room.spy.name : null,
-    spyCaught,
-    teamBWon,
-    scoreA,
-    scoreB,
-  });
-}
-
-const PORT = process.env.PORT || 3000;
-server.listen(PORT, '0.0.0.0', () => {
-  console.log(`Server running on port ${PORT}`);
-  console.log(`Admin: http://localhost:${PORT}/admin`);
-  console.log(`Player: http://localhost:${PORT}/play`);
+    document.getElementById('display-my-team').innerText = 'DOI ' + myTeam;
+    showScreen('screen-role');
 });
+
+socket.on('startStage', (data) => {
+    submitted = false;
+    showScreen('screen-game');
+    document.getElementById('display-stage-title').innerText = `Vong ${data.stageNum} / 10` + (data.isDouble ? ' (X2 DIEM CAU DUNG)' : '');
+
+    const container = document.getElementById('questions-container');
+    container.innerHTML = '';
+
+    data.questions.forEach((q, index) => {
+        const block = document.createElement('div');
+        block.className = 'question-block';
+        block.setAttribute('data-qid', q.id);
+
+        const numDiv = document.createElement('div');
+        numDiv.className = 'question-num';
+        numDiv.textContent = 'CAU ' + (index + 1);
+
+        const textDiv = document.createElement('div');
+        textDiv.className = 'question-text';
+        textDiv.textContent = q.text;
+
+        const gridDiv = document.createElement('div');
+        gridDiv.className = 'options-grid';
+
+        q.choices.forEach(c => {
+            const lbl = document.createElement('label');
+            lbl.className = 'option-label';
+            lbl.addEventListener('click', function() {
+                gridDiv.querySelectorAll('.option-label').forEach(l => l.classList.remove('selected'));
+                this.classList.add('selected');
+                this.querySelector('input').checked = true;
+            });
+
+            const radio = document.createElement('input');
+            radio.type = 'radio';
+            radio.name = 'q_' + q.id;
+            radio.value = c.key;
+
+            const keySpan = document.createElement('span');
+            keySpan.className = 'option-key';
+            keySpan.textContent = c.key + '.';
+
+            const txtSpan = document.createElement('span');
+            txtSpan.className = 'option-text';
+            txtSpan.textContent = " " + c.text;
+
+            lbl.appendChild(radio);
+            lbl.appendChild(keySpan);
+            lbl.appendChild(txtSpan);
+            gridDiv.appendChild(lbl);
+        });
+
+        block.appendChild(numDiv);
+        block.appendChild(textDiv);
+        block.appendChild(gridDiv);
+        container.appendChild(block);
+    });
+
+    renderMathIn(container);
+});
+
+socket.on('timerUpdate', (seconds) => {
+    const m = Math.floor(seconds / 60).toString().padStart(2, '0');
+    const s = (seconds % 60).toString().padStart(2, '0');
+    const el = document.getElementById('game-timer');
+    if (el) el.innerText = `${m}:${s}`;
+});
+
+function submitAnswers() {
+    if (submitted) return;
+    submitted = true;
+
+    const answers = {};
+    document.querySelectorAll('.question-block').forEach(block => {
+        const qid = block.getAttribute('data-qid');
+        const chk = block.querySelector('input[type="radio"]:checked');
+        answers[qid] = chk ? chk.value : '';
+    });
+
+    socket.emit('submitAnswers', { roomId: myRoomId, answers });
+    showScreen('screen-waiting');
+}
+
+socket.on('earlyResult', (data) => {
+    let deltaText = data.delta >= 0 ? `+${data.delta}` : `${data.delta}`;
+    document.getElementById('quiz-view').innerHTML = `
+        <div class="result-card">
+            <p style="font-size: 16px; margin-bottom: 10px;">So cau dung cua ban: <strong>${data.correct} / ${data.total}</strong></p>
+            <p>Bien dong diem so: <strong class="${data.delta >= 0 ? 'score-up' : 'score-down'}">${deltaText} diem</strong></p>
+            <p style="margin-top: 15px; font-size: 14px;">Tong diem hien tai: <strong>${data.currentScore} diem</strong></p>
+            <p style="margin-top: 20px; color: var(--muted); font-size: 13px;">Vui long cho het thoi gian 60s cua vong...</p>
+        </div>
+    `;
+});
+
+socket.on('intermissionStart', (data) => {
+    if (!document.getElementById('screen-game').classList.contains('hidden') && !submitted) {
+        submitAnswers();
+    }
+});
+
+// Essay Round
+socket.on('essayRoundRequestQuestion', (data) => {
+    showScreen('screen-essay');
+    document.getElementById('game-area-essay').innerHTML = `
+        <div class="essay-box">
+            <h3 style="color:var(--accent); margin-bottom: 15px;">VONG TU LUAN (Doi C)</h3>
+            <p style="margin-bottom: 15px;">Ban la nguoi choi doc lap. Hay tao 1 cau hoi tu luan that kho de thach do Doi A va B. Nguoi tra loi dung nhanh nhat se lay duoc toan bo <strong>${data.scoreC} diem</strong> ban da tich luy.</p>
+            <input type="text" id="essayQuestionInput" class="form-control" placeholder="Nhap noi dung cau hoi tai day...">
+            <button id="btnSendEssayQuestion" class="btn btn-success">XAC NHAN GUI CAU HOI</button>
+            <div style="margin-top: 30px;">
+                <h4 style="margin-bottom: 15px; color:var(--muted)">DAP AN TU CAC DOI GUI VE (Chon nguoi nhanh/dung nhat):</h4>
+                <div id="receivedAnswersList"></div>
+            </div>
+        </div>
+    `;
+
+    document.getElementById('btnSendEssayQuestion').addEventListener('click', () => {
+        let text = document.getElementById('essayQuestionInput').value;
+        if(text.trim()) {
+            socket.emit('submitEssayQuestion', { roomId: myRoomId, questionText: text });
+            document.getElementById('essayQuestionInput').disabled = true;
+            document.getElementById('btnSendEssayQuestion').style.display = 'none';
+        }
+    });
+});
+
+socket.on('essayRoundNewAnswer', (data) => {
+    const list = document.getElementById('receivedAnswersList');
+    if (list) {
+        const div = document.createElement('div');
+        div.className = 'answer-item';
+        div.innerHTML = `
+            <p style="margin-bottom: 10px;"><strong>${data.name} (Doi ${data.team}):</strong> ${data.answerText}</p>
+            <button onclick="approveAnswer('${data.playerId}')" class="btn-approve">CHON DAP AN NAY LA CHUAN NHAT</button>
+        `;
+        list.appendChild(div);
+    }
+});
+
+window.approveAnswer = function(playerId) {
+    if(confirm('Ban co chac chan chon cau nay lam cau tra loi dung? Diem cua ban se duoc cong vao thanh vien nay.')) {
+        socket.emit('chooseBestEssayAnswer', { roomId: myRoomId, playerId: playerId });
+    }
+};
+
+socket.on('essayRoundWaitingQuestion', (data) => {
+    showScreen('screen-essay');
+    document.getElementById('game-area-essay').innerHTML = `
+        <div class="text-center">
+            <h3 style="color:var(--accent); margin-bottom: 15px;">VONG TU LUAN THU THACH</h3>
+            <p>Dang cho <strong>${data.creatorName}</strong> (Doi C le) ra de bai...</p>
+        </div>
+    `;
+});
+
+socket.on('essayRoundBroadcastQuestion', (data) => {
+    if (myTeam === 'A' || myTeam === 'B') {
+        document.getElementById('game-area-essay').innerHTML = `
+            <div class="essay-box">
+                <h3 style="color:var(--accent); margin-bottom: 15px;">CAU HOI TU ${data.creatorName}:</h3>
+                <p style="font-size: 18px; margin-bottom: 20px;"><strong>${data.questionText}</strong></p>
+                <textarea id="essayAnswerInput" class="form-control" placeholder="Tra loi nhanh nhat co the vao day de lay diem Doi C..."></textarea>
+                <button id="btnSendEssayAnswer" class="btn btn-success">NOP CAU TRA LOI</button>
+            </div>
+        `;
+
+        document.getElementById('btnSendEssayAnswer').addEventListener('click', () => {
+            let ans = document.getElementById('essayAnswerInput').value;
+            if(ans.trim()) {
+                socket.emit('submitEssayAnswer', { roomId: myRoomId, answerText: ans });
+                document.getElementById('game-area-essay').innerHTML = `<div class="text-center"><h3 style="color:var(--success)">DA GUI!</h3><p>Dang cho khao thi quyet dinh nguoi tra loi chuan nhat...</p></div>`;
+            }
+        });
+    }
+});
+
+socket.on('gameOver', (data) => {
+    showScreen('screen-winner');
+    let winHtml = '';
+    if (data.winningTeam === 'draw') {
+        winHtml = `<h3 style="color:var(--gold); font-size: 24px; margin-bottom: 15px;">HOA NHAU!</h3>`;
+    } else {
+        winHtml = `<h3 style="color:var(--accent); font-size: 24px; margin-bottom: 15px;">DOI CHIEN THANG: DOI ${data.winningTeam}</h3>`;
+    }
+    
+    let bonusInfo = data.essayBonusDetails ? `
+        <div style="margin: 15px 0; padding: 15px; background: rgba(52,211,153,0.1); border: 1px solid var(--success); border-radius: 8px;">
+            <p style="color:var(--success); font-weight: bold; font-size: 16px;">
+                ${data.essayBonusDetails.winnerName} (Doi ${data.essayBonusDetails.winningTeam}) da nhanh nhat va doat them ${data.essayBonusDetails.bonusPoints} diem tu Doi C!
+            </p>
+        </div>
+    ` : '';
+    
+    document.getElementById('final-results').innerHTML = `
+        ${winHtml}
+        <p style="font-size: 18px; margin-bottom: 10px;">Doi A: <strong>${data.scoreA}</strong> | Doi B: <strong>${data.scoreB}</strong></p>
+        ${bonusInfo}
+        <p style="margin-top: 30px; font-size: 14px; color: var(--muted);">Tro choi da ket thuc. He thong dang duoc khoi dong lai tu admin.</p>
+    `;
+});
+
+function escHtml(str) {
+    return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+</script>
+</body>
+</html>
