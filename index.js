@@ -9,7 +9,6 @@ const io = new Server(server);
 
 app.use(express.static(path.join(__dirname, 'public')));
 
-// Route admin va player
 app.get('/admin', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'admin.html'));
 });
@@ -17,10 +16,9 @@ app.get('/play', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'player.html'));
 });
 
-// Load ngan hang cau hoi
+// Load question bank
 const questionsData = require('./data/questions.js');
 
-// Gop cau hoi tu cac chuong thanh mang phang de xao tron
 function buildFlatQuestions(data) {
   const flat = [];
   const chapterKeys = ['chapter1', 'chapter2', 'chapter3', 'chapter4'];
@@ -28,17 +26,14 @@ function buildFlatQuestions(data) {
     const chapter = data[key];
     if (!chapter) return;
     chapter.stages.forEach((stageArr) => {
-      stageArr.forEach(q => flat.push({ ...q }));
+      stageArr.forEach(q => flat.push(q));
     });
   });
   return flat;
 }
 
-const allQuestions = buildFlatQuestions(questionsData);
+const allQuestionsPool = buildFlatQuestions(questionsData);
 
-// =====================
-// Room Management
-// =====================
 const rooms = {};
 
 function generateRoomId() {
@@ -60,13 +55,10 @@ function createRoom() {
     players: [],
     teamA: [],
     teamB: [],
-    teamC: [], // Doi danh cho nguoi bi le
-    gameQuestions: [], 
-    stageStartTime: null,
+    teamC: [], // Đội lẻ
     timer: null,
-    essayAnswers: [],
-    currentEssayQuestion: null,
-    essayBonusDetails: null
+    shuffledQuestions: [],
+    essayQuestion: null
   };
   return roomId;
 }
@@ -91,33 +83,22 @@ function getScores(room) {
   return { scoreA, scoreB, scoreC };
 }
 
-// Uu tien diem cao, neu bang diem thi tong thoi gian it hon (nhanh hon) xep tren
 function getLeaderboard(room) {
   return [...room.players]
-    .sort((a, b) => {
-      if (b.score !== a.score) {
-        return b.score - a.score;
-      }
-      return (a.totalCompletionTime || 0) - (b.totalCompletionTime || 0);
-    })
-    .map((p, i) => ({
-      rank: i + 1,
-      id: p.id,
-      name: p.name,
-      score: p.score,
+    .sort((a, b) => b.score - a.score || a.totalCompletionTime - b.totalCompletionTime)
+    .map((p, i) => ({ 
+      rank: i + 1, 
+      name: p.name, 
+      score: p.score, 
       team: p.team,
-      lastDelta: p.lastDelta || 0,
-      lastCompletionTime: p.lastCompletionTime || 0,
-      totalCompletionTime: p.totalCompletionTime || 0
+      lastDelta: p.lastDelta,
+      lastCompletionTime: p.lastCompletionTime,
+      totalCompletionTime: p.totalCompletionTime
     }));
 }
 
-// =====================
-// Socket.IO
-// =====================
 io.on('connection', (socket) => {
 
-  // Admin: tao phong
   socket.on('adminCreateRoom', () => {
     const roomId = createRoom();
     const room = getRoom(roomId);
@@ -127,7 +108,6 @@ io.on('connection', (socket) => {
     socket.emit('roomCreated', roomId);
   });
 
-  // Player: join phong
   socket.on('playerJoinRoom', ({ roomId, name }) => {
     const room = getRoom(roomId);
     if (!room) { socket.emit('errorMsg', 'Phong khong ton tai!'); return; }
@@ -142,6 +122,7 @@ io.on('connection', (socket) => {
       score: 0,
       team: null,
       submittedCurrentStage: false,
+      _currentStageAnswers: {},
       lastDelta: 0,
       lastCompletionTime: 0,
       totalCompletionTime: 0
@@ -154,7 +135,6 @@ io.on('connection', (socket) => {
     socket.emit('joinedRoom', { roomId });
   });
 
-  // Admin: bat dau game
   socket.on('adminStartGame', (roomId) => {
     const room = getRoom(roomId);
     if (!room || room.players.length === 0) return;
@@ -164,35 +144,21 @@ io.on('connection', (socket) => {
     room.teamA = [];
     room.teamB = [];
     room.teamC = [];
-    room.essayAnswers = [];
-    room.essayBonusDetails = null;
-    
-    // Xao tron toan bo cau hoi 1 lan va cat ra cho tung vong
-    room.gameQuestions = shuffle([...allQuestions]);
+    room.shuffledQuestions = shuffle([...allQuestionsPool]);
 
     if (room.players.length === 1) {
-      room.players[0].team = 'solo';
-      io.to(room.players[0].id).emit('roleAssignment', { team: 'solo' });
+      room.players[0].team = 'SOLO';
+      io.to(room.players[0].id).emit('roleAssignment', { team: 'SOLO' });
     } else {
-      let shuffledPlayers = shuffle([...room.players]);
-      shuffledPlayers.forEach(p => {
-        p.score = 0;
-        p.totalCompletionTime = 0;
-        p.lastDelta = 0;
-        p.lastCompletionTime = 0;
-      });
-
-      // Neu le thanh vien thi dua nguoi cuoi cung vao Doi C
-      if (shuffledPlayers.length % 2 !== 0) {
-        const playerC = shuffledPlayers.pop();
+      let shuffled = shuffle([...room.players]);
+      if (shuffled.length % 2 !== 0) {
+        const playerC = shuffled.pop();
         playerC.team = 'C';
         room.teamC.push(playerC);
       }
-      
-      const half = Math.floor(shuffledPlayers.length / 2);
-      shuffledPlayers.slice(0, half).forEach(p => { p.team = 'A'; room.teamA.push(p); });
-      shuffledPlayers.slice(half).forEach(p => { p.team = 'B'; room.teamB.push(p); });
-      
+      const half = Math.floor(shuffled.length / 2);
+      shuffled.slice(0, half).forEach(p => { p.team = 'A'; room.teamA.push(p); });
+      shuffled.slice(half).forEach(p => { p.team = 'B'; room.teamB.push(p); });
       room.players = [...room.teamA, ...room.teamB, ...room.teamC];
 
       room.players.forEach(p => {
@@ -204,48 +170,53 @@ io.on('connection', (socket) => {
     startStage(roomId, 1);
   });
 
-  // Player: nop bai giua cac vong
-  socket.on('submitAnswers', ({ roomId, answers }) => {
+  socket.on('submitSingleAnswer', ({ roomId, questionId, answer, timeTaken }) => {
     const room = getRoom(roomId);
-    if (!room) return;
+    if (!room || room.status !== 'playing') return;
+    
     const player = room.players.find(p => p.id === socket.id);
     if (!player || player.submittedCurrentStage) return;
-    player.submittedCurrentStage = true;
-
-    const duration = room.stageStartTime ? (Date.now() - room.stageStartTime) / 1000 : 0;
-    player.lastCompletionTime = Number(duration.toFixed(2));
-    player.totalCompletionTime = Number(((player.totalCompletionTime || 0) + duration).toFixed(2));
+    if (player._currentStageAnswers[questionId] !== undefined) return;
 
     const stageAnswers = player._stageAnswers || {};
-    let correct = 0, wrong = 0;
+    const correctAnswer = stageAnswers[questionId];
+    const isCorrect = (answer === correctAnswer);
 
-    Object.keys(stageAnswers).forEach(qId => {
-      const submitted = answers[qId];
-      if (!submitted) return; 
-      if (submitted === stageAnswers[qId]) correct++;
-      else wrong++;
+    const multiplier = (room.currentStage === 10) ? 2 : 1;
+    const points = isCorrect ? (10 * multiplier) : -2;
+
+    player.score += points;
+    player.lastDelta = points;
+    player.lastCompletionTime = timeTaken;
+    player.totalCompletionTime += timeTaken;
+    
+    player._currentStageAnswers[questionId] = answer;
+
+    socket.emit('singleAnswerResult', {
+      questionId,
+      isCorrect,
+      points: points >= 0 ? `+${points}` : `${points}`,
+      currentScore: player.score
     });
 
-    // Vong 10 nhan doi diem khi tra loi dung, sai van bi -2
-    let correctPoints = room.currentStage === 10 ? 20 : 10;
-    let wrongPoints = 2;
-
-    const delta = (correct * correctPoints - wrong * wrongPoints);
-    player.score += delta;
-    if (player.score < 0) player.score = 0; // Khong de diem am
-    player.lastDelta = delta;
-
-    const total = Object.keys(stageAnswers).length;
-    socket.emit('earlyResult', { correct, total, delta, currentScore: player.score });
-
+    const scores = getScores(room);
     io.to('admin_' + roomId).emit('playerSubmittedUpdate', {
       id: player.id,
       name: player.name,
       team: player.team,
-      lastCompletionTime: player.lastCompletionTime,
-      lastDelta: player.lastDelta,
-      score: player.score
+      score: player.score,
+      lastDelta: points,
+      lastCompletionTime: timeTaken,
+      teamA_score: scores.scoreA,
+      teamB_score: scores.scoreB,
+      teamC_score: scores.scoreC
     });
+
+    const totalQs = Object.keys(stageAnswers).length;
+    const answeredCount = Object.keys(player._currentStageAnswers).length;
+    if (answeredCount >= totalQs) {
+      player.submittedCurrentStage = true;
+    }
 
     if (room.players.every(p => p.submittedCurrentStage)) {
       clearInterval(room.timer);
@@ -253,70 +224,59 @@ io.on('connection', (socket) => {
     }
   });
 
-  // VONG TU LUAN: Doi C dat cau hoi
-  socket.on('submitEssayQuestion', ({ roomId, questionText }) => {
+  socket.on('sendGlobalMessage', ({ roomId, msg }) => {
     const room = getRoom(roomId);
-    if (!room || room.status !== 'essay_round') return;
+    if (!room || !msg || !msg.trim()) return;
     const player = room.players.find(p => p.id === socket.id);
-    if (!player || player.team !== 'C') return;
-
-    room.currentEssayQuestion = questionText.trim();
-
-    io.to('room_' + roomId).emit('essayRoundBroadcastQuestion', {
-      questionText: room.currentEssayQuestion,
-      creatorName: player.name
+    if (!player || room.status !== 'intermission') return;
+    io.to('room_' + roomId).emit('receiveGlobalMessage', { 
+      name: player.name, 
+      team: player.team, 
+      msg: msg.trim().substring(0, 200) 
     });
   });
 
-  // VONG TU LUAN: Doi A/B nop cau tra loi
+  socket.on('submitEssayQuestion', ({ roomId, questionText }) => {
+    const room = getRoom(roomId);
+    if (!room || room.status !== 'essay') return;
+    const player = room.players.find(p => p.id === socket.id);
+    if (!player || player.team !== 'C') return;
+
+    room.essayQuestion = questionText;
+    io.to('room_' + roomId).emit('essayRoundBroadcastQuestion', {
+      creatorName: player.name,
+      questionText: questionText
+    });
+  });
+
   socket.on('submitEssayAnswer', ({ roomId, answerText }) => {
     const room = getRoom(roomId);
-    if (!room || room.status !== 'essay_round') return;
+    if (!room || room.status !== 'essay') return;
     const player = room.players.find(p => p.id === socket.id);
     if (!player || (player.team !== 'A' && player.team !== 'B')) return;
 
-    const answerData = {
+    io.to('room_' + roomId).emit('essayRoundNewAnswer', {
       playerId: player.id,
       name: player.name,
       team: player.team,
-      answerText: answerText.trim(),
-      timestamp: Date.now()
-    };
-    room.essayAnswers.push(answerData);
-
-    if (room.teamC[0]) {
-      io.to(room.teamC[0].id).emit('essayRoundNewAnswer', answerData);
-    }
-    io.to('admin_' + roomId).emit('essayRoundNewAnswer', answerData);
+      answerText: answerText
+    });
   });
 
-  // VONG TU LUAN: Doi C chon nguoi tra loi dung dau tien
   socket.on('chooseBestEssayAnswer', ({ roomId, playerId }) => {
     const room = getRoom(roomId);
-    if (!room || room.status !== 'essay_round') return;
-    const chooser = room.players.find(p => p.id === socket.id);
-    if (!chooser || chooser.team !== 'C') return;
+    if (!room || room.status !== 'essay') return;
+    const creator = room.players.find(p => p.id === socket.id);
+    if (!creator || creator.team !== 'C') return;
 
-    const chosen = room.essayAnswers.find(ans => ans.playerId === playerId);
-    if (!chosen) return;
-
-    const totalBonus = room.teamC[0].score;
-    const winnerPlayer = room.players.find(p => p.id === chosen.playerId);
-    
-    if (winnerPlayer) {
-      winnerPlayer.score += totalBonus;
+    const winner = room.players.find(p => p.id === playerId);
+    if (winner) {
+      const bonus = creator.score;
+      winner.score += bonus;
+      resolveEndgame(roomId, { winnerName: winner.name, winningTeam: winner.team, bonusPoints: bonus });
     }
-
-    room.essayBonusDetails = {
-      winningTeam: chosen.team,
-      winnerName: chosen.name,
-      bonusPoints: totalBonus
-    };
-
-    startEndgame(roomId);
   });
 
-  // Admin Reset
   socket.on('resetGame', (roomId) => {
     const room = getRoom(roomId);
     if (!room) return;
@@ -332,10 +292,9 @@ io.on('connection', (socket) => {
     if (!room) return;
 
     room.players = room.players.filter(p => p.id !== socket.id);
-    room.teamA   = room.teamA.filter(p => p.id !== socket.id);
-    room.teamB   = room.teamB.filter(p => p.id !== socket.id);
-    room.teamC   = room.teamC.filter(p => p.id !== socket.id);
-
+    room.teamA = room.teamA.filter(p => p.id !== socket.id);
+    room.teamB = room.teamB.filter(p => p.id !== socket.id);
+    room.teamC = room.teamC.filter(p => p.id !== socket.id);
     if (room.status === 'lobby') {
       io.to('admin_' + roomId).emit('updatePlayerList', room.players);
     }
@@ -348,35 +307,30 @@ function startStage(roomId, stageNum) {
 
   room.status = 'playing';
   room.currentStage = stageNum;
-  room.stageStartTime = Date.now();
-
   room.players.forEach(p => { 
     p.submittedCurrentStage = false; 
-    p.lastDelta = 0;
+    p._currentStageAnswers = {};
     p.lastCompletionTime = 0;
   });
 
-  const startIdx = (stageNum - 1) * 5;
-  let stageQs = room.gameQuestions.slice(startIdx, startIdx + 5);
-  if (stageQs.length < 5) {
-    stageQs = shuffle([...allQuestions]).slice(0, 5); 
-  }
-
+  const startIndex = (stageNum - 1) * 5;
+  const stageQs = room.shuffledQuestions.slice(startIndex, startIndex + 5);
   const letters = ['A', 'B', 'C', 'D'];
+
   stageQs.forEach((q, i) => { q._id = `s${stageNum}_${i}`; });
 
-  const { scoreA, scoreB, scoreC } = getScores(room);
-
+  const scores = getScores(room);
   io.to('admin_' + roomId).emit('stageUpdate', {
     stageNum,
     isDouble: stageNum === 10,
-    teamA_score: scoreA,
-    teamB_score: scoreB,
-    teamC_score: scoreC,
+    teamA_score: scores.scoreA,
+    teamB_score: scores.scoreB,
+    teamC_score: scores.scoreC,
+    players: room.players
   });
 
   room.players.forEach(p => {
-    const personalQs = shuffle([...stageQs]).map(q => {
+    const personalQs = stageQs.map(q => {
       const entries = shuffle(Object.entries(q.options));
       const newOptions = {};
       let newAnswer = '';
@@ -405,7 +359,6 @@ function startStage(roomId, stageNum) {
     });
   });
 
-  // Giam thoi gian xuong 60s
   let timeLeft = 60;
   room.timer = setInterval(() => {
     io.to('room_' + roomId).emit('timerUpdate', timeLeft);
@@ -421,27 +374,19 @@ function startIntermission(roomId) {
   const room = getRoom(roomId);
   if (!room || room.status === 'intermission') return;
   room.status = 'intermission';
-  
-  room.players.forEach(p => { 
-    if (!p.submittedCurrentStage) {
-      p.submittedCurrentStage = true;
-      p.lastCompletionTime = 60;
-      p.totalCompletionTime = Number(((p.totalCompletionTime || 0) + 60).toFixed(2));
-      p.lastDelta = 0;
-    }
-  });
+  room.players.forEach(p => { p.submittedCurrentStage = true; });
 
-  const { scoreA, scoreB, scoreC } = getScores(room);
+  const scores = getScores(room);
   const leaderboard = getLeaderboard(room);
 
   io.to('room_' + roomId).emit('intermissionStart', {
-    teamA_score: scoreA,
-    teamB_score: scoreB,
-    teamC_score: scoreC,
+    teamA_score: scores.scoreA,
+    teamB_score: scores.scoreB,
+    teamC_score: scores.scoreC,
     leaderboard,
   });
 
-  let timeLeft = 10;
+  let timeLeft = 30;
   room.timer = setInterval(() => {
     io.to('room_' + roomId).emit('timerUpdate', timeLeft);
     timeLeft--;
@@ -449,10 +394,10 @@ function startIntermission(roomId) {
       clearInterval(room.timer);
       const next = room.currentStage + 1;
       if (next > 10) {
-        if (room.teamC.length > 0) {
+        if (room.teamC.length > 0 && room.teamA.length > 0 && room.teamB.length > 0) {
           startEssayRound(roomId);
         } else {
-          startEndgame(roomId);
+          resolveEndgame(roomId);
         }
       } else {
         startStage(roomId, next);
@@ -464,46 +409,33 @@ function startIntermission(roomId) {
 function startEssayRound(roomId) {
   const room = getRoom(roomId);
   if (!room) return;
-  room.status = 'essay_round';
-  room.essayAnswers = [];
+  room.status = 'essay';
+  const playerC = room.teamC[0];
 
-  const { scoreC } = getScores(room);
-
-  io.to('admin_' + roomId).emit('essayRoundStart', {
-    creatorName: room.teamC[0].name,
-    scoreC
+  io.to('room_' + roomId).emit('essayRoundStart', {
+    creatorName: playerC.name,
+    scoreC: playerC.score
   });
 
-  io.to(room.teamC[0].id).emit('essayRoundRequestQuestion', {
-    scoreC
-  });
-
-  room.players.filter(p => p.team === 'A' || p.team === 'B').forEach(p => {
-    io.to(p.id).emit('essayRoundWaitingQuestion', {
-      creatorName: room.teamC[0].name
-    });
-  });
+  io.to(playerC.id).emit('essayRoundRequestQuestion', { scoreC: playerC.score });
 }
 
-function startEndgame(roomId) {
+function resolveEndgame(roomId, essayBonusDetails = null) {
   const room = getRoom(roomId);
   if (!room) return;
   room.status = 'endgame';
 
-  const { scoreA, scoreB, scoreC } = getScores(room);
-  let winner = 'draw';
-  if (scoreA > scoreB) winner = 'A';
-  else if (scoreB > scoreA) winner = 'B';
-
-  const leaderboard = getLeaderboard(room);
+  const scores = getScores(room);
+  let winner = 'HOA';
+  if (scores.scoreA > scores.scoreB) winner = 'A';
+  else if (scores.scoreB > scores.scoreA) winner = 'B';
 
   io.to('room_' + roomId).emit('gameOver', {
     winningTeam: winner,
-    topPlayers: leaderboard.slice(0, 3),
-    scoreA,
-    scoreB,
-    scoreC,
-    essayBonusDetails: room.essayBonusDetails
+    topPlayers: getLeaderboard(room).slice(0, 3),
+    scoreA: scores.scoreA,
+    scoreB: scores.scoreB,
+    essayBonusDetails
   });
 }
 
