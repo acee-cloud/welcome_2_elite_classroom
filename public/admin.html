@@ -260,4 +260,17 @@ function renderLeaderboard(hasFlashEffect) {
 
         tbody.innerHTML += `
             <tr ${flashClass}>
-                <td style="font-family:'Orbitron'; font-weight:bold
+                <td style="font-family:'Orbitron'; font-weight:bold; color:var(--gold);">${idx + 1}</td>
+                <td><strong>${p.name}</strong></td>
+                <td><span class="badge-team b-team-${p.team}">${p.team}</span></td>
+                <td style="font-size:18px; font-weight:700; color:var(--accent);">${p.score}</td>
+                <td><span class="${dClass}">${dText}</span></td>
+                <td>${p.lastCompletionTime ? p.lastCompletionTime + 's' : '-'}</td>
+                <td style="color:var(--muted);">${p.totalCompletionTime || 0}s</td>
+            </tr>
+        `;
+    });
+}
+</script>
+</body>
+</html>
