@@ -55,6 +55,7 @@ function getLeaderboard(room) {
     .map((p) => ({
       id: p.id,
       name: p.name,
+      avatar: p.avatar,
       score: p.score,
       team: p.team,
       totalTimeTaken: p.totalTimeTaken,
@@ -78,8 +79,8 @@ io.on('connection', (socket) => {
     socket.emit('roomCreated', roomId);
   });
 
-  // PLAYER: Tham gia phòng chơi
-  socket.on('playerJoinRoom', ({ roomId, name }) => {
+  // PLAYER: Tham gia phòng chơi (Nhận thêm avatar từ việc quét QR/nhập form)
+  socket.on('playerJoinRoom', ({ roomId, name, avatar }) => {
     const rId = roomId.toUpperCase();
     const room = rooms[rId];
     if (!room || room.status !== 'lobby') {
@@ -87,51 +88,65 @@ io.on('connection', (socket) => {
     }
     const playerName = (name || '').trim().substring(0, 20);
     if (!playerName) return socket.emit('errorMsg', 'Tên không hợp lệ!');
+    
+    const playerAvatar = (avatar || 'default_animal').trim();
+
+    // Thuật toán chia đội tự động & cân bằng tuyệt đối ngay khi vào sảnh
+    let assignedTeam = 'A';
+    const countA = room.teamA.length;
+    const countB = room.teamB.length;
+
+    if (countA < countB) {
+      assignedTeam = 'A';
+    } else if (countB < countA) {
+      assignedTeam = 'B';
+    } else {
+      // Nếu bằng nhau thì random ngẫu nhiên ngẫu chọn một đội
+      assignedTeam = Math.random() < 0.5 ? 'A' : 'B';
+    }
 
     const player = {
-      id: socket.id, name: playerName, score: 0, team: null,
+      id: socket.id, name: playerName, avatar: playerAvatar, score: 0, team: assignedTeam,
       submittedCurrentStage: false, _stageAnswers: {}, _answeredCount: 0,
       totalTimeTaken: 0, lastDelta: 0, history: []
     };
     
     room.players.push(player);
+    if (assignedTeam === 'A') {
+      room.teamA.push(player);
+    } else {
+      room.teamB.push(player);
+    }
+
     socket.join('room_' + rId);
     socket.data.roomId = rId;
 
-    io.to('admin_' + room.roomId).emit('updatePlayerList', room.players.map(p => ({ name: p.name })));
-    socket.emit('joinedRoom', { roomId: room.roomId });
+    // Gửi phản hồi xác nhận cho cá nhân player kèm thông tin team đã được phân phối
+    socket.emit('joinedRoom', { roomId: room.roomId, team: assignedTeam });
+
+    // Cập nhật danh sách realtime hiển thị trong không gian sảnh chờ công khai cho TẤT CẢ mọi người
+    io.to('room_' + rId).emit('updatePlayerList', room.players.map(p => ({
+      id: p.id,
+      name: p.name,
+      avatar: p.avatar,
+      team: p.team
+    })));
   });
 
   // ADMIN: Khởi chạy trận đấu công bằng
   socket.on('adminStartGame', (roomId) => {
     const room = rooms[roomId];
     if (!room || room.players.length === 0) return;
+    
     room.status = 'playing';
     
-    let shuffled = [...room.players].sort(() => Math.random() - 0.5);
-    
-    if (shuffled.length === 1) {
-      // Chế độ 1 người chơi chơi đơn
-      shuffled[0].team = 'Solo';
-      room.teamA = [shuffled[0]];
-    } else {
-      // Phân chia đội lẻ nâng cao
-      if (shuffled.length % 2 !== 0) {
-        room.teamC = shuffled.pop();
-        room.teamC.team = 'C'; // Đội thứ 3 tách biệt độc lập
-      }
-      const half = Math.floor(shuffled.length / 2);
-      shuffled.slice(0, half).forEach(p => { p.team = 'A'; room.teamA.push(p); });
-      shuffled.slice(half).forEach(p => { p.team = 'B'; room.teamB.push(p); });
-    }
-    
-    room.players = [...room.teamA, ...room.teamB, ...(room.teamC ? [room.teamC] : [])];
-
+    // Gửi thông báo phân bổ vai trò chính thức dựa trên đội hình đã phân chia ở sảnh chờ
     room.players.forEach(p => {
       io.to(p.id).emit('roleAssignment', { team: p.team });
     });
 
     io.to('admin_' + roomId).emit('gameStarted');
+    io.to('room_' + roomId).emit('gameStarted');
     startStage(roomId, 1);
   });
 
@@ -189,10 +204,12 @@ io.on('connection', (socket) => {
     }
   });
 
-  // PHÒNG CHAT GIẢI LAO 15S CÔNG KHAI
+  // PHÒNG CHAT TÍCH HỢP TOÀN SẢNH CHỜ VÀ GIẢI LAO TRỰC TUYẾN
   socket.on('sendGlobalMessage', ({ roomId, msg }) => {
     const room = rooms[roomId];
-    if (!room || room.status !== 'intermission' || !msg || !msg.trim()) return;
+    // Cho phép chat cả ở trạng thái 'lobby' (sảnh chờ) và 'intermission' (giải lao giữa hiệp)
+    if (!room || (room.status !== 'lobby' && room.status !== 'intermission') || !msg || !msg.trim()) return;
+    
     const player = room.players.find(p => p.id === socket.id);
     if (!player) return;
 
@@ -267,11 +284,26 @@ io.on('connection', (socket) => {
     io.to('room_' + roomId).emit('roomResetByAdmin');
   });
 
+  // Xử lý khi có người chơi ngắt kết nối trong sảnh chờ hoặc trong trận
   socket.on('disconnect', () => {
     const roomId = socket.data.roomId;
     if (!roomId || !rooms[roomId]) return;
-    rooms[roomId].players = rooms[roomId].players.filter(p => p.id !== socket.id);
-    io.to('admin_' + roomId).emit('updatePlayerList', rooms[roomId].players.map(p => ({ name: p.name })));
+    
+    const room = rooms[roomId];
+    
+    // Loại bỏ khỏi danh sách tổng và danh sách đội bộ phận tương ứng
+    room.players = room.players.filter(p => p.id !== socket.id);
+    room.teamA = room.teamA.filter(p => p.id !== socket.id);
+    room.teamB = room.teamB.filter(p => p.id !== socket.id);
+    if (room.teamC && room.teamC.id === socket.id) room.teamC = null;
+
+    // Cập nhật lại giao diện danh sách chia đội realtime cho sảnh chờ ngay lập tức
+    io.to('room_' + roomId).emit('updatePlayerList', room.players.map(p => ({
+      id: p.id,
+      name: p.name,
+      avatar: p.avatar,
+      team: p.team
+    })));
   });
 });
 
@@ -369,9 +401,9 @@ function endGameFinal(roomId) {
     topPlayers: getLeaderboard(room).slice(0, 5)
   });
 }
-// Cấu hình cổng cho server (Rất quan trọng khi deploy vì nền tảng sẽ tự cấp PORT)
-const PORT = process.env.PORT || 3000;
 
+// Cấu hình cổng cho server
+const PORT = process.env.PORT || 3000;
 server.listen(PORT, () => {
   console.log(`Server đang chạy tại port ${PORT}`);
 });
