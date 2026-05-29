@@ -369,5 +369,9 @@ function endGameFinal(roomId) {
     topPlayers: getLeaderboard(room).slice(0, 5)
   });
 }
+// Cấu hình cổng cho server (Rất quan trọng khi deploy vì nền tảng sẽ tự cấp PORT)
+const PORT = process.env.PORT || 3000;
 
-server.listen(3000, () => { console.log('Physics Arena server running on port 3000'); });
+server.listen(PORT, () => {
+  console.log(`Server đang chạy tại port ${PORT}`);
+});
