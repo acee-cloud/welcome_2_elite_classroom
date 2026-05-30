@@ -38,7 +38,7 @@
             cursor: pointer;
             transition: opacity .2s, transform .15s;
             position: relative;
-            z-index: 10; /* Ép nút bấm luôn nổi lên trên cùng để không bị cản */
+            z-index: 10;
         }
         button:hover { opacity: .88; transform: scale(1.02); }
 
@@ -57,7 +57,7 @@
 
         .web-title-wrapper { 
             position: relative; 
-            margin-bottom: 45px; /* Tăng khoảng cách để hiệu ứng glow không đè xuống nút */
+            margin-bottom: 45px;
         }
         .web-title-glow {
             position: absolute; inset: -30px -60px;
@@ -297,6 +297,7 @@
             font-size: 1rem; padding: 16px; border-radius: 10px;
             box-shadow: 0 4px 24px rgba(0,255,136,.25);
             transition: box-shadow .2s, transform .15s, opacity .2s;
+            position: relative; z-index: 11;
         }
         #btn-start-game:hover { box-shadow: 0 6px 32px rgba(0,255,136,.45); transform: translateY(-2px) scale(1.01); }
         #btn-start-game:disabled { opacity: .35; cursor: not-allowed; transform: none; box-shadow: none; }
@@ -457,7 +458,7 @@
             <button id="btn-start-game" onclick="startGame()" disabled>
                 KÍCH HOẠT TRẬN ĐẤU
             </button>
-            <p id="start-hint">Cần ít nhất <span>2</span> người để bắt đầu</p>
+            <p id="start-hint">Cần ít nhất <span>1</span> người để bắt đầu</p>
         </div>
 
         <div class="team-box" id="box-b">
@@ -553,11 +554,10 @@ let playerMap = {};
 function createRoom() {
     const btn = document.getElementById('btn-create');
     btn.disabled = true;
-    btn.innerText = "ĐANG TẠO..."; // Cho biết đang xử lý
+    btn.innerText = "ĐANG TẠO...";
     
     socket.emit('adminCreateRoom');
 
-    // Chống kẹt nút: Nếu 3 giây sau mà mạng lag chưa phản hồi, tự nhả nút ra cho bấm lại
     setTimeout(() => {
         if (document.getElementById('lobby-view').style.display !== 'none') {
             btn.disabled = false;
@@ -633,8 +633,9 @@ function renderLobbyTeams(players) {
         totalEl.classList.add('bump');
     }
 
+    // SỬA ĐỔI: Chỉ cần từ 1 người trở lên là cho phép bấm nút Start Game
     const btn = document.getElementById('btn-start-game');
-    btn.disabled = total < 2;
+    btn.disabled = total < 1;
 
     renderMemberList('list-a', teamA);
     renderMemberList('list-b', teamB);
@@ -643,20 +644,24 @@ function renderLobbyTeams(players) {
 function renderMemberList(containerId, members) {
     const container = document.getElementById(containerId);
 
-    const rendered = new Set(
-        [...container.querySelectorAll('[data-mid]')].map(el => el.dataset.mid)
-    );
-    const incoming = new Set(members.map(p => p.id));
+    // Lấy danh sách phần tử học sinh hiện tại đang có trong DOM
+    const children = [...container.children].filter(el => el.hasAttribute('data-mid'));
+    const incomingIds = new Set(members.map(p => p.id));
 
-    rendered.forEach(id => {
-        if (!incoming.has(id)) {
-            const el = container.querySelector(`[data-mid="${CSS.escape(id)}"]`);
-            if (el) {
-                el.style.opacity = '0';
-                el.style.transform = 'scale(.85)';
-                el.style.transition = 'opacity .25s, transform .25s';
-                setTimeout(() => el.remove(), 250);
-            }
+    // SỬA ĐỔI: Xóa ngay lập tức khi player thoát và cập nhật lại thông báo trống
+    children.forEach(el => {
+        const mid = el.dataset.mid;
+        if (!incomingIds.has(mid)) {
+            el.style.opacity = '0';
+            el.style.transform = 'scale(.85)';
+            el.style.transition = 'opacity .25s, transform .25s';
+            setTimeout(() => {
+                el.remove();
+                const currentCards = container.querySelectorAll('[data-mid]');
+                if (currentCards.length === 0 && !container.querySelector('.team-empty')) {
+                    container.innerHTML = '<div class="team-empty">Chưa có thành viên…</div>';
+                }
+            }, 250);
         }
     });
 
@@ -665,8 +670,11 @@ function renderMemberList(containerId, members) {
         if (empty) empty.remove();
     }
 
+    // Thêm học sinh mới vào danh sách bằng phương thức kiểm tra mảng an toàn
     members.forEach((p, idx) => {
-        if (rendered.has(p.id)) return;
+        const exists = [...container.children].some(el => el.dataset.mid === p.id);
+        if (exists) return;
+
         const el = document.createElement('div');
         el.className = 'member-card';
         el.dataset.mid = p.id;
@@ -680,12 +688,16 @@ function renderMemberList(containerId, members) {
         container.appendChild(el);
     });
 
-    [...container.querySelectorAll('[data-mid]')].forEach((el, i) => {
-        const num = el.querySelector('.m-num');
-        if (num) num.innerText = `#${i + 1}`;
-    });
+    // Đồng bộ lại số thứ tự hiển thị số ghế #1, #2...
+    setTimeout(() => {
+        const activeCards = [...container.children].filter(el => el.hasAttribute('data-mid') && el.style.opacity !== '0');
+        activeCards.forEach((el, i) => {
+            const num = el.querySelector('.m-num');
+            if (num) num.innerText = `#${i + 1}`;
+        });
+    }, 50);
 
-    if (members.length === 0 && container.children.length === 0) {
+    if (members.length === 0 && children.length === 0) {
         container.innerHTML = '<div class="team-empty">Chưa có thành viên…</div>';
     }
 }
