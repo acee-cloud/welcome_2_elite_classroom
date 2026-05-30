@@ -781,23 +781,39 @@
         <div class="arena-subtitle">MULTIPLAYER BATTLE ROYALE</div>
     </div>
 
-    <div id="join-form">
+    <!-- ══ BƯỚC 1: CHỈ NHẬP MÃ PHÒNG (chế độ link trần) ══ -->
+    <div id="step-room" style="display:none;">
+        <div class="login-card">
+            <div style="text-align:center; margin-bottom:18px;">
+                <div style="font-size:2rem; margin-bottom:8px;">🔑</div>
+                <div style="font-family:'Orbitron',sans-serif; color:var(--accent); font-size:1rem; letter-spacing:2px;">NHẬP MÃ PHÒNG</div>
+                <div style="color:var(--text-dim); font-size:0.78rem; margin-top:5px;">Nhập mã phòng do giáo viên cung cấp</div>
+            </div>
+            <div class="field-group">
+                <div class="field-label"><span class="fl-icon">🔑</span> MÃ PHÒNG</div>
+                <input type="text" id="input-room" placeholder="Nhập mã phòng (VD: ABC123)..."
+                    maxlength="10" style="text-transform:uppercase; letter-spacing:3px; font-size:1.2rem; text-align:center;"
+                    oninput="this.value=this.value.toUpperCase()"
+                    onkeypress="if(event.key==='Enter') confirmRoom()">
+            </div>
+            <button class="btn-primary" onclick="confirmRoom()" id="confirm-room-btn">🚪 VÀO PHÒNG</button>
+        </div>
+    </div>
+
+    <!-- ══ BƯỚC 2: NHẬP TÊN + CHỌN AVATAR ══ -->
+    <div id="step-profile">
         <!-- Badge QR mode -->
         <div class="qr-badge" id="qr-mode-badge">
             <span>📷</span>
             <span>Đã quét QR — Phòng <strong id="qr-room-display"></strong></span>
         </div>
+        <!-- Badge manual room (khi dùng link trần đã nhập mã) -->
+        <div class="qr-badge" id="manual-room-badge" style="display:none; background:rgba(0,232,136,0.1); border-color:rgba(0,232,136,0.3);">
+            <span>🔑</span>
+            <span>Phòng <strong id="manual-room-display"></strong></span>
+        </div>
 
         <div class="login-card">
-            <!-- Nhập mã phòng (chỉ hiện khi mở bằng link không có QR) -->
-            <div class="field-group" id="room-code-group">
-                <div class="field-label"><span class="fl-icon">🔑</span> MÃ PHÒNG</div>
-                <input type="text" id="input-room" placeholder="Nhập mã phòng (VD: ABC123)..."
-                    maxlength="10" style="text-transform:uppercase; letter-spacing:2px;"
-                    oninput="this.value=this.value.toUpperCase()">
-                <div class="room-hint">Nhập mã phòng do giáo viên cung cấp</div>
-            </div>
-
             <div class="field-group">
                 <div class="field-label"><span class="fl-icon">👤</span> TÊN CỦA BẠN</div>
                 <input type="text" id="input-name" placeholder="Nhập tên hiển thị..." maxlength="20"
@@ -807,10 +823,22 @@
             <div class="field-group">
                 <div class="av-section-label">
                     <div class="field-label" style="margin-bottom:0;"><span class="fl-icon">🐾</span> CHỌN BIỂU TƯỢNG</div>
-                    <span class="av-count-badge">50 loài</span>
+                    <span class="av-count-badge" id="av-toggle-btn"
+                        style="cursor:pointer; user-select:none; padding:4px 14px; background:rgba(0,210,255,0.12); border:1px solid rgba(0,210,255,0.35); color:var(--accent); border-radius:20px; font-size:0.72rem; font-weight:700;"
+                        onclick="toggleAvatarGrid()">▼ Mở chọn</span>
                 </div>
-                <div class="avatar-grid" id="avatar-grid"></div>
-                <div class="selected-preview" id="avatar-preview"></div>
+
+                <!-- Hiện avatar đang chọn (luôn hiển thị nếu đã chọn) -->
+                <div id="avatar-selected-display" style="display:none; margin:8px 0; padding:10px 14px;
+                    background:rgba(0,210,255,0.07); border:1px solid rgba(0,210,255,0.25);
+                    border-radius:8px; font-size:0.95rem; color:var(--accent); text-align:left; cursor:pointer;"
+                    onclick="toggleAvatarGrid()">
+                </div>
+
+                <!-- Grid avatar ẩn mặc định -->
+                <div id="avatar-grid-wrapper" style="display:none; margin-top:8px;">
+                    <div class="avatar-grid" id="avatar-grid"></div>
+                </div>
             </div>
 
             <button class="btn-primary" onclick="joinRoom()" id="join-btn">⚡ VÀO PHÒNG CHỜ</button>
@@ -1060,32 +1088,84 @@ window.addEventListener('DOMContentLoaded', () => {
     setupClickToMove();
     setupKeyboard();
 
-    // ✅ FIX: Đọc ?room= từ cả /play?room=, /player?room= và /
+    // Đọc ?room= từ URL (QR hoặc link đầy đủ)
     const params = new URLSearchParams(window.location.search);
     const roomParam = params.get('room');
 
     if (roomParam) {
-        // Chế độ QR: đã có room trong URL
+        // ── Chế độ QR / link đầy đủ: bỏ qua bước nhập mã phòng ──
         isQRMode = true;
         urlRoomId = roomParam.toUpperCase().trim();
         document.getElementById('qr-mode-badge').classList.add('show');
         document.getElementById('qr-room-display').textContent = urlRoomId;
-        document.getElementById('room-code-group').style.display = 'none';
-        document.getElementById('input-name').focus();
+
+        // Hiện thẳng bước profile, ẩn bước room
+        document.getElementById('step-room').style.display = 'none';
+        document.getElementById('step-profile').style.display = 'block';
+        setTimeout(() => document.getElementById('input-name').focus(), 100);
     } else {
-        // Chế độ Link: cần nhập mã phòng
+        // ── Chế độ link trần: hiện bước nhập mã phòng trước ──
         isQRMode = false;
-        document.getElementById('room-code-group').style.display = 'block';
-        document.getElementById('input-room').focus();
+        document.getElementById('step-room').style.display = 'block';
+        document.getElementById('step-profile').style.display = 'none';
+        setTimeout(() => document.getElementById('input-room').focus(), 100);
     }
 });
+
+// ═══════════════════════════════════════
+//  BƯỚC 1: XÁC NHẬN MÃ PHÒNG (chỉ dùng khi vào link trần)
+// ═══════════════════════════════════════
+function confirmRoom() {
+    const roomInput = document.getElementById('input-room').value.trim().toUpperCase();
+    if (!roomInput) {
+        // Hiển thị lỗi nhỏ dưới input
+        showRoomError('Vui lòng nhập mã phòng!');
+        return;
+    }
+    urlRoomId = roomInput;
+
+    // Ẩn bước 1, hiện bước 2 với badge phòng
+    document.getElementById('step-room').style.display = 'none';
+    document.getElementById('manual-room-badge').style.display = 'flex';
+    document.getElementById('manual-room-display').textContent = urlRoomId;
+    document.getElementById('step-profile').style.display = 'block';
+    setTimeout(() => document.getElementById('input-name').focus(), 100);
+}
+
+function showRoomError(msg) {
+    let errEl = document.getElementById('room-error');
+    if (!errEl) {
+        errEl = document.createElement('div');
+        errEl.id = 'room-error';
+        errEl.style.cssText = 'color:var(--danger);font-size:0.85rem;margin-top:10px;padding:8px 12px;background:rgba(255,74,106,0.1);border-radius:6px;border:1px solid rgba(255,74,106,0.3)';
+        document.getElementById('confirm-room-btn').before(errEl);
+    }
+    errEl.textContent = '⚠ ' + msg;
+    setTimeout(() => { if (errEl) errEl.textContent = ''; }, 4000);
+}
+
+// ═══════════════════════════════════════
+//  TOGGLE AVATAR GRID
+// ═══════════════════════════════════════
+function toggleAvatarGrid() {
+    const wrapper = document.getElementById('avatar-grid-wrapper');
+    const btn = document.getElementById('av-toggle-btn');
+    const isOpen = wrapper.style.display !== 'none';
+    if (isOpen) {
+        wrapper.style.display = 'none';
+        btn.textContent = myAvatar ? `▼ Đổi (${myAvatar.emoji})` : '▼ Mở chọn';
+    } else {
+        wrapper.style.display = 'block';
+        btn.textContent = '▲ Đóng';
+    }
+}
 
 // ═══════════════════════════════════════
 //  BUILD AVATAR GRID
 // ═══════════════════════════════════════
 function buildAvatarGrid() {
     const grid = document.getElementById('avatar-grid');
-    AVATARS.forEach((av, i) => {
+    animals.forEach((av, i) => {
         const cell = document.createElement('div');
         cell.className = 'avatar-cell';
         cell.dataset.index = i;
@@ -1093,15 +1173,30 @@ function buildAvatarGrid() {
         cell.addEventListener('click', () => selectAvatar(i, cell));
         grid.appendChild(cell);
     });
+    // Tự random chọn 1 avatar mặc định
+    const randIdx = Math.floor(Math.random() * animals.length);
+    myAvatar = animals[randIdx];
+    const cells = grid.querySelectorAll('.avatar-cell');
+    if (cells[randIdx]) cells[randIdx].classList.add('selected');
+    updateAvatarDisplay();
 }
 
 function selectAvatar(index, cell) {
     document.querySelectorAll('.avatar-cell').forEach(c => c.classList.remove('selected'));
     cell.classList.add('selected');
-    myAvatar = AVATARS[index];
-    const preview = document.getElementById('avatar-preview');
-    preview.style.display = 'block';
-    preview.innerHTML = `<strong>${myAvatar.emoji} ${myAvatar.name}</strong> đã được chọn làm biểu tượng`;
+    myAvatar = animals[index];
+    updateAvatarDisplay();
+    // Đóng grid sau khi chọn
+    document.getElementById('avatar-grid-wrapper').style.display = 'none';
+    document.getElementById('av-toggle-btn').textContent = `▼ Đổi (${myAvatar.emoji})`;
+}
+
+function updateAvatarDisplay() {
+    if (!myAvatar) return;
+    const display = document.getElementById('avatar-selected-display');
+    display.style.display = 'block';
+    display.innerHTML = `<strong>${myAvatar.emoji} ${myAvatar.name}</strong> — nhấn để đổi`;
+    document.getElementById('av-toggle-btn').textContent = `▼ Đổi (${myAvatar.emoji})`;
 }
 
 // ═══════════════════════════════════════
