@@ -848,17 +848,24 @@ socket.on('realtimeScoreUpdate', (data) => {
             <td><span class="score-cell">${p.score}đ ${deltaHtml}</span></td>
             <td><span class="${tClass}">${p.totalTimeTaken.toFixed(1)}s</span></td>
         `;
-        row.style.animationDelay = `${idx * 0.04}s`;
+        
+        // Lưu row vào cache để tái sử dụng
+        cache[pid] = row;
     });
 
-    tbody.innerHTML = '';
+    // Xóa an toàn các node hiện tại (khắc phục lỗi giật/đơ animation)
+    while(tbody.firstChild) { tbody.removeChild(tbody.firstChild); }
+
+    // Chèn lại các row theo thứ tự đã sắp xếp
     sorted.forEach((p, idx) => {
         const pid = p.id || p.name;
         const row = cache[pid];
-        if (row) { row.style.animationDelay = `${idx * 0.04}s`; tbody.appendChild(row); }
+        if (row) { 
+            row.style.animationDelay = `${idx * 0.04}s`; 
+            tbody.appendChild(row); 
+        }
     });
 });
-
 // ────────────────────────────────────────────────────
 //  RESET
 // ────────────────────────────────────────────────────
