@@ -15,27 +15,19 @@
             --accent: #00ff88;
             --team-a: #ff4a4a;
             --team-b: #00d2ff;
-            --team-c: #ffaa00;
         }
 
         * { box-sizing: border-box; margin: 0; padding: 0; }
 
-        body {
+        html, body {
             background: var(--bg);
             color: #fff;
             font-family: 'IBM Plex Sans', sans-serif;
-            min-height: 100vh;
-            padding: 24px 20px;
+            height: 100%;
+            overflow: hidden;
         }
 
-        /* ─── SHARED CARD ──────────────────────────────────── */
-        .card {
-            background: var(--panel);
-            border: 2px solid var(--border);
-            border-radius: 14px;
-            padding: 22px;
-            position: relative;
-        }
+        body { overflow-y: auto; }
 
         button {
             background: var(--accent);
@@ -50,7 +42,7 @@
         }
         button:hover { opacity: .88; transform: scale(1.02); }
 
-        /* ─── LOBBY (step 1 — before room created) ─────────── */
+        /* ─── LOBBY (step 1) ─── */
         #lobby-view {
             width: fit-content;
             min-width: 320px;
@@ -58,405 +50,280 @@
             margin: 60px auto;
             text-align: center;
             padding: 40px 48px 36px;
+            background: var(--panel);
+            border: 2px solid var(--border);
+            border-radius: 14px;
             overflow: hidden;
+            position: relative;
         }
 
-        /* WEB TITLE */
-        .web-title-wrapper {
-            position: relative;
-            margin-bottom: 28px;
-        }
+        .web-title-wrapper { position: relative; margin-bottom: 28px; }
         .web-title-glow {
-            position: absolute;
-            inset: -30px -60px;
+            position: absolute; inset: -30px -60px;
             background: radial-gradient(ellipse at 50% 55%, rgba(0,255,136,.18) 0%, transparent 60%);
             pointer-events: none;
             animation: glowPulse 3s ease-in-out infinite;
         }
-        @keyframes glowPulse {
-            0%,100% { opacity: .7; }
-            50%      { opacity: 1; }
-        }
+        @keyframes glowPulse { 0%,100%{opacity:.7;} 50%{opacity:1;} }
         .web-title {
-            font-family: 'Orbitron', sans-serif;
-            font-size: 2.8rem;
-            font-weight: 900;
-            letter-spacing: 3px;
-            line-height: 1.1;
-            position: relative;
-            display: block;
-            white-space: nowrap;
-            animation: titleIn .8s cubic-bezier(.175,.885,.32,1.275) both;
+            font-family: 'Orbitron', sans-serif; font-size: 2.8rem; font-weight: 900;
+            letter-spacing: 3px; line-height: 1.1; position: relative; display: block;
+            white-space: nowrap; animation: titleIn .8s cubic-bezier(.175,.885,.32,1.275) both;
         }
-        @keyframes titleIn {
-            from { opacity:0; transform: translateY(-18px) scale(.9); }
-            to   { opacity:1; transform: translateY(0) scale(1); }
-        }
+        @keyframes titleIn { from{opacity:0;transform:translateY(-18px) scale(.9);} to{opacity:1;transform:translateY(0) scale(1);} }
         .wt-phys { color: #fff; text-shadow: 0 0 24px rgba(255,255,255,.25); }
-        .wt-game {
-            color: var(--accent);
-            text-shadow: 0 0 22px rgba(0,255,136,.65);
-            position: relative;
-        }
+        .wt-game { color: var(--accent); text-shadow: 0 0 22px rgba(0,255,136,.65); position: relative; }
         .wt-game::after {
-            content: '';
-            position: absolute; inset: 0;
+            content: ''; position: absolute; inset: 0;
             background: linear-gradient(105deg, transparent 38%, rgba(0,255,136,.28) 50%, transparent 62%);
-            background-size: 220% 100%;
-            animation: shimmer 3s linear infinite;
+            background-size: 220% 100%; animation: shimmer 3s linear infinite;
         }
-        @keyframes shimmer {
-            0%   { background-position: 220% 0; }
-            100% { background-position: -220% 0; }
-        }
+        @keyframes shimmer { 0%{background-position:220% 0;} 100%{background-position:-220% 0;} }
         .web-subtitle {
-            font-size: .72rem;
-            color: rgba(148,163,184,.4);
-            letter-spacing: 3px;
-            font-style: italic;
-            margin-top: 8px;
-            display: block;
+            font-size: .72rem; color: rgba(148,163,184,.4); letter-spacing: 3px;
+            font-style: italic; margin-top: 8px; display: block;
             animation: fadeIn 1.3s ease .5s both;
         }
-        @keyframes fadeIn { from { opacity:0; } to { opacity:1; } }
-
+        @keyframes fadeIn { from{opacity:0;} to{opacity:1;} }
         #lobby-view h2 {
-            font-family: 'Orbitron', sans-serif;
-            color: var(--accent);
-            font-size: .9rem;
-            letter-spacing: 2px;
-            margin-bottom: 20px;
-            white-space: nowrap;
+            font-family: 'Orbitron', sans-serif; color: var(--accent);
+            font-size: .9rem; letter-spacing: 2px; margin-bottom: 20px; white-space: nowrap;
         }
 
-        /* ─── ROOM VIEW (step 2 — after room created) ──────── */
-        #room-view { display: none; max-width: 1080px; margin: 0 auto; }
-
-        /* top bar: code + QR */
-        #room-topbar {
+        /* ─── ROOM VIEW ─── */
+        #room-view {
+            display: none;
+            height: 100vh;
+            padding: 12px 14px;
+            display: none;
+            flex-direction: column;
+            gap: 10px;
+            overflow: hidden;
+        }
+        #room-view.active {
             display: flex;
+        }
+
+        /* ── TOP BAR: code + QR (grande) + hint ── */
+        #room-topbar {
+            display: grid;
+            grid-template-columns: auto 1fr auto;
             align-items: center;
-            justify-content: space-between;
-            gap: 20px;
+            gap: 16px;
             background: var(--panel);
             border: 2px solid var(--border);
-            border-radius: 14px;
-            padding: 18px 28px;
-            margin-bottom: 18px;
-            flex-wrap: wrap;
+            border-radius: 12px;
+            padding: 12px 20px;
+            flex-shrink: 0;
         }
-        #room-topbar .code-block { line-height: 1; }
-        #room-topbar .code-label {
-            font-size: .78rem;
-            color: #64748b;
-            letter-spacing: 2px;
-            text-transform: uppercase;
-            margin-bottom: 4px;
+
+        .code-block { line-height: 1; }
+        .code-label {
+            font-size: .72rem; color: #64748b; letter-spacing: 2px;
+            text-transform: uppercase; margin-bottom: 3px;
         }
         #room-code-txt {
             font-family: 'Orbitron', sans-serif;
-            font-size: 3rem;
-            font-weight: 900;
-            color: #fff;
-            letter-spacing: 6px;
+            font-size: 2.6rem; font-weight: 900; color: #fff; letter-spacing: 5px;
         }
-        #room-topbar .qr-wrap {
+
+        /* ✅ QR to ở giữa */
+        .qr-center-block {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 6px;
+        }
+        .qr-wrap {
             background: #fff;
-            border-radius: 10px;
-            padding: 8px;
-            width: 120px;
-            height: 120px;
+            border-radius: 12px;
+            padding: 10px;
+            width: 180px;
+            height: 180px;
             display: flex;
             align-items: center;
             justify-content: center;
+            box-shadow: 0 0 32px rgba(0,255,136,.2), 0 0 0 3px rgba(0,255,136,.15);
         }
-        #room-topbar .join-hint {
-            font-size: .88rem;
-            color: #64748b;
-            flex: 1;
-            min-width: 160px;
+        .qr-label {
+            font-size: .68rem; color: #64748b; letter-spacing: 1.5px;
+            text-transform: uppercase;
         }
-        #room-topbar .join-hint span { color: var(--accent); }
+        .qr-url {
+            font-size: .75rem; color: var(--accent); letter-spacing: .5px;
+            max-width: 220px; overflow: hidden; text-overflow: ellipsis;
+            white-space: nowrap; text-align: center;
+        }
 
-        /* 3-column layout: Team A | Info+Start | Team B */
+        .join-hint {
+            font-size: .85rem; color: #64748b; line-height: 1.6; text-align: right;
+        }
+        .join-hint span { color: var(--accent); font-weight: 700; }
+
+        /* ── MAIN AREA: Team A | Center | Team B ── */
         #room-main {
             display: grid;
-            grid-template-columns: 1fr 280px 1fr;
-            gap: 14px;
-            align-items: start;
+            grid-template-columns: 1fr 240px 1fr;
+            gap: 10px;
+            flex: 1;
+            min-height: 0;
+            overflow: hidden;
         }
 
         /* Team panels */
         .team-box {
-            border-radius: 14px;
-            padding: 0;
+            border-radius: 12px;
             overflow: hidden;
             border: 2px solid;
+            display: flex;
+            flex-direction: column;
+            min-height: 0;
         }
-        #box-a { border-color: rgba(255,74,74,.4); background: rgba(255,74,74,.05); }
-        #box-b { border-color: rgba(0,210,255,.4); background: rgba(0,210,255,.05); }
+        #box-a { border-color: rgba(255,74,74,.5); background: rgba(255,74,74,.04); }
+        #box-b { border-color: rgba(0,210,255,.5); background: rgba(0,210,255,.04); }
 
         .team-box-header {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 12px 16px;
-            border-bottom: 1px solid rgba(255,255,255,.07);
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 10px 14px; border-bottom: 1px solid rgba(255,255,255,.07); flex-shrink: 0;
         }
-        #box-a .team-box-header { background: rgba(255,74,74,.12); }
-        #box-b .team-box-header { background: rgba(0,210,255,.12); }
+        #box-a .team-box-header { background: rgba(255,74,74,.14); }
+        #box-b .team-box-header { background: rgba(0,210,255,.14); }
 
         .team-box-header .team-name {
-            font-family: 'Orbitron', sans-serif;
-            font-size: .9rem;
-            font-weight: 900;
-            letter-spacing: 2px;
+            font-family: 'Orbitron', sans-serif; font-size: .88rem; font-weight: 900; letter-spacing: 2px;
         }
         #box-a .team-name { color: var(--team-a); }
         #box-b .team-name { color: var(--team-b); }
 
         .team-count-pill {
-            font-family: 'Orbitron', sans-serif;
-            font-size: .78rem;
-            font-weight: 700;
-            padding: 3px 12px;
-            border-radius: 99px;
+            font-family: 'Orbitron', sans-serif; font-size: .76rem; font-weight: 700;
+            padding: 2px 10px; border-radius: 99px;
         }
         #box-a .team-count-pill { background: rgba(255,74,74,.2); color: var(--team-a); border: 1px solid rgba(255,74,74,.4); }
         #box-b .team-count-pill { background: rgba(0,210,255,.2); color: var(--team-b); border: 1px solid rgba(0,210,255,.4); }
 
         .team-member-list {
-            padding: 10px 12px;
-            display: flex;
-            flex-direction: column;
-            gap: 7px;
-            min-height: 80px;
-            max-height: 420px;
-            overflow-y: auto;
-            scrollbar-width: thin;
-            scrollbar-color: var(--border) transparent;
+            padding: 8px 10px;
+            display: flex; flex-direction: column; gap: 6px;
+            flex: 1; overflow-y: auto;
+            scrollbar-width: thin; scrollbar-color: var(--border) transparent;
         }
 
         .member-card {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            background: rgba(255,255,255,.05);
-            border-radius: 9px;
-            padding: 8px 12px;
+            display: flex; align-items: center; gap: 8px;
+            background: rgba(255,255,255,.05); border-radius: 8px; padding: 7px 10px;
             animation: memberIn .35s cubic-bezier(.175,.885,.32,1.275) both;
         }
-        @keyframes memberIn {
-            from { opacity:0; transform: translateY(10px) scale(.92); }
-            to   { opacity:1; transform: translateY(0) scale(1); }
-        }
-        .member-card .m-avatar { font-size: 1.5rem; line-height: 1; flex-shrink: 0; }
-        .member-card .m-name {
-            font-weight: 600;
-            font-size: .85rem;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-        }
-        .member-card .m-num {
-            margin-left: auto;
-            font-size: .7rem;
-            color: #475569;
-            font-family: 'Orbitron', sans-serif;
-            flex-shrink: 0;
-        }
-
-        .team-empty {
-            text-align: center;
-            color: #334155;
-            font-size: .82rem;
-            padding: 20px 0;
-            font-style: italic;
-        }
-
-        /* Pulse dot on member */
+        @keyframes memberIn { from{opacity:0;transform:translateY(10px) scale(.92);} to{opacity:1;transform:translateY(0) scale(1);} }
+        .member-card .m-avatar { font-size: 1.4rem; line-height: 1; flex-shrink: 0; }
+        .member-card .m-name { font-weight: 600; font-size: .83rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex: 1; }
+        .member-card .m-num { margin-left: auto; font-size: .68rem; color: #475569; font-family: 'Orbitron', sans-serif; flex-shrink: 0; }
         .member-card::before {
-            content: '';
-            width: 6px; height: 6px;
-            border-radius: 50%;
-            flex-shrink: 0;
+            content: ''; width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0;
             animation: dotBlink 2s ease-in-out infinite;
         }
         #box-a .member-card::before { background: var(--team-a); box-shadow: 0 0 6px var(--team-a); }
         #box-b .member-card::before { background: var(--team-b); box-shadow: 0 0 6px var(--team-b); }
         @keyframes dotBlink { 0%,100%{opacity:1;} 50%{opacity:.3;} }
+        .team-empty { text-align: center; color: #334155; font-size: .82rem; padding: 16px 0; font-style: italic; }
 
         /* Center column */
-        #room-center {
-            display: flex;
-            flex-direction: column;
-            gap: 14px;
-        }
+        #room-center { display: flex; flex-direction: column; gap: 10px; }
 
-        /* Player counter card */
         #player-counter-card {
-            background: var(--panel);
-            border: 2px solid var(--border);
-            border-radius: 14px;
-            padding: 18px 16px;
-            text-align: center;
+            background: var(--panel); border: 2px solid var(--border);
+            border-radius: 12px; padding: 16px 14px; text-align: center;
         }
         #player-counter-card .counter-label {
-            font-size: .72rem;
-            color: #64748b;
-            letter-spacing: 2px;
-            text-transform: uppercase;
-            margin-bottom: 6px;
+            font-size: .7rem; color: #64748b; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 4px;
         }
         #player-counter-card .counter-num {
-            font-family: 'Orbitron', sans-serif;
-            font-size: 2.8rem;
-            font-weight: 900;
-            color: var(--accent);
-            line-height: 1;
-            text-shadow: 0 0 20px rgba(0,255,136,.4);
+            font-family: 'Orbitron', sans-serif; font-size: 2.6rem; font-weight: 900;
+            color: var(--accent); line-height: 1; text-shadow: 0 0 20px rgba(0,255,136,.4);
             transition: transform .25s cubic-bezier(.175,.885,.32,1.275);
         }
-        #player-counter-card .counter-num.bump {
-            animation: counterBump .4s cubic-bezier(.175,.885,.32,1.275);
-        }
-        @keyframes counterBump {
-            0%{transform:scale(1);} 40%{transform:scale(1.3);} 100%{transform:scale(1);}
-        }
-        #player-counter-card .counter-sub {
-            font-size: .75rem;
-            color: #475569;
-            margin-top: 4px;
-        }
+        #player-counter-card .counter-num.bump { animation: counterBump .4s cubic-bezier(.175,.885,.32,1.275); }
+        @keyframes counterBump { 0%{transform:scale(1);} 40%{transform:scale(1.3);} 100%{transform:scale(1);} }
+        #player-counter-card .counter-sub { font-size: .72rem; color: #475569; margin-top: 3px; }
 
-        /* Live indicator */
         .live-badge {
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-            background: rgba(0,255,136,.1);
-            border: 1px solid rgba(0,255,136,.3);
-            border-radius: 99px;
-            padding: 4px 14px;
-            font-size: .72rem;
-            font-weight: 700;
-            color: var(--accent);
-            letter-spacing: 1.5px;
-            text-transform: uppercase;
+            display: inline-flex; align-items: center; gap: 6px;
+            background: rgba(0,255,136,.1); border: 1px solid rgba(0,255,136,.3);
+            border-radius: 99px; padding: 4px 14px; font-size: .7rem; font-weight: 700;
+            color: var(--accent); letter-spacing: 1.5px; text-transform: uppercase;
         }
         .live-badge::before {
-            content: '';
-            width: 7px; height: 7px;
-            border-radius: 50%;
-            background: var(--accent);
-            box-shadow: 0 0 6px var(--accent);
-            animation: dotBlink 1.2s infinite;
+            content: ''; width: 7px; height: 7px; border-radius: 50%;
+            background: var(--accent); box-shadow: 0 0 6px var(--accent); animation: dotBlink 1.2s infinite;
         }
 
-        /* Start button */
         #btn-start-game {
             width: 100%;
             background: linear-gradient(135deg, #00ff88, #00cc6a);
-            font-family: 'Orbitron', sans-serif;
-            letter-spacing: 2px;
-            font-size: .95rem;
-            padding: 16px 20px;
-            border-radius: 10px;
+            font-family: 'Orbitron', sans-serif; letter-spacing: 2px;
+            font-size: .9rem; padding: 14px 16px; border-radius: 10px;
             box-shadow: 0 4px 24px rgba(0,255,136,.25);
             transition: box-shadow .2s, transform .15s, opacity .2s;
         }
-        #btn-start-game:hover {
-            box-shadow: 0 6px 32px rgba(0,255,136,.45);
-            transform: translateY(-2px) scale(1.01);
-        }
-        #btn-start-game:disabled {
-            opacity: .35;
-            cursor: not-allowed;
-            transform: none;
-            box-shadow: none;
-        }
+        #btn-start-game:hover { box-shadow: 0 6px 32px rgba(0,255,136,.45); transform: translateY(-2px) scale(1.01); }
+        #btn-start-game:disabled { opacity: .35; cursor: not-allowed; transform: none; box-shadow: none; }
 
-        #start-hint {
-            font-size: .72rem;
-            color: #475569;
-            text-align: center;
-            margin-top: -4px;
-        }
+        #start-hint { font-size: .7rem; color: #475569; text-align: center; margin-top: -2px; }
         #start-hint span { color: var(--accent); }
 
-        /* ─── DASHBOARD VIEW ──────────────────────────────── */
-        #dashboard-view { display: none; }
+        /* ─── DASHBOARD VIEW ─── */
+        #dashboard-view { display: none; padding: 14px; }
 
         .score-big {
-            font-family: 'Orbitron';
-            font-size: 3.5rem;
-            font-weight: 900;
-            margin: 12px 0;
+            font-family: 'Orbitron'; font-size: 3.2rem; font-weight: 900; margin: 10px 0;
         }
-        .score-big.score-bump {
-            animation: scoreBump .45s cubic-bezier(.175,.885,.32,1.275);
-        }
-        @keyframes scoreBump {
-            0%{transform:scale(1);} 40%{transform:scale(1.28);} 70%{transform:scale(.95);} 100%{transform:scale(1);}
-        }
+        .score-big.score-bump { animation: scoreBump .45s cubic-bezier(.175,.885,.32,1.275); }
+        @keyframes scoreBump { 0%{transform:scale(1);} 40%{transform:scale(1.28);} 70%{transform:scale(.95);} 100%{transform:scale(1);} }
 
+        .card {
+            background: var(--panel); border: 2px solid var(--border);
+            border-radius: 14px; padding: 20px; position: relative;
+        }
         .grid-layout {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-            gap: 18px;
-            margin-top: 18px;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 14px; margin-top: 14px;
         }
 
         .score-card-animated { transition: transform .3s ease, box-shadow .3s ease; }
         .score-card-animated:hover { transform: translateY(-3px); box-shadow: 0 8px 32px rgba(0,0,0,.4); }
-
-        @keyframes cardFlash {
-            0%  { box-shadow: 0 0 0 rgba(0,0,0,0); }
-            30% { box-shadow: 0 0 30px var(--flash-color, rgba(0,255,136,.5)); }
-            100%{ box-shadow: 0 0 0 rgba(0,0,0,0); }
-        }
+        @keyframes cardFlash { 0%{box-shadow:0 0 0;} 30%{box-shadow:0 0 30px var(--flash-color,rgba(0,255,136,.5));} 100%{box-shadow:0 0 0;} }
         .card-flash-a { --flash-color: rgba(255,74,74,.5); animation: cardFlash .6s ease; }
         .card-flash-b { --flash-color: rgba(0,210,255,.5); animation: cardFlash .6s ease; }
 
-        /* Leaderboard */
-        table { width: 100%; border-collapse: collapse; margin-top: 14px; text-align: left; }
-        th, td { padding: 11px 12px; border-bottom: 1px solid var(--border); }
-        th { color: #64748b; font-size: .8rem; letter-spacing: 1px; text-transform: uppercase; }
-
-        #leaderboard-rows tr {
-            animation: rowEnter .4s ease both;
-            transition: background .3s;
-        }
+        table { width: 100%; border-collapse: collapse; margin-top: 12px; text-align: left; }
+        th, td { padding: 9px 10px; border-bottom: 1px solid var(--border); }
+        th { color: #64748b; font-size: .76rem; letter-spacing: 1px; text-transform: uppercase; }
+        #leaderboard-rows tr { animation: rowEnter .4s ease both; transition: background .3s; }
         #leaderboard-rows tr:nth-child(even) { background: rgba(255,255,255,.02); }
         #leaderboard-rows tr:hover { background: rgba(0,255,136,.06); }
-        @keyframes rowEnter {
-            from { opacity:0; transform: translateX(-10px); }
-            to   { opacity:1; transform: translateX(0); }
-        }
+        @keyframes rowEnter { from{opacity:0;transform:translateX(-10px);} to{opacity:1;transform:translateX(0);} }
 
-        .delta-badge { font-size: .8rem; padding: 2px 6px; border-radius: 4px; margin-left: 6px; font-weight: 700; }
-        .delta-plus  { background: rgba(0,255,136,.18); color: #00ff88; }
+        .delta-badge { font-size: .78rem; padding: 2px 6px; border-radius: 4px; margin-left: 6px; font-weight: 700; }
+        .delta-plus { background: rgba(0,255,136,.18); color: #00ff88; }
         .delta-minus { background: rgba(255,74,74,.18); color: #ff4a4a; }
 
         .rank-medal {
             display: inline-flex; align-items: center; justify-content: center;
-            width: 28px; height: 28px; border-radius: 50%;
-            font-weight: 900; font-size: .82rem; font-family: 'Orbitron', sans-serif;
+            width: 26px; height: 26px; border-radius: 50%;
+            font-weight: 900; font-size: .8rem; font-family: 'Orbitron', sans-serif;
         }
         .rank-1 { background: linear-gradient(135deg,#ffd700,#ff8c00); color:#000; animation: goldPulse 2s ease-in-out infinite; }
         .rank-2 { background: linear-gradient(135deg,#c0c0c0,#808080); color:#000; }
         .rank-3 { background: linear-gradient(135deg,#cd7f32,#8b4513); color:#fff; }
         .rank-n { background: rgba(255,255,255,.08); color:#64748b; }
-        @keyframes goldPulse {
-            0%,100%{ box-shadow:0 0 10px rgba(255,215,0,.6); }
-            50%    { box-shadow:0 0 22px rgba(255,215,0,.9),0 0 32px rgba(255,165,0,.4); }
-        }
+        @keyframes goldPulse { 0%,100%{box-shadow:0 0 10px rgba(255,215,0,.6);} 50%{box-shadow:0 0 22px rgba(255,215,0,.9),0 0 32px rgba(255,165,0,.4);} }
 
         .team-pill {
-            display: inline-block; padding: 2px 10px;
-            border-radius: 99px; font-size: .76rem; font-weight: 700; letter-spacing: .5px;
+            display: inline-block; padding: 2px 10px; border-radius: 99px;
+            font-size: .74rem; font-weight: 700; letter-spacing: .5px;
         }
-        .time-display { font-size: .83rem; color: #475569; font-variant-numeric: tabular-nums; }
+        .time-display { font-size: .81rem; color: #475569; font-variant-numeric: tabular-nums; }
         .time-fast { color: #00ff88; }
         .time-slow { color: #ff6b6b; }
         .score-cell { font-weight: 700; display: flex; align-items: center; gap: 5px; font-variant-numeric: tabular-nums; }
@@ -466,51 +333,108 @@
             content:''; display:inline-block; width:4px; height:1.1em;
             background:var(--accent); border-radius:2px; box-shadow:0 0 8px var(--accent);
         }
+
+        /* ─── GAME OVER / WINNER SCREEN ─── */
+        #winner-overlay {
+            display: none;
+            position: fixed; inset: 0; z-index: 999;
+            background: rgba(0,0,0,.85);
+            backdrop-filter: blur(8px);
+            align-items: center; justify-content: center;
+            flex-direction: column; gap: 20px;
+            animation: fadeIn .5s ease;
+        }
+        #winner-overlay.show { display: flex; }
+        .winner-card {
+            background: var(--panel);
+            border: 3px solid;
+            border-radius: 20px;
+            padding: 40px 56px;
+            text-align: center;
+            max-width: 520px;
+            animation: winnerIn .6s cubic-bezier(.175,.885,.32,1.275);
+        }
+        @keyframes winnerIn { from{opacity:0;transform:scale(.7) translateY(40px);} to{opacity:1;transform:scale(1) translateY(0);} }
+        .winner-card.team-a { border-color: var(--team-a); box-shadow: 0 0 60px rgba(255,74,74,.3); }
+        .winner-card.team-b { border-color: var(--team-b); box-shadow: 0 0 60px rgba(0,210,255,.3); }
+        .winner-card.draw    { border-color: #ffaa00;       box-shadow: 0 0 60px rgba(255,170,0,.3); }
+        .winner-trophy { font-size: 5rem; margin-bottom: 10px; animation: trophyBounce 1s ease-in-out infinite; }
+        @keyframes trophyBounce { 0%,100%{transform:translateY(0) rotate(-5deg);} 50%{transform:translateY(-12px) rotate(5deg);} }
+        .winner-title {
+            font-family: 'Orbitron', sans-serif; font-size: 1rem;
+            letter-spacing: 3px; color: #64748b; margin-bottom: 8px;
+        }
+        .winner-name {
+            font-family: 'Orbitron', sans-serif; font-size: 2.4rem; font-weight: 900;
+            margin-bottom: 20px;
+        }
+        .winner-name.team-a { color: var(--team-a); text-shadow: 0 0 28px rgba(255,74,74,.6); }
+        .winner-name.team-b { color: var(--team-b); text-shadow: 0 0 28px rgba(0,210,255,.6); }
+        .winner-name.draw    { color: #ffaa00;        text-shadow: 0 0 28px rgba(255,170,0,.6); }
+        .score-row {
+            display: flex; justify-content: center; gap: 40px; margin-bottom: 24px;
+        }
+        .score-col { text-align: center; }
+        .score-col-label { font-size: .7rem; letter-spacing: 2px; color: #64748b; margin-bottom: 4px; }
+        .score-col-val {
+            font-family: 'Orbitron', sans-serif; font-size: 2rem; font-weight: 900;
+        }
+        .score-col-val.a { color: var(--team-a); }
+        .score-col-val.b { color: var(--team-b); }
+        #btn-close-winner {
+            background: rgba(255,255,255,.08); color: #fff; border: 1px solid rgba(255,255,255,.2);
+            padding: 10px 28px; border-radius: 8px; font-size: .85rem; cursor: pointer;
+            transition: background .2s;
+        }
+        #btn-close-winner:hover { background: rgba(255,255,255,.14); }
     </style>
 </head>
 <body>
 
-<!-- ═══════════════════════════════════════════════════
-     STEP 1 — Initial landing (before room is created)
-════════════════════════════════════════════════════ -->
-<div id="lobby-view" class="card">
+<!-- ═══ LOBBY ══════════════════════════════════════════════════════════ -->
+<div id="lobby-view">
     <div class="web-title-wrapper">
         <div class="web-title-glow"></div>
         <h1 class="web-title"><span class="wt-phys">PHYSICS</span><span class="wt-game">GAMEE</span></h1>
         <p class="web-subtitle">made by HYen</p>
     </div>
-    <h2>KHỞI TẠO PHÒNG ARENA</h2>
+    <h2>KHỞI TẠO PHÒNG</h2>
     <button id="btn-create" onclick="createRoom()">TẠO PHÒNG MỚI</button>
 </div>
 
-<!-- ═══════════════════════════════════════════════════
-     STEP 2 — Room created: QR + live team panels
-════════════════════════════════════════════════════ -->
+<!-- ═══ ROOM VIEW ═══════════════════════════════════════════════════════ -->
 <div id="room-view">
 
-    <!-- Top bar: room code + QR + hint -->
+    <!-- TOP BAR: Mã phòng | QR lớn (giữa) | Gợi ý -->
     <div id="room-topbar">
         <div class="code-block">
             <div class="code-label">Mã phòng</div>
             <div id="room-code-txt">----</div>
         </div>
 
-        <div class="qr-wrap" id="qrcode"></div>
+        <!-- ✅ QR to ở giữa, phóng to -->
+        <div class="qr-center-block">
+            <div class="qr-wrap" id="qrcode"></div>
+            <div class="qr-label">Quét QR để vào phòng</div>
+            <div class="qr-url" id="join-url-txt"></div>
+        </div>
 
         <div class="join-hint">
-            📱 Học sinh quét QR hoặc truy cập<br>
-            <span id="join-url-txt"></span><br>
-            để chọn avatar &amp; được ghép đội tự động.
+            Quét QR hoặc truy cập link<br>
+            để vào phòng.<br><br>
+            Nhập tên → Chọn avatar<br>
+            Máy tự chia <span>đội tự động</span>.<br><br>
+            <span id="total-count-topbar">0</span> học sinh đã vào.
         </div>
     </div>
 
-    <!-- 3-col layout -->
+    <!-- MAIN: Team A | Center | Team B -->
     <div id="room-main">
 
         <!-- TEAM A -->
         <div class="team-box" id="box-a">
             <div class="team-box-header">
-                <span class="team-name">⚔ ĐỘI A</span>
+                <span class="team-name">ĐỘI A</span>
                 <span class="team-count-pill" id="count-a">0</span>
             </div>
             <div class="team-member-list" id="list-a">
@@ -518,7 +442,7 @@
             </div>
         </div>
 
-        <!-- CENTER: counter + start -->
+        <!-- CENTER -->
         <div id="room-center">
             <div id="player-counter-card">
                 <div class="counter-label">Người chơi đã vào</div>
@@ -530,7 +454,7 @@
                 <span class="live-badge">LIVE</span>
             </div>
 
-            <button id="btn-start-game" onclick="startGame()">
+            <button id="btn-start-game" onclick="startGame()" disabled>
                 KÍCH HOẠT TRẬN ĐẤU
             </button>
             <p id="start-hint">Cần ít nhất <span>2</span> người để bắt đầu</p>
@@ -539,7 +463,7 @@
         <!-- TEAM B -->
         <div class="team-box" id="box-b">
             <div class="team-box-header">
-                <span class="team-name">🛡 ĐỘI B</span>
+                <span class="team-name">ĐỘI B</span>
                 <span class="team-count-pill" id="count-b">0</span>
             </div>
             <div class="team-member-list" id="list-b">
@@ -550,11 +474,9 @@
     </div><!-- /room-main -->
 </div><!-- /room-view -->
 
-<!-- ═══════════════════════════════════════════════════
-     STEP 3 — Dashboard (game running)
-════════════════════════════════════════════════════ -->
+<!-- ═══ DASHBOARD ═══════════════════════════════════════════════════════ -->
 <div id="dashboard-view">
-    <div style="display:flex; justify-content:space-between; align-items:center; background:var(--panel); padding:15px 20px; border-radius:12px; border:1px solid var(--border);">
+    <div style="display:flex; justify-content:space-between; align-items:center; background:var(--panel); padding:14px 20px; border-radius:12px; border:1px solid var(--border); margin-bottom:14px;">
         <h2 id="current-stage-txt" style="font-family:'Orbitron'; margin:0; color:var(--accent);">STAGE 1</h2>
         <h2 id="global-timer"      style="font-family:'Orbitron'; margin:0; color:#ffaa00;">60s</h2>
     </div>
@@ -568,14 +490,10 @@
             <h3 style="color:var(--team-b); margin:0;">TỔNG ĐIỂM ĐỘI B</h3>
             <div class="score-big" id="score-b-view" style="color:var(--team-b);">0</div>
         </div>
-        <div class="card score-card-animated" id="card-team-c" style="border-color:var(--team-c); text-align:center; display:none;">
-            <h3 style="color:var(--team-c); margin:0;">ĐỘI C (NGƯỜI LẺ)</h3>
-            <div class="score-big" id="score-c-view" style="color:var(--team-c);">0</div>
-        </div>
     </div>
 
-    <div class="card leaderboard-card" style="margin-top:18px; text-align:left;">
-        <h3 style="margin-top:0; color:var(--accent); font-family:'Orbitron';">BẢNG XẾP HẠNG THỜI GIAN THỰC</h3>
+    <div class="card leaderboard-card" style="margin-top:14px; text-align:left;">
+        <h3 style="margin-top:0; color:var(--accent); font-family:'Orbitron';">BẢNG XẾP HẠNG</h3>
         <table>
             <thead>
                 <tr>
@@ -584,30 +502,51 @@
                     <th>Avatar</th>
                     <th>Đội</th>
                     <th>Điểm</th>
-                    <th>Thời gian TL</th>
+                    <th>Thời gian</th>
                 </tr>
             </thead>
             <tbody id="leaderboard-rows"></tbody>
         </table>
     </div>
 
-    <div id="reset-zone" style="margin-top:28px; text-align:center; display:none;">
+    <div id="reset-zone" style="margin-top:24px; text-align:center; display:none;">
         <button onclick="resetGame()" style="background:#ff4a4a; color:#fff; font-family:'Orbitron';">
             RESET PHÒNG &amp; BẮT ĐẦU LẠI
         </button>
     </div>
 </div>
 
-<!-- ═══════════════════════════════════════════════════
-     JAVASCRIPT
-════════════════════════════════════════════════════ -->
+<!-- ═══ WINNER OVERLAY ══════════════════════════════════════════════════ -->
+<div id="winner-overlay">
+    <div class="winner-card" id="winner-card">
+        <div class="winner-trophy" id="winner-trophy">🏆</div>
+        <div class="winner-title">KẾT QUẢ TRẬN ĐẤU</div>
+        <div class="winner-name" id="winner-name">ĐỘI A</div>
+        <div class="score-row">
+            <div class="score-col">
+                <div class="score-col-label">ĐỘI A</div>
+                <div class="score-col-val a" id="final-score-a">0</div>
+            </div>
+            <div class="score-col">
+                <div class="score-col-label" style="color:#ffaa00; font-size:1.2rem;">VS</div>
+                <div class="score-col-val" style="color:#ffaa00; font-size:1.2rem;">–</div>
+            </div>
+            <div class="score-col">
+                <div class="score-col-label">ĐỘI B</div>
+                <div class="score-col-val b" id="final-score-b">0</div>
+            </div>
+        </div>
+        <button id="btn-close-winner" onclick="closeWinner()">Xem bảng điểm →</button>
+    </div>
+</div>
+
 <script>
 // ────────────────────────────────────────────────────
 //  STATE
 // ────────────────────────────────────────────────────
 const socket = io();
 let myRoomId  = '';
-let playerMap = {};   // id → { id, name, avatar, team }
+let playerMap = {};
 
 // ────────────────────────────────────────────────────
 //  ROOM CREATION
@@ -620,20 +559,20 @@ function createRoom() {
 socket.on('roomCreated', (roomId) => {
     myRoomId = roomId;
 
-    // Hide step-1, show step-2
     document.getElementById('lobby-view').style.display = 'none';
-    document.getElementById('room-view').style.display  = 'block';
+    document.getElementById('room-view').classList.add('active');
 
     document.getElementById('room-code-txt').innerText = roomId;
 
+    // ✅ Dùng /play?room= cho QR (có route trên server)
     const fullUrl = `${window.location.origin}/play?room=${roomId}`;
-    document.getElementById('join-url-txt').innerText  = fullUrl;
+    document.getElementById('join-url-txt').innerText = fullUrl;
 
-    // QR code
+    // ✅ QR to hơn
     document.getElementById('qrcode').innerHTML = '';
     new QRCode(document.getElementById('qrcode'), {
         text: fullUrl,
-        width: 104, height: 104,
+        width: 158, height: 158,
         colorDark: '#000', colorLight: '#fff',
         correctLevel: QRCode.CorrectLevel.H
     });
@@ -653,25 +592,22 @@ function renderLobbyTeams(players) {
     const teamB = players.filter(p => p.team === 'B');
     const total = players.length;
 
-    // Counts
-    document.getElementById('count-a').innerText     = teamA.length;
-    document.getElementById('count-b').innerText     = teamB.length;
+    document.getElementById('count-a').innerText = teamA.length;
+    document.getElementById('count-b').innerText = teamB.length;
 
-    // Animated total counter
     const totalEl = document.getElementById('total-count');
     const prev    = parseInt(totalEl.innerText) || 0;
     totalEl.innerText = total;
+    document.getElementById('total-count-topbar').innerText = total;
     if (total !== prev) {
         totalEl.classList.remove('bump');
         void totalEl.offsetWidth;
         totalEl.classList.add('bump');
     }
 
-    // Start button state
     const btn = document.getElementById('btn-start-game');
     btn.disabled = total < 2;
 
-    // Render member cards
     renderMemberList('list-a', teamA);
     renderMemberList('list-b', teamB);
 }
@@ -679,13 +615,11 @@ function renderLobbyTeams(players) {
 function renderMemberList(containerId, members) {
     const container = document.getElementById(containerId);
 
-    // Build a set of current IDs already rendered
     const rendered = new Set(
         [...container.querySelectorAll('[data-mid]')].map(el => el.dataset.mid)
     );
     const incoming = new Set(members.map(p => p.id));
 
-    // Remove players who left
     rendered.forEach(id => {
         if (!incoming.has(id)) {
             const el = container.querySelector(`[data-mid="${CSS.escape(id)}"]`);
@@ -698,34 +632,32 @@ function renderMemberList(containerId, members) {
         }
     });
 
-    // Remove empty placeholder if any player exists
     if (members.length > 0) {
         const empty = container.querySelector('.team-empty');
         if (empty) empty.remove();
     }
 
-    // Add new players
     members.forEach((p, idx) => {
-        if (rendered.has(p.id)) return; // already there
+        if (rendered.has(p.id)) return;
         const el = document.createElement('div');
         el.className = 'member-card';
         el.dataset.mid = p.id;
         el.style.animationDelay = `${idx * 0.04}s`;
+        // avatar có thể là object {emoji, name} hoặc string
+        const avatarEmoji = typeof p.avatar === 'object' ? p.avatar.emoji : (p.avatar || '🐾');
         el.innerHTML = `
-            <span class="m-avatar">${p.avatar || '🐾'}</span>
+            <span class="m-avatar">${avatarEmoji}</span>
             <span class="m-name">${escapeHtml(p.name)}</span>
             <span class="m-num">#${idx + 1}</span>
         `;
         container.appendChild(el);
     });
 
-    // Re-number existing cards (in case order shifted)
     [...container.querySelectorAll('[data-mid]')].forEach((el, i) => {
         const num = el.querySelector('.m-num');
         if (num) num.innerText = `#${i + 1}`;
     });
 
-    // Show empty placeholder if no members
     if (members.length === 0 && container.children.length === 0) {
         container.innerHTML = '<div class="team-empty">Chưa có thành viên…</div>';
     }
@@ -739,17 +671,18 @@ function startGame() {
 }
 
 socket.on('gameStarted', () => {
-    document.getElementById('room-view').style.display      = 'none';
-    document.getElementById('lobby-view').style.display     = 'none';
+    document.getElementById('room-view').classList.remove('active');
+    document.getElementById('room-view').style.display  = 'none';
+    document.getElementById('lobby-view').style.display = 'none';
     document.getElementById('dashboard-view').style.display = 'block';
 });
 
 // ────────────────────────────────────────────────────
-//  DASHBOARD — stage / timer
+//  DASHBOARD
 // ────────────────────────────────────────────────────
 socket.on('stageUpdate', (data) => {
     document.getElementById('current-stage-txt').innerText =
-        `STAGE ${data.stageNum}${data.isDouble ? ' – (VÒNG X2 ĐIỂM)' : ''}`;
+        `STAGE ${data.stageNum} / ${data.totalStages}${data.isDouble ? ' — 🔥 VÒNG X2 ĐIỂM' : ''}`;
 });
 
 socket.on('timerUpdate', (timeLeft) => {
@@ -757,14 +690,49 @@ socket.on('timerUpdate', (timeLeft) => {
 });
 
 socket.on('intermissionStart', () => {
-    document.getElementById('current-stage-txt').innerText = 'ĐANG TRONG THỜI GIAN GIẢI LAO (15S)';
+    document.getElementById('current-stage-txt').innerText = '⏸ GIẢI LAO (15S)';
 });
 
-socket.on('gameOver', () => {
-    document.getElementById('current-stage-txt').innerText = 'TRÒ CHƠI KẾT THÚC';
+// ✅ Game over → hiện bảng kết quả + winner overlay
+socket.on('gameOver', (d) => {
+    document.getElementById('current-stage-txt').innerText = '🏁 TRÒ CHƠI KẾT THÚC';
     document.getElementById('global-timer').innerText      = 'END';
     document.getElementById('reset-zone').style.display    = 'block';
+
+    // Nếu server gửi kèm data (từ endGameFinal player.html gửi gameOver không có d)
+    if (d && (d.scoreA !== undefined)) {
+        showWinnerOverlay(d);
+    }
 });
+
+function showWinnerOverlay(d) {
+    const overlay = document.getElementById('winner-overlay');
+    const card    = document.getElementById('winner-card');
+    const name    = document.getElementById('winner-name');
+    const trophy  = document.getElementById('winner-trophy');
+
+    document.getElementById('final-score-a').innerText = Math.round(d.scoreA || 0);
+    document.getElementById('final-score-b').innerText = Math.round(d.scoreB || 0);
+
+    if (d.winningTeam === 'Hòa') {
+        card.className  = 'winner-card draw';
+        name.className  = 'winner-name draw';
+        name.innerText  = 'HÒA NHAU!';
+        trophy.innerText = '🤝';
+    } else {
+        const isA = d.winningTeam === 'A';
+        card.className  = 'winner-card ' + (isA ? 'team-a' : 'team-b');
+        name.className  = 'winner-name ' + (isA ? 'team-a' : 'team-b');
+        name.innerText  = `ĐỘI ${d.winningTeam} CHIẾN THẮNG`;
+        trophy.innerText = '🏆';
+    }
+
+    overlay.classList.add('show');
+}
+
+function closeWinner() {
+    document.getElementById('winner-overlay').classList.remove('show');
+}
 
 // ────────────────────────────────────────────────────
 //  SCORE ANIMATION
@@ -778,7 +746,7 @@ function animateScoreBump(elId, newVal, team) {
     void el.offsetWidth;
     el.classList.add('score-bump');
 
-    const cardIds = { A:'card-team-a', B:'card-team-b', C:'card-team-c' };
+    const cardIds = { A:'card-team-a', B:'card-team-b' };
     const card = document.getElementById(cardIds[team]);
     if (card) {
         card.classList.remove('card-flash-a','card-flash-b');
@@ -788,18 +756,12 @@ function animateScoreBump(elId, newVal, team) {
 }
 
 // ────────────────────────────────────────────────────
-//  REALTIME SCORE UPDATE + LEADERBOARD
+//  REALTIME SCORE
 // ────────────────────────────────────────────────────
 socket.on('realtimeScoreUpdate', (data) => {
     animateScoreBump('score-a-view', data.scoreA, 'A');
     animateScoreBump('score-b-view', data.scoreB, 'B');
 
-    if (data.scoreC !== undefined && (data.scoreC > 0 || data.players.some(p => p.team === 'C'))) {
-        document.getElementById('card-team-c').style.display = 'block';
-        animateScoreBump('score-c-view', data.scoreC, 'C');
-    }
-
-    // Sort: higher score first; tie → faster time first
     const sorted = [...data.players].sort((a, b) => {
         if (b.score !== a.score) return b.score - a.score;
         return a.totalTimeTaken - b.totalTimeTaken;
@@ -810,7 +772,6 @@ socket.on('realtimeScoreUpdate', (data) => {
     const maxT   = times.length ? Math.max(...times) : 0;
     const tbody  = document.getElementById('leaderboard-rows');
 
-    // Cache existing rows
     const cache = {};
     [...tbody.querySelectorAll('tr[data-pid]')].forEach(r => { cache[r.dataset.pid] = r; });
 
@@ -818,7 +779,6 @@ socket.on('realtimeScoreUpdate', (data) => {
         let tColor = 'var(--accent)', tTxt = 'Đơn Lẻ', tBg = 'rgba(0,255,136,.12)';
         if (p.team === 'A') { tColor = 'var(--team-a)'; tTxt = 'Đội A'; tBg = 'rgba(255,74,74,.15)'; }
         if (p.team === 'B') { tColor = 'var(--team-b)'; tTxt = 'Đội B'; tBg = 'rgba(0,210,255,.15)'; }
-        if (p.team === 'C') { tColor = 'var(--team-c)'; tTxt = 'Đội C'; tBg = 'rgba(255,170,0,.15)'; }
 
         let deltaHtml = '';
         if (p.lastDelta > 0) deltaHtml = `<span class="delta-badge delta-plus">+${p.lastDelta}</span>`;
@@ -841,10 +801,13 @@ socket.on('realtimeScoreUpdate', (data) => {
         let row = cache[pid];
         if (!row) { row = document.createElement('tr'); row.dataset.pid = pid; }
 
+        // avatar có thể là object hoặc string
+        const avEmoji = typeof p.avatar === 'object' ? p.avatar.emoji : (p.avatar || '🐾');
+
         row.innerHTML = `
             <td>${rankHtml}</td>
             <td style="font-weight:600;">${escapeHtml(p.name)}</td>
-            <td style="font-size:1.35rem; line-height:1;">${p.avatar || '🐾'}</td>
+            <td style="font-size:1.3rem; line-height:1;">${avEmoji}</td>
             <td><span class="team-pill" style="color:${tColor};background:${tBg};border:1px solid ${tColor}40;">${tTxt}</span></td>
             <td><span class="score-cell">${p.score}đ ${deltaHtml}</span></td>
             <td><span class="${tClass}">${p.totalTimeTaken.toFixed(1)}s</span></td>
@@ -882,13 +845,5 @@ function escapeHtml(str) {
         .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
 </script>
-
-<!--
-    SERVER CONTRACT (unchanged):
-    Events received  : roomCreated, updatePlayerList, gameStarted, stageUpdate,
-                       timerUpdate, realtimeScoreUpdate, intermissionStart,
-                       startFastQuestionPhase, gameOver, roomResetByAdmin
-    Events emitted   : adminCreateRoom, adminStartGame(roomId), adminResetGame(roomId)
--->
 </body>
 </html>
