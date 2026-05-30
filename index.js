@@ -143,6 +143,20 @@ function getLeaderboard(room) {
 
 io.on('connection', (socket) => {
 
+  // ── PLAYER: Xác minh phòng tồn tại (bước 1 nhập mã phòng) ─────────────────
+  socket.on('verifyRoom', (roomId, callback) => {
+    const rId = (roomId || '').toUpperCase().trim();
+    const room = rooms[rId];
+    if (typeof callback !== 'function') return;
+    if (!room) {
+      return callback({ success: false, message: 'Phòng không tồn tại! Kiểm tra lại mã phòng.' });
+    }
+    if (room.status !== 'lobby') {
+      return callback({ success: false, message: 'Trận đấu đã bắt đầu, không thể vào phòng!' });
+    }
+    callback({ success: true, roomId: rId });
+  });
+
   // ── ADMIN: Tạo phòng mới ────────────────────────────────────────────────────
   socket.on('adminCreateRoom', () => {
     const roomId = generateRoomId();
@@ -166,28 +180,6 @@ io.on('connection', (socket) => {
     if (!playerName) return socket.emit('joinError', 'Tên không hợp lệ!');
 
     const playerAvatar = (avatar || 'default_animal');
-    // ── XÁC MINH PHÒNG TRƯỚC KHI VÀO (MỚI) ──
-  socket.on('verifyRoom', (roomId, callback) => {
-    const rId = (roomId || '').toUpperCase();
-    const room = rooms[rId];
-    if (!room) return callback({ success: false, message: 'Phòng không tồn tại! Kiểm tra lại mã phòng.' });
-    if (room.status !== 'lobby') return callback({ success: false, message: 'Trận đấu đã bắt đầu, không thể vào phòng!' });
-    callback({ success: true, roomId: rId });
-  });
-
-  // ── CHAT TRONG SẢNH CHỜ (ĐÃ SỬA LỖI) ──
-  socket.on('sendLobbyMessage', ({ roomId, msg }) => {
-    const room = rooms[roomId];
-    if (!room || room.status !== 'lobby' || !msg?.trim()) return;
-    const player = room.players.find(p => p.id === socket.id);
-    if (!player) return;
-
-    io.to('room_' + roomId).emit('receiveLobbyMessage', {
-      name: player.name,
-      msg: msg.trim().substring(0, 150),
-      team: player.team
-    });
-  });
 
     // ✅ Chia đội cân bằng tự động
     const countA = room.teamA.length;
@@ -276,14 +268,25 @@ io.on('connection', (socket) => {
     player._answeredCount++;
 
     socket.emit('singleAnswerResult', {
-      questionId, isCorrect,
-      points: points >= 0 ? `+${points}` : `${points}`,
+      questionId,
+      isCorrect,
+      pointsDelta: points,                          // số nguyên (có dấu)
+      chosenAnswer: answer,                         // phím player đã chọn
+      correctAnswer: currentQData.correctKey,       // phím đúng
       currentScore: player.score
     });
 
     const { scoreA, scoreB, scoreC } = getScores(room);
     io.to('admin_' + roomId).emit('realtimeScoreUpdate', {
       scoreA, scoreB, scoreC, players: getLeaderboard(room)
+    });
+
+    // Cập nhật điểm real-time cho tất cả player trong phòng
+    io.to('room_' + roomId).emit('scoreUpdate', {
+      playerId: socket.id,
+      personalScore: player.score,
+      delta: points,
+      teamScores: { A: scoreA, B: scoreB }
     });
 
     const totalQs = Object.keys(player._stageAnswers).length;
@@ -297,7 +300,20 @@ io.on('connection', (socket) => {
     }
   });
 
-  // ── PHÒNG CHAT ───────────────────────────────────────────────────────────────
+  // ── PHÒNG CHAT (LOBBY) ──────────────────────────────────────────────────────
+  socket.on('sendLobbyMessage', ({ roomId, msg }) => {
+    const room = rooms[roomId];
+    if (!room || room.status !== 'lobby' || !msg?.trim()) return;
+    const player = room.players.find(p => p.id === socket.id);
+    if (!player) return;
+    io.to('room_' + roomId).emit('receiveLobbyMessage', {
+      name: player.name,
+      msg: msg.trim().substring(0, 150),
+      team: player.team
+    });
+  });
+
+  // ── PHÒNG CHAT (GIẢI LAO) ─────────────────────────────────────────────────
   socket.on('sendGlobalMessage', ({ roomId, msg }) => {
     const room = rooms[roomId];
     if (!room || (room.status !== 'lobby' && room.status !== 'intermission') || !msg?.trim()) return;
@@ -309,6 +325,43 @@ io.on('connection', (socket) => {
       msg: msg.trim().substring(0, 150),
       team: player.team
     });
+  });
+
+  // ── PLAYER: Kết nối lại sau khi mất mạng ───────────────────────────────────
+  socket.on('playerRejoin', ({ roomId, name, avatar, team }) => {
+    const rId = (roomId || '').toUpperCase().trim();
+    const room = rooms[rId];
+    if (!room) return;
+
+    socket.data.roomId = rId;
+    socket.join('room_' + rId);
+
+    // Tìm player theo tên+đội và cập nhật socket.id mới
+    const player = room.players.find(p => p.name === name && p.team === team);
+    if (player) {
+      const oldId = player.id;
+      player.id = socket.id;
+      const teamArr = team === 'A' ? room.teamA : room.teamB;
+      const tp = teamArr.find(p => p.id === oldId);
+      if (tp) tp.id = socket.id;
+    }
+
+    // Cập nhật lại lobby nếu còn đang chờ
+    if (room.status === 'lobby') {
+      socket.emit('joinedRoom', { roomId: rId, team });
+      socket.emit('roleAssignment', { team });
+      io.to('room_' + rId).emit('lobbyUpdate', {
+        players: room.players.map(p => ({
+          id: p.id, name: p.name,
+          avatar: typeof p.avatar === 'object' ? p.avatar.emoji : p.avatar,
+          team: p.team, score: p.score
+        })),
+        totalCount: room.players.length
+      });
+      io.to('room_' + rId).emit('updatePlayerList', room.players.map(p => ({
+        id: p.id, name: p.name, avatar: p.avatar, team: p.team
+      })));
+    }
   });
 
   // ── ADMIN: Reset phòng ─────────────────────────────────────────────────────
@@ -334,6 +387,18 @@ io.on('connection', (socket) => {
     io.to('room_' + roomId).emit('updatePlayerList', room.players.map(p => ({
       id: p.id, name: p.name, avatar: p.avatar, team: p.team
     })));
+
+    // Cập nhật sảnh chờ cho player còn lại
+    if (room.status === 'lobby') {
+      io.to('room_' + roomId).emit('lobbyUpdate', {
+        players: room.players.map(p => ({
+          id: p.id, name: p.name,
+          avatar: typeof p.avatar === 'object' ? p.avatar.emoji : p.avatar,
+          team: p.team, score: p.score
+        })),
+        totalCount: room.players.length
+      });
+    }
 
     if (room.status === 'playing' && room.players.length > 0 &&
         room.players.every(p => p.submittedCurrentStage)) {
@@ -457,9 +522,8 @@ function endGameFinal(roomId) {
     scoreA, scoreB,
     topPlayers: getLeaderboard(room).slice(0, 5)
   });
-
-  // ✅ Gửi tổng kết đầy đủ cho admin
-  io.to('admin_' + roomId).emit('gameOver');
+  // Admin đã ở trong room_ channel nên nhận được gameOver ở trên rồi,
+  // không cần emit riêng cho admin_ để tránh kích hoạt handler 2 lần.
 }
 
 // ─── KHỞI ĐỘNG SERVER ──────────────────────────────────────────────────────
