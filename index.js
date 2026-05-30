@@ -166,6 +166,28 @@ io.on('connection', (socket) => {
     if (!playerName) return socket.emit('joinError', 'Tên không hợp lệ!');
 
     const playerAvatar = (avatar || 'default_animal');
+    // ── XÁC MINH PHÒNG TRƯỚC KHI VÀO (MỚI) ──
+  socket.on('verifyRoom', (roomId, callback) => {
+    const rId = (roomId || '').toUpperCase();
+    const room = rooms[rId];
+    if (!room) return callback({ success: false, message: 'Phòng không tồn tại! Kiểm tra lại mã phòng.' });
+    if (room.status !== 'lobby') return callback({ success: false, message: 'Trận đấu đã bắt đầu, không thể vào phòng!' });
+    callback({ success: true, roomId: rId });
+  });
+
+  // ── CHAT TRONG SẢNH CHỜ (ĐÃ SỬA LỖI) ──
+  socket.on('sendLobbyMessage', ({ roomId, msg }) => {
+    const room = rooms[roomId];
+    if (!room || room.status !== 'lobby' || !msg?.trim()) return;
+    const player = room.players.find(p => p.id === socket.id);
+    if (!player) return;
+
+    io.to('room_' + roomId).emit('receiveLobbyMessage', {
+      name: player.name,
+      msg: msg.trim().substring(0, 150),
+      team: player.team
+    });
+  });
 
     // ✅ Chia đội cân bằng tự động
     const countA = room.teamA.length;
