@@ -422,27 +422,38 @@
             100% { opacity:0; transform: translateX(-50%) translateY(-40px) scale(0.8); }
         }
 
-        /* D-Pad */
-        #dpad-container {
-            position: fixed; bottom: 158px; right: 12px;
-            display: flex; flex-direction: column; align-items: center;
-            gap: 2px; z-index: 30; user-select: none;
+        /* Click-to-move cursor hint */
+        #arena-floor { cursor: crosshair; }
+
+        /* Score Popup Overlay – hiện giữa màn hình khi trả lời xong */
+        .score-popup-overlay {
+            position: fixed;
+            left: 50%; top: 48%;
+            transform: translate(-50%, -50%) scale(0.4);
+            font-family: 'Orbitron', sans-serif;
+            font-size: 3.2rem; font-weight: 900;
+            pointer-events: none;
+            z-index: 2000;
+            letter-spacing: 3px;
+            opacity: 0;
+            animation: scoreOverlayAnim 1.8s cubic-bezier(0.22,1,0.36,1) forwards;
+            text-align: center;
         }
-        .dpad-row { display: flex; gap: 2px; }
-        .dpad-btn {
-            width: 42px; height: 42px;
-            background: rgba(0,210,255,0.08);
-            border: 1.5px solid rgba(0,210,255,0.25);
-            border-radius: 8px;
-            color: var(--accent);
-            font-size: 1.1rem;
-            display: flex; align-items: center; justify-content: center;
-            cursor: pointer;
-            transition: background 0.1s, transform 0.1s;
-            -webkit-tap-highlight-color: transparent;
+        .score-popup-overlay .pop-label {
+            font-size: 0.9rem; font-weight: 700; letter-spacing: 4px;
+            display: block; opacity: 0.8;
+            font-family: 'IBM Plex Sans', sans-serif;
+            margin-bottom: 4px;
         }
-        .dpad-btn:active { background: rgba(0,210,255,0.22); transform: scale(0.92); }
-        .dpad-spacer { width: 42px; height: 42px; }
+        .score-popup-overlay.positive { color: var(--success); text-shadow: 0 0 40px rgba(0,232,136,0.6), 0 0 80px rgba(0,232,136,0.25); }
+        .score-popup-overlay.negative { color: var(--danger);  text-shadow: 0 0 40px rgba(255,74,106,0.6), 0 0 80px rgba(255,74,106,0.25); }
+        @keyframes scoreOverlayAnim {
+            0%   { opacity: 0; transform: translate(-50%, -50%) scale(0.4); }
+            18%  { opacity: 1; transform: translate(-50%, -50%) scale(1.15); }
+            40%  { opacity: 1; transform: translate(-50%, -54%) scale(1); }
+            75%  { opacity: 1; transform: translate(-50%, -66%) scale(0.9); }
+            100% { opacity: 0; transform: translate(-50%, -80%) scale(0.75); }
+        }
 
         /* ── LOBBY CHAT ── */
         #lobby-chat {
@@ -748,9 +759,6 @@
         @media (max-width: 600px) {
             .team-panel { width: 110px; }
             #arena-floor { left: 110px; right: 110px; }
-            #dpad-container { right: 8px; }
-            .dpad-btn { width: 36px; height: 36px; font-size: 0.95rem; }
-            .dpad-spacer { width: 36px; height: 36px; }
         }
         @media (max-width: 400px) {
             .team-panel { width: 80px; font-size: 0.65rem; }
@@ -764,6 +772,9 @@
     <div id="top-progress-bar"></div>
 </div>
 
+<!-- ────────────────────────────
+     SCREEN 1 – NHẬP TÊN & PHÒNG
+──────────────────────────────── -->
 <div id="lobby-screen" class="screen active">
     <div class="arena-logo">
         <div class="arena-title">⚛ ARENA VẬT LÍ</div>
@@ -771,12 +782,14 @@
     </div>
 
     <div id="join-form">
+        <!-- Badge QR mode -->
         <div class="qr-badge" id="qr-mode-badge">
             <span>📷</span>
             <span>Đã quét QR — Phòng <strong id="qr-room-display"></strong></span>
         </div>
 
         <div class="login-card">
+            <!-- Nhập mã phòng (chỉ hiện khi mở bằng link không có QR) -->
             <div class="field-group" id="room-code-group">
                 <div class="field-label"><span class="fl-icon">🔑</span> MÃ PHÒNG</div>
                 <input type="text" id="input-room" placeholder="Nhập mã phòng (VD: ABC123)..."
@@ -805,6 +818,7 @@
     </div>
 </div>
 
+<!-- Team Reveal Banner -->
 <div class="team-reveal-banner" id="team-reveal">
     <div class="team-reveal-card" id="team-reveal-card">
         <div class="reveal-avatar" id="reveal-avatar-display"></div>
@@ -814,6 +828,9 @@
     </div>
 </div>
 
+<!-- ────────────────────────────
+     SCREEN 2 – SẢNH CHỜ
+──────────────────────────────── -->
 <div id="waiting-screen" class="screen">
     <div class="waiting-header">
         <div class="waiting-title">⚔ SẢNH CHỜ</div>
@@ -824,6 +841,7 @@
         <div class="waiting-badge" id="my-team-badge">TEAM ?</div>
     </div>
 
+    <!-- Team A (trái) -->
     <div class="team-panel left">
         <div class="team-panel-title">⚔ TEAM A</div>
         <div class="team-score-pill" id="team-a-score-pill">0đ</div>
@@ -831,6 +849,7 @@
         <div class="member-count" id="team-a-count">0 thành viên</div>
     </div>
 
+    <!-- Team B (phải) -->
     <div class="team-panel right">
         <div class="team-panel-title">🛡 TEAM B</div>
         <div class="team-score-pill" id="team-b-score-pill">0đ</div>
@@ -838,28 +857,17 @@
         <div class="member-count" id="team-b-count">0 thành viên</div>
     </div>
 
-    <div id="arena-floor" role="region" aria-label="Không gian sảnh chờ"></div>
-
-    <div id="dpad-container">
-        <div class="dpad-row">
-            <div class="dpad-spacer"></div>
-            <button class="dpad-btn" id="dpad-up" title="Lên">▲</button>
-            <div class="dpad-spacer"></div>
-        </div>
-        <div class="dpad-row">
-            <button class="dpad-btn" id="dpad-left" title="Trái">◀</button>
-            <div class="dpad-spacer" style="display:flex;align-items:center;justify-content:center;">
-                <span style="font-size:0.7rem;color:rgba(0,210,255,0.3);">✛</span>
-            </div>
-            <button class="dpad-btn" id="dpad-right" title="Phải">▶</button>
-        </div>
-        <div class="dpad-row">
-            <div class="dpad-spacer"></div>
-            <button class="dpad-btn" id="dpad-down" title="Xuống">▼</button>
-            <div class="dpad-spacer"></div>
+    <!-- Arena floor -->
+    <div id="arena-floor" role="region" aria-label="Không gian sảnh chờ">
+        <div id="click-move-hint" style="
+            position:absolute; bottom:8px; left:50%; transform:translateX(-50%);
+            font-size:0.68rem; color:rgba(0,210,255,0.35); pointer-events:none;
+            letter-spacing:1px; white-space:nowrap; user-select:none;">
+            👆 Chạm / Click để di chuyển
         </div>
     </div>
 
+    <!-- Lobby Chat -->
     <div id="lobby-chat">
         <div id="lobby-chat-messages"></div>
         <div class="chat-input-row">
@@ -870,7 +878,11 @@
     </div>
 </div>
 
+<!-- ────────────────────────────
+     SCREEN 3 – GAME
+──────────────────────────────── -->
 <div id="game-screen" class="screen">
+    <!-- Live score strip -->
     <div id="live-score-strip">
         <div class="live-score-item">
             <div class="live-score-label">Đội A</div>
@@ -886,6 +898,7 @@
         </div>
     </div>
 
+    <!-- Game header -->
     <div class="game-header">
         <span class="stage-label" id="stage-title">VÒNG 1</span>
         <span id="timer-text">50s</span>
@@ -894,6 +907,9 @@
     <div id="question-box"></div>
 </div>
 
+<!-- ────────────────────────────
+     SCREEN 4 – GIẢI LAO
+──────────────────────────────── -->
 <div id="intermission-screen" class="screen">
     <div class="intermission-header">
         <div class="intermission-title">⏸ GIẢI LAO GIỮA CHẶNG</div>
@@ -919,6 +935,9 @@
     </div>
 </div>
 
+<!-- ────────────────────────────
+     SCREEN 5 – VÒNG NHANH
+──────────────────────────────── -->
 <div id="fast-phase-screen" class="screen">
     <h2 style="font-family:'Orbitron'; color:#ffaa00; margin-bottom:16px;">⚡ VÒNG TRANH ĐIỂM NHANH</h2>
     <div id="host-controls" style="display:none;">
@@ -939,6 +958,9 @@
     </div>
 </div>
 
+<!-- ────────────────────────────
+     SCREEN 6 – KẾT QUẢ
+──────────────────────────────── -->
 <div id="summary-screen" class="screen">
     <div class="game-over-card" id="game-over-box"></div>
     <h3 style="color:var(--accent); font-family:'Orbitron'; text-align:left; margin-bottom:14px; font-size:0.9rem; letter-spacing:2px;">📋 XEM LẠI CHI TIẾT ĐÁP ÁN</h3>
@@ -947,59 +969,63 @@
 
 <script>
 // ═══════════════════════════════════════
-//  50 AVATAR ĐỘNG VẬT (MỚI: BỎ CÔN TRÙNG NHỎ, THÊM CÁNH CỤT...)
+//  50 AVATAR ĐỘNG VẬT
 // ═══════════════════════════════════════
 const AVATARS = [
+    // Thú trên cạn
     { emoji: '🦁', name: 'Sư Tử' },
     { emoji: '🐯', name: 'Hổ' },
-    { emoji: '🐻', name: 'Gấu' },
     { emoji: '🦊', name: 'Cáo' },
     { emoji: '🐺', name: 'Sói' },
-    { emoji: '🦍', name: 'Khỉ Đột' },
-    { emoji: '🐒', name: 'Khỉ' },
-    { emoji: '🦧', name: 'Đười Ươi' },
     { emoji: '🦌', name: 'Nai' },
-    { emoji: '🦒', name: 'Hươu Cao Cổ' },
     { emoji: '🐘', name: 'Voi' },
-    { emoji: '🦏', name: 'Tê Giác' },
-    { emoji: '🦛', name: 'Hà Mã' },
+    { emoji: '🦒', name: 'Hươu Cao' },
     { emoji: '🦓', name: 'Ngựa Vằn' },
     { emoji: '🐆', name: 'Báo' },
-    { emoji: '🐅', name: 'Cọp' },
-    { emoji: '🐪', name: 'Lạc Đà' },
-    { emoji: '🦙', name: 'Lạc Đà Nam Mỹ' },
+    { emoji: '🐻', name: 'Gấu' },
+    { emoji: '🐼', name: 'Gấu Trúc' },
     { emoji: '🦘', name: 'Kangaroo' },
-    { emoji: '🦡', name: 'Lửng Mật' },
-    { emoji: '🦦', name: 'Rái Cá' },
-    { emoji: '🦨', name: 'Chồn' },
-    { emoji: '🦝', name: 'Gấu Mèo' },
+    { emoji: '🦛', name: 'Tê Giác' },
+    { emoji: '🦏', name: 'Tê Giác C' },
+    { emoji: '🐪', name: 'Lạc Đà' },
+    { emoji: '🦙', name: 'Lạc Đà Nam' },
     { emoji: '🐗', name: 'Lợn Rừng' },
+    { emoji: '🦝', name: 'Gấu Mèo' },
     { emoji: '🦔', name: 'Nhím' },
-    { emoji: '🦇', name: 'Dơi' },
-    { emoji: '🐧', name: 'Chim Cánh Cụt' },
+    { emoji: '🦦', name: 'Rái Cá' },
+    { emoji: '🦥', name: 'Lười' },
+    // Chim & bò sát
     { emoji: '🦅', name: 'Đại Bàng' },
     { emoji: '🦉', name: 'Cú' },
     { emoji: '🦜', name: 'Vẹt' },
     { emoji: '🦩', name: 'Hồng Hạc' },
     { emoji: '🦚', name: 'Công' },
     { emoji: '🦢', name: 'Thiên Nga' },
-    { emoji: '🦆', name: 'Vịt' },
+    { emoji: '🦤', name: 'Dodo' },
     { emoji: '🐓', name: 'Gà Trống' },
-    { emoji: '🐊', name: 'Cá Sấu' },
-    { emoji: '🐢', name: 'Rùa' },
-    { emoji: '🐍', name: 'Rắn' },
     { emoji: '🦎', name: 'Tắc Kè' },
+    { emoji: '🐉', name: 'Rồng' },
+    { emoji: '🐢', name: 'Rùa' },
     { emoji: '🐸', name: 'Ếch' },
+    // Côn trùng & nhện
+    { emoji: '🦋', name: 'Bướm' },
+    { emoji: '🐝', name: 'Ong' },
+    { emoji: '🪲', name: 'Bọ Cứng' },
+    { emoji: '🕷', name: 'Nhện' },
+    { emoji: '🦂', name: 'Bọ Cạp' },
+    // Dưới nước
     { emoji: '🦈', name: 'Cá Mập' },
     { emoji: '🐬', name: 'Cá Heo' },
     { emoji: '🐋', name: 'Cá Voi' },
-    { emoji: '🦭', name: 'Hải Cẩu' },
     { emoji: '🐙', name: 'Bạch Tuộc' },
     { emoji: '🦑', name: 'Mực' },
     { emoji: '🦞', name: 'Tôm Hùm' },
     { emoji: '🦀', name: 'Cua' },
     { emoji: '🐡', name: 'Cá Nóc' },
-    { emoji: '🐠', name: 'Cá Nhiệt Đới' }
+    { emoji: '🐠', name: 'Cá Nhiệt Đới' },
+    { emoji: '🦭', name: 'Hải Cẩu' },
+    { emoji: '🐳', name: 'Cá Voi Xanh' },
+    { emoji: '🦐', name: 'Tôm' },
 ];
 
 // ═══════════════════════════════════════
@@ -1019,19 +1045,16 @@ let allPlayers = {};         // { socketId: { name, avatar, team, score } }
 let revealTimeout = null;
 let myScore = 0;
 let teamScores = { A: 0, B: 0 };
-let currentMaxTime = 60;     // Được cập nhật mỗi khi bắt đầu vòng mới
 
 // Vị trí nhân vật trên sảnh
 let myTokenPos = { x: 0, y: 0 };
-const DPAD_STEP = 0.055;     // % per step
-let dpadInterval = null;
 
 // ═══════════════════════════════════════
 //  KHỞI TẠO
 // ═══════════════════════════════════════
 window.addEventListener('DOMContentLoaded', () => {
     buildAvatarGrid();
-    setupDpad();
+    setupClickToMove();
     setupKeyboard();
 
     const params = new URLSearchParams(window.location.search);
@@ -1224,6 +1247,10 @@ function updateLiveScoreStrip() {
 
 /**
  * Animate a score element: show floating delta, then count from oldVal to newVal.
+ * @param {string} elId   - id of the .live-score-val element
+ * @param {number} oldVal - previous score
+ * @param {number} newVal - new score after delta
+ * @param {number} delta  - signed change (+10 or -3)
  */
 function animateScoreChange(elId, oldVal, newVal, delta) {
     const el = document.getElementById(elId);
@@ -1388,47 +1415,61 @@ function renderArenaTokens(teamA, teamB) {
 }
 
 // ═══════════════════════════════════════
-//  D-PAD MOVEMENT
+//  CLICK / TOUCH TO MOVE
 // ═══════════════════════════════════════
-function setupDpad() {
-    const dirs = {
-        'dpad-up':    { dx: 0, dy: -DPAD_STEP },
-        'dpad-down':  { dx: 0, dy:  DPAD_STEP },
-        'dpad-left':  { dx: -DPAD_STEP, dy: 0 },
-        'dpad-right': { dx:  DPAD_STEP, dy: 0 },
+function setupClickToMove() {
+    const floor = document.getElementById('arena-floor');
+
+    const handleMove = (clientX, clientY) => {
+        if (!document.getElementById('waiting-screen').classList.contains('active')) return;
+        const rect = floor.getBoundingClientRect();
+        const xPct = (clientX - rect.left) / rect.width;
+        const yPct = (clientY - rect.top)  / rect.height;
+
+        myTokenPos.x = Math.max(0.02, Math.min(0.93, xPct));
+        myTokenPos.y = Math.max(0.04, Math.min(0.87, yPct));
+
+        const myToken = floor.querySelector('.player-token.is-me');
+        if (myToken) {
+            const floorW = floor.offsetWidth || 400;
+            const floorH = floor.offsetHeight || 300;
+            myToken.style.left = (myTokenPos.x * floorW) + 'px';
+            myToken.style.top  = (myTokenPos.y * floorH) + 'px';
+        }
+
+        if (currentRoomId) {
+            socket.emit('playerMove', { roomId: currentRoomId, x: myTokenPos.x, y: myTokenPos.y });
+        }
+
+        // Ẩn hint sau lần đầu di chuyển
+        const hint = document.getElementById('click-move-hint');
+        if (hint) hint.style.opacity = '0';
     };
 
-    Object.entries(dirs).forEach(([id, delta]) => {
-        const btn = document.getElementById(id);
-        if (!btn) return;
-
-        const startMove = () => {
-            moveMyToken(delta.dx, delta.dy);
-            dpadInterval = setInterval(() => moveMyToken(delta.dx, delta.dy), 120);
-        };
-        const stopMove = () => {
-            clearInterval(dpadInterval);
-            dpadInterval = null;
-        };
-
-        btn.addEventListener('mousedown', startMove);
-        btn.addEventListener('touchstart', (e) => { e.preventDefault(); startMove(); }, { passive: false });
-        btn.addEventListener('mouseup', stopMove);
-        btn.addEventListener('mouseleave', stopMove);
-        btn.addEventListener('touchend', stopMove);
+    floor.addEventListener('click', (e) => {
+        // Không di chuyển nếu click vào token của player khác
+        if (e.target.closest('.player-token')) return;
+        handleMove(e.clientX, e.clientY);
     });
+
+    floor.addEventListener('touchstart', (e) => {
+        e.preventDefault();
+        if (e.target.closest('.player-token')) return;
+        handleMove(e.touches[0].clientX, e.touches[0].clientY);
+    }, { passive: false });
 }
 
 function setupKeyboard() {
+    const STEP = 0.055;
     const keyMap = {
-        'ArrowUp':    { dx: 0, dy: -DPAD_STEP },
-        'ArrowDown':  { dx: 0, dy:  DPAD_STEP },
-        'ArrowLeft':  { dx: -DPAD_STEP, dy: 0 },
-        'ArrowRight': { dx:  DPAD_STEP, dy: 0 },
-        'w': { dx: 0, dy: -DPAD_STEP },
-        's': { dx: 0, dy:  DPAD_STEP },
-        'a': { dx: -DPAD_STEP, dy: 0 },
-        'd': { dx:  DPAD_STEP, dy: 0 },
+        'ArrowUp':    { dx: 0, dy: -STEP },
+        'ArrowDown':  { dx: 0, dy:  STEP },
+        'ArrowLeft':  { dx: -STEP, dy: 0 },
+        'ArrowRight': { dx:  STEP, dy: 0 },
+        'w': { dx: 0, dy: -STEP },
+        's': { dx: 0, dy:  STEP },
+        'a': { dx: -STEP, dy: 0 },
+        'd': { dx:  STEP, dy: 0 },
     };
     const held = {};
     document.addEventListener('keydown', (e) => {
@@ -1533,9 +1574,6 @@ socket.on('startStage', (data) => {
     currentQuestions = data.questions;  // đã được shuffle riêng cho player này
     questionIndex = 0;
 
-    // Cập nhật giới hạn thời gian (Server điều tiết 60s hay 50s dựa vào vòng thi)
-    currentMaxTime = data.timeLimit || (data.isDouble ? 50 : 60);
-
     const isBonus = data.isDouble || data.stageNum === 5;
     // Tối đa 5 vòng; vòng 5 = nhân đôi
     const stageLabel = `VÒNG ${Math.min(data.stageNum, 5)} / 5` + (isBonus ? ' ★ NHÂN ĐÔI' : '');
@@ -1606,31 +1644,53 @@ socket.on('singleAnswerResult', (data) => {
     });
 
     const badge = document.getElementById('feedback-badge');
-    // Tính delta: server trả về data.points (dương = đúng, âm = sai)
-    // Fallback: +10 đúng / -3 sai
     const delta = data.isCorrect
         ? (data.points !== undefined ? data.points : 10)
         : (data.points !== undefined ? data.points : -3);
     const sign = delta > 0 ? '+' : '';
 
     if (data.isCorrect) {
-        badge.innerHTML = `<span class="fb-correct">✓ ĐÁP ÁN CHÍNH XÁC</span>
-            <span class="score-delta fb-correct">${sign}${delta}đ</span>`;
+        badge.innerHTML = `<span class="fb-correct">✓ ĐÁP ÁN CHÍNH XÁC</span>`;
     } else {
-        badge.innerHTML = `<span class="fb-wrong">✗ SAI RỒI</span>
-            <span class="score-delta fb-wrong">${sign}${delta}đ</span>`;
+        badge.innerHTML = `<span class="fb-wrong">✗ SAI RỒI</span>`;
     }
 
-    // Cộng dồn điểm cá nhân vào biến và animate lên UI
+    // ── HIỂN THỊ POPUP ĐIỂM LỚN GIỮA MÀN HÌNH ──
+    showScorePopupOverlay(delta, data.isCorrect);
+
+    // Cộng dồn điểm cá nhân, delay nhẹ để popup hiện ra trước
     const oldScore = myScore;
     myScore += delta;
-    animateScoreChange('live-score-me', oldScore, myScore, delta);
+    setTimeout(() => {
+        animateScoreChange('live-score-me', oldScore, myScore, delta);
+    }, 350);
 
     setTimeout(() => {
         questionIndex++;
         renderSingleQuestion();
-    }, 1400);
+    }, 1800);
 });
+
+/**
+ * Hiện popup điểm nổi bật giữa màn hình, tự biến mất sau ~1.8s
+ */
+function showScorePopupOverlay(delta, isCorrect) {
+    // Xoá popup cũ nếu có
+    const old = document.getElementById('score-popup-overlay');
+    if (old) old.remove();
+
+    const sign = delta > 0 ? '+' : '';
+    const cls  = delta > 0 ? 'positive' : 'negative';
+    const label = isCorrect ? '✓ CHÍNH XÁC' : '✗ SAI RỒI';
+
+    const el = document.createElement('div');
+    el.id = 'score-popup-overlay';
+    el.className = `score-popup-overlay ${cls}`;
+    el.innerHTML = `<span class="pop-label">${label}</span>${sign}${delta}đ`;
+    document.body.appendChild(el);
+
+    setTimeout(() => el.remove(), 1850);
+}
 
 // ═══════════════════════════════════════
 //  TIMER
@@ -1639,11 +1699,11 @@ socket.on('timerUpdate', (timeLeft) => {
     if (isAnsweringState) {
         const timerEl = document.getElementById('timer-text');
         timerEl.textContent = timeLeft + 's';
-        
-        // Cập nhật thanh thời gian dựa vào Max Time hiện tại (60 hoặc 50)
-        const pct = (timeLeft / currentMaxTime) * 100;
+        // Vòng 5: tổng 50s; các vòng khác: 60s (hoặc giá trị server gửi)
+        const maxTime = 60; // server sẽ gửi đúng
+        const pct = (timeLeft / maxTime) * 100;
         const bar = document.getElementById('top-progress-bar');
-        bar.style.width = Math.max(0, pct) + '%';
+        bar.style.width = Math.max(0, (timeLeft / maxTime) * 100) + '%';
 
         timerEl.classList.remove('warn', 'danger');
         if (timeLeft <= 10) { timerEl.classList.add('danger'); bar.style.backgroundColor = 'var(--danger)'; }
