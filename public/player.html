@@ -778,40 +778,45 @@
         <div class="arena-subtitle">MULTIPLAYER BATTLE ROYALE</div>
     </div>
 
-    <div id="join-form">
-        <div class="qr-badge" id="qr-mode-badge">
-            <span>📷</span>
-            <span>Đã quét QR — Phòng <strong id="qr-room-display"></strong></span>
-        </div>
-
+   <div id="join-form">
         <div class="login-card">
-            <div class="field-group" id="room-code-group">
-                <div class="field-label"><span class="fl-icon">🔑</span> MÃ PHÒNG</div>
-                <input type="text" id="input-room" placeholder="Nhập mã phòng (VD: ABC123)..."
-                    maxlength="10" style="text-transform:uppercase; letter-spacing:2px;"
-                    oninput="this.value=this.value.toUpperCase()">
-                <div class="room-hint">Nhập mã phòng do giáo viên cung cấp</div>
-            </div>
-
-            <div class="field-group">
-                <div class="field-label"><span class="fl-icon">👤</span> TÊN CỦA BẠN</div>
-                <input type="text" id="input-name" placeholder="Nhập tên hiển thị..." maxlength="20"
-                    onkeypress="if(event.key==='Enter') joinRoom()">
-            </div>
-
-            <div class="field-group">
-                <div class="av-section-label">
-                    <div class="field-label" style="margin-bottom:0;"><span class="fl-icon">🐾</span> CHỌN BIỂU TƯỢNG</div>
-                    <span class="av-count-badge">50 loài</span>
+            <div id="step-1-room">
+                <div class="field-group" id="room-code-group">
+                    <div class="field-label"><span class="fl-icon">🔑</span> MÃ PHÒNG</div>
+                    <input type="text" id="input-room" placeholder="Nhập mã phòng (VD: ABC123)..."
+                        maxlength="10" style="text-transform:uppercase; letter-spacing:2px;"
+                        oninput="this.value=this.value.toUpperCase()" onkeypress="if(event.key==='Enter') verifyRoomStep()">
+                    <div class="room-hint">Nhập mã phòng</div>
                 </div>
-                <div class="avatar-grid" id="avatar-grid"></div>
-                <div class="selected-preview" id="avatar-preview"></div>
+                <button class="btn-primary" onclick="verifyRoomStep()" id="verify-btn">TIẾP TỤC ➔</button>
             </div>
 
-            <button class="btn-primary" onclick="joinRoom()" id="join-btn">⚡ VÀO PHÒNG CHỜ</button>
+            <div id="step-2-profile" style="display: none;">
+                <div class="qr-badge" id="qr-mode-badge">
+                    <span>📷</span>
+                    <span>Đã quét QR — Phòng <strong id="qr-room-display"></strong></span>
+                </div>
+
+                <div class="field-group">
+                    <div class="field-label"><span class="fl-icon"></span>YOUR NAME</div>
+                    <input type="text" id="input-name" placeholder="Nhập tên hiển thị..." maxlength="20"
+                        onkeypress="if(event.key==='Enter') joinRoom()">
+                </div>
+
+                <div class="field-group">
+                    <div class="av-section-label">
+                        <div class="field-label" style="margin-bottom:0;"><span class="fl-icon">🐾</span> CHỌN AVAVTAR</div>
+                        <span class="av-count-badge">...</span>
+                    </div>
+                    <div class="avatar-grid" id="avatar-grid"></div>
+                    <div class="selected-preview" id="avatar-preview"></div>
+                </div>
+
+                <button class="btn-primary" onclick="joinRoom()" id="join-btn">⚡ VÀO PHÒNG CHỜ</button>
+                <button class="btn-secondary" onclick="backToStep1()" id="back-btn" style="margin-top:10px; background:transparent; border:1px solid var(--border); color:var(--text-dim); width:100%; padding:10px; border-radius:8px; cursor:pointer; font-weight: bold;">⬅ QUAY LẠI CÀI MÃ PHÒNG</button>
+            </div>
         </div>
     </div>
-</div>
 
 <div class="team-reveal-banner" id="team-reveal">
     <div class="team-reveal-card" id="team-reveal-card">
@@ -1018,17 +1023,89 @@ window.addEventListener('DOMContentLoaded', () => {
     if (roomParam) {
         isQRMode = true;
         urlRoomId = roomParam.toUpperCase().trim();
+        document.getElementById('step-1-room').style.display = 'none';
+        document.getElementById('step-2-profile').style.display = 'block';
         document.getElementById('qr-mode-badge').classList.add('show');
         document.getElementById('qr-room-display').textContent = urlRoomId;
-        document.getElementById('room-code-group').style.display = 'none';
         document.getElementById('input-name').focus();
+        currentRoomId = urlRoomId; // Lưu mã phòng từ QR
     } else {
         isQRMode = false;
-        document.getElementById('room-code-group').style.display = 'block';
+        document.getElementById('step-1-room').style.display = 'block';
+        document.getElementById('step-2-profile').style.display = 'none';
         document.getElementById('input-room').focus();
     }
 });
 
+function verifyRoomStep() {
+    const roomId = document.getElementById('input-room').value.trim().toUpperCase();
+    if (!roomId) return showError('Vui lòng nhập mã phòng!', 'verify-btn');
+
+    const btn = document.getElementById('verify-btn');
+    btn.disabled = true;
+    btn.textContent = '⏳ Đang kiểm tra...';
+
+    socket.emit('verifyRoom', roomId, (response) => {
+        btn.disabled = false;
+        btn.textContent = 'TIẾP TỤC ➔';
+        if (response.success) {
+            currentRoomId = response.roomId;
+            document.getElementById('step-1-room').style.display = 'none';
+            document.getElementById('step-2-profile').style.display = 'block';
+            document.getElementById('input-name').focus();
+        } else {
+            showError(response.message, 'verify-btn');
+        }
+    });
+}
+
+function backToStep1() {
+    document.getElementById('step-2-profile').style.display = 'none';
+    document.getElementById('step-1-room').style.display = 'block';
+    document.getElementById('input-room').focus();
+}
+
+function joinRoom() {
+    const name = document.getElementById('input-name').value.trim();
+    if (!name) return showError('Vui lòng nhập tên của bạn!', 'join-btn');
+    if (!myAvatar) return showError('Vui lòng chọn 1 biểu tượng đại diện!', 'join-btn');
+
+    if (!socket.connected) {
+        showError('Đang kết nối lại server... Thử lại sau vài giây!', 'join-btn');
+        socket.connect();
+        return;
+    }
+
+    myName = name;
+    const btn = document.getElementById('join-btn');
+    btn.disabled = true;
+    btn.textContent = '⏳ Đang kết nối...';
+
+    socket.emit('playerJoinRoom', {
+        roomId: currentRoomId,
+        name: myName,
+        avatar: myAvatar
+    });
+
+    const joinTimeout = setTimeout(() => {
+        if (document.getElementById('lobby-screen').classList.contains('active')) {
+            showError('Không nhận được phản hồi. Vui lòng kiểm tra lại!', 'join-btn');
+        }
+    }, 8000);
+    socket._joinTimeout = joinTimeout;
+}
+
+function showError(msg, btnId = 'join-btn') {
+    let errEl = document.getElementById('join-error');
+    if (!errEl) {
+        errEl = document.createElement('div');
+        errEl.id = 'join-error';
+        errEl.style.cssText = 'color:var(--danger);font-size:0.85rem;margin-top:10px;padding:8px 12px;background:rgba(255,74,106,0.1);border-radius:6px;border:1px solid rgba(255,74,106,0.3)';
+    }
+    document.getElementById(btnId).after(errEl); // Đưa thông báo lỗi xuống dưới nút đang click
+    errEl.textContent = '⚠ ' + msg;
+    setTimeout(() => { if (errEl) errEl.textContent = ''; }, 4000);
+}
 // ═══════════════════════════════════════
 //  BUILD AVATAR GRID
 // ═══════════════════════════════════════
