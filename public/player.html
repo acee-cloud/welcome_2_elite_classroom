@@ -914,26 +914,6 @@
     </div>
 </div>
 
-<div id="fast-phase-screen" class="screen">
-    <h2 style="font-family:'Orbitron'; color:#ffaa00; margin-bottom:16px;">⚡ VÒNG TRANH ĐIỂM NHANH</h2>
-    <div id="host-controls" style="display:none;">
-        <p style="color:var(--danger); font-weight:bold; margin-bottom:12px;">👑 Bạn là chủ khảo!</p>
-        <input type="text" id="fast-question-input" placeholder="Nhập câu hỏi phụ tự luận nhanh..." style="margin-bottom:10px;">
-        <button onclick="hostPublishQuestion()" style="background:#ffaa00; width:100%; padding:13px; border:none; border-radius:9px; font-weight:800; cursor:pointer; letter-spacing:1px;">PHÁT HÀNH CÂU HỎI</button>
-        <div style="margin-top:20px; text-align:left;">
-            <h4 style="margin-bottom:10px;">Danh sách phản hồi nhanh:</h4>
-            <div id="host-submission-list" style="color:var(--text-dim);">Đang chờ câu trả lời gửi lên...</div>
-        </div>
-    </div>
-    <div id="player-controls" style="display:none;">
-        <h3 id="fast-question-display" style="color:#fff; line-height:1.6; margin-bottom:16px;">Đang chờ chủ khảo đặt câu hỏi...</h3>
-        <div id="fast-answer-zone" style="display:none;">
-            <input type="text" id="player-fast-answer-input" placeholder="Nhập câu trả lời nhanh..." style="margin-bottom:10px;">
-            <button onclick="playerSubmitFastAnswer()" style="width:100%; padding:13px; background:var(--accent); color:#000; border:none; border-radius:9px; font-weight:800; cursor:pointer;">NỘP CÂU TRẢ LỜI</button>
-        </div>
-    </div>
-</div>
-
 <div id="summary-screen" class="screen">
     <div class="game-over-card" id="game-over-box"></div>
     <h3 style="color:var(--accent); font-family:'Orbitron'; text-align:left; margin-bottom:14px; font-size:0.9rem; letter-spacing:2px;">📋 XEM LẠI CHI TIẾT ĐÁP ÁN</h3>
@@ -986,8 +966,7 @@ const animals = [
     { emoji: '🦇', name: 'Dơi' },
     { emoji: '🐧', name: 'Cánh Cụt' },
     { emoji: '🦆', name: 'Vịt' },
-    { emoji: '🐔', name: 'Gà' },
-    { emoji: '🐓', name: 'Gà Trống' },
+    { emoji: '🐥', name: 'Gà' },
     { emoji: '🐉', name: 'Rồng' },
     { emoji: '🐊', name: 'Cá Sấu' },
     { emoji: '🐢', name: 'Rùa' },
