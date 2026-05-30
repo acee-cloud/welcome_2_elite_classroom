@@ -299,48 +299,7 @@ io.on('connection', (socket) => {
     });
   });
 
-  // ── VÒNG CÂU HỎI NHANH TỰ LUẬN (Đội C) ────────────────────────────────────
-  socket.on('hostSubmitFastQuestion', ({ roomId, questionText }) => {
-    const room = rooms[roomId];
-    if (!room || !room.teamC || room.teamC.id !== socket.id) return;
 
-    room.fastPhase.active = true;
-    room.fastPhase.questionText = questionText;
-    room.fastPhase.submissions = [];
-
-    io.to('room_' + roomId).emit('fastQuestionBroadcast', {
-      questionText, hostName: room.teamC.name
-    });
-  });
-
-  socket.on('playerSubmitFastAnswer', ({ roomId, answerText }) => {
-    const room = rooms[roomId];
-    if (!room || !room.fastPhase.active) return;
-    const player = room.players.find(p => p.id === socket.id);
-    if (!player || player.team === 'C') return;
-
-    const subItem = { id: socket.id, name: player.name, team: player.team, answerText };
-    room.fastPhase.submissions.push(subItem);
-    io.to(room.teamC.id).emit('hostReceiveSubmissions', room.fastPhase.submissions);
-  });
-
-  socket.on('hostApproveWinner', ({ roomId, winnerSocketId }) => {
-    const room = rooms[roomId];
-    if (!room || !room.teamC || room.teamC.id !== socket.id || !room.fastPhase.active) return;
-
-    const winner = room.players.find(p => p.id === winnerSocketId);
-    if (winner) {
-      const rewardPoints = room.teamC.score;
-      if (winner.team === 'A') room.bonusTeamA += rewardPoints;
-      if (winner.team === 'B') room.bonusTeamB += rewardPoints;
-
-      io.to('room_' + roomId).emit('fastPhaseEnded', {
-        winnerName: winner.name, winningTeam: winner.team, pointsAwarded: rewardPoints
-      });
-    }
-    room.fastPhase.active = false;
-    endGameFinal(roomId);
-  });
 
   // ── ADMIN: Reset phòng → câu hỏi được chọn lại ngẫu nhiên ─────────────────
   socket.on('adminResetGame', (roomId) => {
@@ -469,19 +428,12 @@ function startIntermission(roomId) {
       clearInterval(room.timer);
       const next = room.currentStage + 1;
 
-      if (next > TOTAL_STAGES) {
-        // ★ Đã qua vòng 5 → kết thúc (hoặc vòng câu hỏi nhanh nếu có Đội C)
-        if (room.teamC) {
-          room.status = 'fast_phase_running';
-          io.to('room_' + roomId).emit('startFastQuestionPhase', {
-            hostName: room.teamC.name, hostId: room.teamC.id
-          });
-        } else {
-          endGameFinal(roomId);
-        }
-      } else {
-        startStage(roomId, next);
-      }
+    if (next > TOTAL_STAGES) {
+    // ★ Đã qua vòng 5 -> kết thúc game luôn
+    endGameFinal(roomId);
+} else {
+    startStage(roomId, next);
+}
     }
   }, 1000);
 }
