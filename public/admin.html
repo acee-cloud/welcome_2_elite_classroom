@@ -33,7 +33,7 @@
             background: var(--panel);
             border: 2px solid var(--border);
             border-radius: 14px;
-            padding: 30px;
+            padding: 22px;
             position: relative;
         }
 
@@ -52,21 +52,24 @@
 
         /* ─── LOBBY (step 1 — before room created) ─────────── */
         #lobby-view {
-            max-width: 500px;
-            margin: 30px auto;
+            width: fit-content;
+            min-width: 320px;
+            max-width: calc(100vw - 48px);
+            margin: 60px auto;
             text-align: center;
+            padding: 40px 48px 36px;
+            overflow: hidden;
         }
 
         /* WEB TITLE */
         .web-title-wrapper {
             position: relative;
-            margin-bottom: 32px;
-            padding-bottom: 8px;
+            margin-bottom: 28px;
         }
         .web-title-glow {
             position: absolute;
-            inset: -20px;
-            background: radial-gradient(ellipse at 50% 60%, rgba(0,255,136,.18) 0%, transparent 65%);
+            inset: -30px -60px;
+            background: radial-gradient(ellipse at 50% 55%, rgba(0,255,136,.18) 0%, transparent 60%);
             pointer-events: none;
             animation: glowPulse 3s ease-in-out infinite;
         }
@@ -76,16 +79,17 @@
         }
         .web-title {
             font-family: 'Orbitron', sans-serif;
-            font-size: clamp(2.4rem, 7vw, 4rem);
+            font-size: 2.8rem;
             font-weight: 900;
-            letter-spacing: 4px;
-            line-height: 1;
+            letter-spacing: 3px;
+            line-height: 1.1;
             position: relative;
-            display: inline-block;
+            display: block;
+            white-space: nowrap;
             animation: titleIn .8s cubic-bezier(.175,.885,.32,1.275) both;
         }
         @keyframes titleIn {
-            from { opacity:0; transform: translateY(-22px) scale(.88); }
+            from { opacity:0; transform: translateY(-18px) scale(.9); }
             to   { opacity:1; transform: translateY(0) scale(1); }
         }
         .wt-phys { color: #fff; text-shadow: 0 0 24px rgba(255,255,255,.25); }
@@ -107,10 +111,11 @@
         }
         .web-subtitle {
             font-size: .72rem;
-            color: rgba(148,163,184,.45);
+            color: rgba(148,163,184,.4);
             letter-spacing: 3px;
             font-style: italic;
-            margin-top: 6px;
+            margin-top: 8px;
+            display: block;
             animation: fadeIn 1.3s ease .5s both;
         }
         @keyframes fadeIn { from { opacity:0; } to { opacity:1; } }
@@ -118,9 +123,10 @@
         #lobby-view h2 {
             font-family: 'Orbitron', sans-serif;
             color: var(--accent);
-            font-size: 1rem;
+            font-size: .9rem;
             letter-spacing: 2px;
-            margin-bottom: 18px;
+            margin-bottom: 20px;
+            white-space: nowrap;
         }
 
         /* ─── ROOM VIEW (step 2 — after room created) ──────── */
@@ -473,7 +479,7 @@
         <h1 class="web-title"><span class="wt-phys">PHYSICS</span><span class="wt-game">GAMEE</span></h1>
         <p class="web-subtitle">made by HYen</p>
     </div>
-    <h2>KHỞI TẠO PHÒNG</h2>
+    <h2>KHỞI TẠO PHÒNG ARENA</h2>
     <button id="btn-create" onclick="createRoom()">TẠO PHÒNG MỚI</button>
 </div>
 
@@ -504,7 +510,7 @@
         <!-- TEAM A -->
         <div class="team-box" id="box-a">
             <div class="team-box-header">
-                <span class="team-name">ĐỘI A</span>
+                <span class="team-name">⚔ ĐỘI A</span>
                 <span class="team-count-pill" id="count-a">0</span>
             </div>
             <div class="team-member-list" id="list-a">
@@ -533,7 +539,7 @@
         <!-- TEAM B -->
         <div class="team-box" id="box-b">
             <div class="team-box-header">
-                <span class="team-name">ĐỘI B</span>
+                <span class="team-name">🛡 ĐỘI B</span>
                 <span class="team-count-pill" id="count-b">0</span>
             </div>
             <div class="team-member-list" id="list-b">
@@ -578,7 +584,7 @@
                     <th>Avatar</th>
                     <th>Đội</th>
                     <th>Điểm</th>
-                    <th>Thời gian</th>
+                    <th>Thời gian TL</th>
                 </tr>
             </thead>
             <tbody id="leaderboard-rows"></tbody>
@@ -753,7 +759,6 @@ socket.on('timerUpdate', (timeLeft) => {
 socket.on('intermissionStart', () => {
     document.getElementById('current-stage-txt').innerText = 'ĐANG TRONG THỜI GIAN GIẢI LAO (15S)';
 });
-
 
 socket.on('gameOver', () => {
     document.getElementById('current-stage-txt').innerText = 'TRÒ CHƠI KẾT THÚC';
