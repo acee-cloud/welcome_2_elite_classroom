@@ -612,11 +612,7 @@
         .choice-btn.correct { background: rgba(0,232,136,0.12); border-color: var(--success); }
         .choice-btn.wrong { background: rgba(255,74,106,0.12); border-color: var(--danger); }
 
-        #feedback-badge {
-            margin-top: 18px; font-size: 1.2rem; font-weight: 700;
-            min-height: 32px;
-            display: flex; align-items: center; justify-content: center; gap: 10px;
-        }
+        /* #feedback-badge đã được định nghĩa lại phía dưới với cải tiến */
         .fb-correct { color: var(--success); }
         .fb-wrong { color: var(--danger); }
 
@@ -634,20 +630,26 @@
 
         /* Live scoreboard strip */
         #live-score-strip {
-            display: flex; justify-content: center; gap: 28px;
+            display: flex; justify-content: center; gap: 20px;
             padding: 10px 18px; margin-bottom: 16px;
             background: var(--panel); border: 1px solid var(--border);
-            border-radius: 10px;
+            border-radius: 10px; position: relative;
         }
-        .live-score-item { text-align: center; position: relative; }
-        .live-score-label { font-size: 0.65rem; color: var(--text-dim); letter-spacing: 1px; text-transform: uppercase; margin-bottom: 2px; }
+        .live-score-item { text-align: center; position: relative; min-width: 72px; }
+        .live-score-label { font-size: 0.62rem; color: var(--text-dim); letter-spacing: 1px; text-transform: uppercase; margin-bottom: 2px; }
         .live-score-val {
             font-family: 'Orbitron', sans-serif; font-size: 1.1rem; font-weight: 700;
             transition: color 0.3s;
         }
         .live-score-val.team-a { color: var(--team-a); }
         .live-score-val.team-b { color: var(--team-b); }
-        .live-score-val.my-score { color: var(--gold); }
+        .live-score-val.my-score { color: var(--gold); font-size: 1.3rem; }
+        /* Đường phân cách giữa "Bạn" với đội */
+        .live-score-item.me-item {
+            border-left: 1px solid rgba(255,215,0,0.2);
+            border-right: 1px solid rgba(255,215,0,0.2);
+            padding: 0 12px;
+        }
 
         /* Floating delta on score strip */
         .strip-delta {
@@ -754,6 +756,29 @@
         ::-webkit-scrollbar { width: 5px; }
         ::-webkit-scrollbar-track { background: var(--bg); }
         ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+        /* Feedback badge cải thiện */
+        #feedback-badge {
+            margin-top: 14px; font-size: 1.05rem; font-weight: 700;
+            min-height: 36px;
+            display: flex; align-items: center; justify-content: center;
+            gap: 6px; flex-wrap: wrap;
+            padding: 8px 12px;
+            border-radius: 8px;
+            transition: background 0.3s;
+        }
+        .fb-correct + .score-delta { font-size: 1.2rem; }
+        .fb-wrong   + .score-delta { font-size: 1.2rem; }
+        
+        /* Connection error toast */
+        #conn-toast {
+            position: fixed; bottom: 60px; left: 50%; transform: translateX(-50%);
+            background: rgba(255,74,106,0.92); color: #fff;
+            padding: 8px 20px; border-radius: 20px; font-size: 0.82rem;
+            font-weight: 600; z-index: 9999; display: none;
+            backdrop-filter: blur(8px); letter-spacing: 1px;
+        }
+        #conn-toast.show { display: block; animation: fadeIn 0.3s; }
 
         /* Responsive small screens */
         @media (max-width: 600px) {
@@ -873,15 +898,15 @@
 <div id="game-screen" class="screen">
     <div id="live-score-strip">
         <div class="live-score-item">
-            <div class="live-score-label">Đội A</div>
+            <div class="live-score-label">⚔ Đội A</div>
             <div class="live-score-val team-a" id="live-score-a">0</div>
         </div>
-        <div class="live-score-item">
-            <div class="live-score-label">⭐ Bạn</div>
+        <div class="live-score-item me-item">
+            <div class="live-score-label">⭐ Điểm Bạn</div>
             <div class="live-score-val my-score" id="live-score-me">0</div>
         </div>
         <div class="live-score-item">
-            <div class="live-score-label">Đội B</div>
+            <div class="live-score-label">🛡 Đội B</div>
             <div class="live-score-val team-b" id="live-score-b">0</div>
         </div>
     </div>
@@ -1008,6 +1033,7 @@ let teamScores = { A: 0, B: 0 };
 
 // Vị trí nhân vật trên sảnh
 let myTokenPos = { x: 0, y: 0 };
+let hasNavigatedToWaiting = false; // guard chống navigate 2 lần
 
 // ═══════════════════════════════════════
 //  KHỞI TẠO
@@ -1041,20 +1067,34 @@ function verifyRoomStep() {
     const roomId = document.getElementById('input-room').value.trim().toUpperCase();
     if (!roomId) return showError('Vui lòng nhập mã phòng!', 'verify-btn');
 
+    if (!socket.connected) {
+        showError('Chưa kết nối server, đang thử lại...', 'verify-btn');
+        socket.connect();
+        return;
+    }
+
     const btn = document.getElementById('verify-btn');
     btn.disabled = true;
     btn.textContent = '⏳ Đang kiểm tra...';
 
-    socket.emit('verifyRoom', roomId, (response) => {
+    // Timeout 6s – server không phản hồi callback thì re-enable
+    const verifyTimeout = setTimeout(() => {
         btn.disabled = false;
         btn.textContent = 'TIẾP TỤC ➔';
-        if (response.success) {
-            currentRoomId = response.roomId;
+        showError('Không thể kết nối server. Vui lòng thử lại!', 'verify-btn');
+    }, 6000);
+
+    socket.emit('verifyRoom', roomId, (response) => {
+        clearTimeout(verifyTimeout);
+        btn.disabled = false;
+        btn.textContent = 'TIẾP TỤC ➔';
+        if (response && response.success) {
+            currentRoomId = response.roomId || roomId;
             document.getElementById('step-1-room').style.display = 'none';
             document.getElementById('step-2-profile').style.display = 'block';
             document.getElementById('input-name').focus();
         } else {
-            showError(response.message, 'verify-btn');
+            showError((response && response.message) || 'Mã phòng không hợp lệ!', 'verify-btn');
         }
     });
 }
@@ -1063,6 +1103,11 @@ function backToStep1() {
     document.getElementById('step-2-profile').style.display = 'none';
     document.getElementById('step-1-room').style.display = 'block';
     document.getElementById('input-room').focus();
+}
+
+function resetJoinBtn() {
+    const btn = document.getElementById('join-btn');
+    if (btn) { btn.disabled = false; btn.textContent = '⚡ VÀO PHÒNG CHỜ'; }
 }
 
 function joinRoom() {
@@ -1077,6 +1122,7 @@ function joinRoom() {
     }
 
     myName = name;
+    hasNavigatedToWaiting = false;  // reset guard mỗi lần join mới
     const btn = document.getElementById('join-btn');
     btn.disabled = true;
     btn.textContent = '⏳ Đang kết nối...';
@@ -1089,7 +1135,8 @@ function joinRoom() {
 
     const joinTimeout = setTimeout(() => {
         if (document.getElementById('lobby-screen').classList.contains('active')) {
-            showError('Không nhận được phản hồi. Vui lòng kiểm tra lại!', 'join-btn');
+            resetJoinBtn();
+            showError('Không nhận được phản hồi. Kiểm tra mã phòng rồi thử lại!', 'join-btn');
         }
     }, 8000);
     socket._joinTimeout = joinTimeout;
@@ -1111,7 +1158,9 @@ function showError(msg, btnId = 'join-btn') {
 // ═══════════════════════════════════════
 function buildAvatarGrid() {
     const grid = document.getElementById('avatar-grid');
-    animals.forEach((av, i) => { // Sửa lỗi gọi biến
+    const badge = document.querySelector('.av-count-badge');
+    if (badge) badge.textContent = animals.length + ' ảnh đại diện';
+    animals.forEach((av, i) => {
         const cell = document.createElement('div');
         cell.className = 'avatar-cell';
         cell.dataset.index = i;
@@ -1143,18 +1192,31 @@ function switchScreen(screenId) {
 // ═══════════════════════════════════════
 socket.on('joinedRoom', (data) => {
     if (socket._joinTimeout) clearTimeout(socket._joinTimeout);
-    if (data && data.team) myTeam = data.team;
+    resetJoinBtn();
+    // Nếu server gửi team trong joinedRoom, navigate luôn
+    if (data && data.team && !hasNavigatedToWaiting) {
+        myTeam = data.team;
+        hasNavigatedToWaiting = true;
+        showTeamReveal(data.team, myAvatar, myName);
+    }
+    // Nếu không có team, chờ roleAssignment
 });
 
 socket.on('joinError', (msg) => {
     if (socket._joinTimeout) clearTimeout(socket._joinTimeout);
+    resetJoinBtn();
     showError(msg || 'Không thể vào phòng!');
 });
 
 socket.on('roleAssignment', (data) => {
     if (socket._joinTimeout) clearTimeout(socket._joinTimeout);
-    myTeam = data.team;
-    showTeamReveal(data.team, myAvatar, myName);
+    resetJoinBtn();
+    // Guard: chỉ navigate nếu chưa vào phòng
+    if (!hasNavigatedToWaiting) {
+        hasNavigatedToWaiting = true;
+        myTeam = data.team;
+        showTeamReveal(data.team, myAvatar, myName);
+    }
 });
 
 function showTeamReveal(team, avatar, name) {
@@ -1212,11 +1274,17 @@ socket.on('scoreUpdate', (data) => {
                 animateScoreChange('live-score-b', Math.round(oldB), Math.round(teamScores.B), Math.round(teamScores.B - oldB));
         }
     }
+    // Đồng bộ điểm cá nhân từ server (source of truth)
     if (data.playerId === socket.id && data.personalScore !== undefined) {
+        const serverScore = data.personalScore;
         const oldScore = myScore;
-        myScore = data.personalScore;
-        if (document.getElementById('game-screen').classList.contains('active') && oldScore !== myScore) {
-            animateScoreChange('live-score-me', oldScore, myScore, data.delta || (myScore - oldScore));
+        myScore = serverScore;  // luôn dùng điểm từ server
+        const inGame = document.getElementById('game-screen').classList.contains('active');
+        if (inGame && Math.round(oldScore) !== Math.round(myScore)) {
+            // chỉ animate nếu server có sự thay đổi (tránh conflict với singleAnswerResult)
+            const diff = data.delta || (myScore - oldScore);
+            if (Math.abs(diff) > 0)
+                animateScoreChange('live-score-me', Math.round(oldScore), Math.round(myScore), diff);
         } else {
             document.getElementById('live-score-me').textContent = myScore;
         }
@@ -1512,46 +1580,69 @@ socket.on('playerMoved', (data) => {
 // ═══════════════════════════════════════
 //  CHAT SẢNH CHỜ
 // ═══════════════════════════════════════
+function appendLobbyChatMsg(data, isSystem = false) {
+    const container = document.getElementById('lobby-chat-messages');
+    if (!container) return;
+    const div = document.createElement('div');
+    if (isSystem) {
+        div.className = 'chat-msg system-msg';
+        div.textContent = data.msg || data;
+    } else {
+        div.className = 'chat-msg';
+        let teamLabel = '', teamClass = '';
+        if (data.team === 'A')      { teamLabel = '[Đội A]'; teamClass = 'team-a-name'; }
+        else if (data.team === 'B') { teamLabel = '[Đội B]'; teamClass = 'team-b-name'; }
+        else                        { teamLabel = '[Khán giả]'; }
+        div.innerHTML = `<span class="msg-author ${teamClass}">${teamLabel} ${escapeHtml(data.name || '')}:</span> <span style="color:#cbd5e1">${escapeHtml(data.msg || '')}</span>`;
+    }
+    container.appendChild(div);
+    container.scrollTop = container.scrollHeight;
+}
+
+// Dùng Set để chống hiển thị trùng tin nhắn nếu server echo lại
+const _sentMsgCache = new Set();
+
 function sendLobbyChat() {
     const input = document.getElementById('lobby-chat-input');
     const msg = input.value.trim();
     if (!msg) return;
+
+    if (!socket.connected) {
+        appendLobbyChatMsg({ msg: '⚠ Mất kết nối server, vui lòng tải lại trang.' }, true);
+        return;
+    }
+    if (!currentRoomId) {
+        appendLobbyChatMsg({ msg: '⚠ Chưa vào phòng, không thể nhắn tin.' }, true);
+        return;
+    }
+
+    // Hiển thị tin nhắn của chính mình ngay (optimistic UI)
+    const cacheKey = `${myName}:${msg}:${Date.now()}`;
+    _sentMsgCache.add(cacheKey);
+    appendLobbyChatMsg({ name: myName, msg, team: myTeam });
+
     socket.emit('sendLobbyMessage', { roomId: currentRoomId, msg });
     input.value = '';
+    input.focus();
 }
 
 socket.on('receiveLobbyMessage', (data) => {
-    const container = document.getElementById('lobby-chat-messages');
-    const div = document.createElement('div');
-    div.className = 'chat-msg';
-    
-    let teamLabel = '';
-    let teamClass = '';
-    
-    // Gán nhãn Đội như yêu cầu ở lần trước
-    if (data.team === 'A') { 
-        teamLabel = '[Đội A]'; 
-        teamClass = 'team-a-name'; 
-    } else if (data.team === 'B') { 
-        teamLabel = '[Đội B]'; 
-        teamClass = 'team-b-name'; 
-    } else {
-        teamLabel = '[Khán giả]';
+    // Nếu là tin nhắn của chính mình (đã hiển thị ở trên), bỏ qua echo
+    if (data.name === myName && data.msg) {
+        // Kiểm tra xem có trong cache gửi gần đây không (trong 3s)
+        for (const key of _sentMsgCache) {
+            const [n, m] = key.split(':');
+            if (n === myName && m === data.msg) {
+                _sentMsgCache.delete(key);
+                return;  // Skip – đã hiển thị optimistically
+            }
+        }
     }
-
-    div.innerHTML = `<span class="msg-author ${teamClass}">${teamLabel} ${escapeHtml(data.name)}:</span> <span style="color: #cbd5e1">${escapeHtml(data.msg)}</span>`;
-    
-    container.appendChild(div);
-    container.scrollTop = container.scrollHeight;
+    appendLobbyChatMsg(data);
 });
 
 socket.on('lobbyChatSystem', (text) => {
-    const container = document.getElementById('lobby-chat-messages');
-    const div = document.createElement('div');
-    div.className = 'chat-msg system-msg';
-    div.textContent = text;
-    container.appendChild(div);
-    container.scrollTop = container.scrollHeight;
+    appendLobbyChatMsg({ msg: text }, true);
 });
 
 // ═══════════════════════════════════════
@@ -1646,22 +1737,44 @@ socket.on('singleAnswerResult', (data) => {
     });
 
     const badge = document.getElementById('feedback-badge');
-    const delta = data.isCorrect
-        ? (data.points !== undefined ? data.points : 10)
-        : (data.points !== undefined ? data.points : -3);
 
-    if (data.isCorrect) {
-        badge.innerHTML = `<span class="fb-correct">✓ ĐÁP ÁN CHÍNH XÁC</span>`;
+    // Tính delta có dấu – ưu tiên pointsDelta (signed), fallback sang points
+    let delta;
+    if (data.pointsDelta !== undefined) {
+        delta = data.pointsDelta;
+    } else if (data.isCorrect) {
+        delta = data.points !== undefined ? Math.abs(data.points) : 10;
     } else {
-        badge.innerHTML = `<span class="fb-wrong">✗ SAI RỒI</span>`;
+        // Penalty luôn âm
+        const raw = data.points !== undefined ? data.points : 3;
+        delta = raw > 0 ? -raw : raw;
     }
-
-    showScorePopupOverlay(delta, data.isCorrect);
 
     const oldScore = myScore;
     myScore += delta;
+    const newTotal = myScore;
+
+    // Hiển thị kết quả + tổng điểm ngay trong badge
+    const sign = delta >= 0 ? '+' : '';
+    if (data.isCorrect) {
+        badge.innerHTML = `
+            <span class="fb-correct">✓ CHÍNH XÁC</span>
+            <span class="score-delta" style="color:var(--success); margin-left:6px;">${sign}${delta}đ</span>
+            <span style="font-size:0.82rem; color:var(--gold); font-family:'Orbitron'; margin-left:8px;">▶ Tổng: ${newTotal}đ</span>`;
+    } else {
+        badge.innerHTML = `
+            <span class="fb-wrong">✗ SAI RỒI</span>
+            <span class="score-delta" style="color:var(--danger); margin-left:6px;">${sign}${delta}đ</span>
+            <span style="font-size:0.82rem; color:var(--gold); font-family:'Orbitron'; margin-left:8px;">▶ Tổng: ${newTotal}đ</span>`;
+    }
+
+    // Cập nhật live-score-me ngay lập tức (không đợi server scoreUpdate)
+    document.getElementById('live-score-me').textContent = newTotal;
+
+    showScorePopupOverlay(delta, data.isCorrect);
+
     setTimeout(() => {
-        animateScoreChange('live-score-me', oldScore, myScore, delta);
+        animateScoreChange('live-score-me', oldScore, newTotal, delta);
     }, 350);
 
     setTimeout(() => {
@@ -1732,8 +1845,14 @@ function sendChat() {
     const input = document.getElementById('chat-input');
     const msg = input.value.trim();
     if (!msg) return;
+    if (!socket.connected) {
+        const logs = document.getElementById('chat-logs');
+        if (logs) logs.innerHTML += `<div class="msg-line" style="color:var(--danger)">⚠ Mất kết nối server!</div>`;
+        return;
+    }
     socket.emit('sendGlobalMessage', { roomId: currentRoomId, msg });
     input.value = '';
+    input.focus();
 }
 
 socket.on('receiveGlobalMessage', (data) => {
@@ -1854,6 +1973,40 @@ window.addEventListener('resize', () => {
         const teamA = Object.values(allPlayers).filter(p => p.team === 'A');
         const teamB = Object.values(allPlayers).filter(p => p.team === 'B');
         renderArenaTokens(teamA, teamB);
+    }
+});
+
+// ═══════════════════════════════════════
+//  KẾT NỐI SOCKET – TRẠNG THÁI & TỰ RECONNECT
+// ═══════════════════════════════════════
+socket.on('connect', () => {
+    // Ẩn thông báo lỗi kết nối nếu đang hiển thị
+    const errEl = document.getElementById('join-error');
+    if (errEl && errEl.textContent.includes('kết nối')) errEl.textContent = '';
+    console.log('[Socket] Connected:', socket.id);
+});
+
+socket.on('disconnect', (reason) => {
+    console.warn('[Socket] Disconnected:', reason);
+    // Nếu đang ở sảnh chờ, hiển thị thông báo
+    if (document.getElementById('waiting-screen').classList.contains('active')) {
+        appendLobbyChatMsg({ msg: '⚠ Mất kết nối – đang kết nối lại...' }, true);
+    }
+});
+
+socket.on('connect_error', (err) => {
+    console.error('[Socket] Connection error:', err.message);
+});
+
+// Khi reconnect thành công, rejoin phòng tự động nếu đang trong game/sảnh
+socket.on('reconnect', () => {
+    console.log('[Socket] Reconnected');
+    if (currentRoomId && myName && myAvatar) {
+        // Re-emit playerJoinRoom để server nhận ra lại
+        socket.emit('playerRejoin', { roomId: currentRoomId, name: myName, avatar: myAvatar, team: myTeam });
+        if (document.getElementById('waiting-screen').classList.contains('active')) {
+            appendLobbyChatMsg({ msg: '✓ Đã kết nối lại.' }, true);
+        }
     }
 });
 </script>
