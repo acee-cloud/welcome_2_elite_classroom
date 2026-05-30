@@ -1383,7 +1383,7 @@ function renderLobbyLists() {
     teamA.forEach(p => {
         const div = document.createElement('div');
         div.className = 'member-item';
-        const av = p.avatar ? p.avatar.emoji : '🎮';
+        const av = (p.avatar && typeof p.avatar === 'object') ? p.avatar.emoji : (p.avatar || '🎮');
         const sc = p.score !== undefined ? p.score : 0;
         const isMe = p.id === socket.id;
         div.innerHTML = `<span class="m-av">${av}</span><span class="m-name">${isMe ? '★ ' : ''}${p.name}</span><span class="m-score" style="color:var(--team-a)">${sc}</span>`;
@@ -1396,7 +1396,7 @@ function renderLobbyLists() {
     teamB.forEach(p => {
         const div = document.createElement('div');
         div.className = 'member-item';
-        const av = p.avatar ? p.avatar.emoji : '🎮';
+        const av = (p.avatar && typeof p.avatar === 'object') ? p.avatar.emoji : (p.avatar || '🎮');
         const sc = p.score !== undefined ? p.score : 0;
         const isMe = p.id === socket.id;
         div.innerHTML = `<span class="m-av">${av}</span><span class="m-name">${isMe ? '★ ' : ''}${p.name}</span><span class="m-score" style="color:var(--team-b)">${sc}</span>`;
@@ -1447,7 +1447,7 @@ function renderArenaTokens(teamA, teamB) {
             token.style.left = x + 'px';
             token.style.top = y + 'px';
 
-            const av = p.avatar ? p.avatar.emoji : '🎮';
+            const av = (p.avatar && typeof p.avatar === 'object') ? p.avatar.emoji : (p.avatar || '🎮');
             token.innerHTML = `
                 <div class="token-ring"></div>
                 <div class="token-av">${av}</div>
