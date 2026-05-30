@@ -3,14 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin</title>
+    <title>Admin – Physics Gamee</title>
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=IBM+Plex+Sans:wght@400;600;700&display=swap" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <script src="/socket.io/socket.io.js"></script>
     <style>
         :root {
-            --bg: #0b0f19;
-            --panel: #141b2d;
+            --bg:     #0b0f19;
+            --panel:  #141b2d;
             --border: #24324f;
             --accent: #00ff88;
             --team-a: #ff4a4a;
@@ -18,1052 +18,872 @@
             --team-c: #ffaa00;
         }
 
-        * { box-sizing: border-box; }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
 
         body {
-            margin: 0;
             background: var(--bg);
             color: #fff;
             font-family: 'IBM Plex Sans', sans-serif;
-            padding: 20px;
             min-height: 100vh;
+            padding: 24px 20px;
         }
 
-        /* ===================== LOBBY VIEW ===================== */
+        /* ─── SHARED CARD ──────────────────────────────────── */
         .card {
             background: var(--panel);
             border: 2px solid var(--border);
-            border-radius: 12px;
-            padding: 20px;
-            text-align: center;
+            border-radius: 14px;
+            padding: 30px;
             position: relative;
-        }
-
-        #lobby-view { max-width: 640px; margin: 40px auto; }
-
-        .score-big {
-            font-family: 'Orbitron';
-            font-size: 3.5rem;
-            font-weight: 900;
-            margin: 15px 0;
-        }
-
-        #qrcode {
-            display: flex;
-            justify-content: center;
-            margin: 20px auto;
-            padding: 10px;
-            background: white;
-            width: 180px;
-            height: 180px;
-            border-radius: 8px;
         }
 
         button {
             background: var(--accent);
             color: #000;
-            font-weight: bold;
+            font-weight: 700;
             border: none;
-            padding: 12px 25px;
-            border-radius: 6px;
-            font-size: 1.1rem;
+            padding: 13px 28px;
+            border-radius: 8px;
+            font-size: 1.05rem;
             cursor: pointer;
-            transition: 0.2s;
+            transition: opacity .2s, transform .15s;
         }
-        button:hover { opacity: 0.9; transform: scale(1.02); }
+        button:hover { opacity: .88; transform: scale(1.02); }
 
-        /* ===================== WAITING ROOM VIEW ===================== */
-        #waiting-room-view {
-            display: none;
-            position: relative;
-            width: 100%;
-            min-height: 100vh;
-            overflow: hidden;
-        }
-
-        #waiting-room-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            background: var(--panel);
-            padding: 12px 20px;
-            border-radius: 12px;
-            border: 1px solid var(--border);
-            margin-bottom: 16px;
-        }
-
-        #waiting-room-header h2 {
-            font-family: 'Orbitron';
-            margin: 0;
-            color: var(--accent);
-            font-size: 1.1rem;
-        }
-
-        /* Arena canvas */
-        #arena-container {
-            position: relative;
-            width: 100%;
-            height: 540px;
-            background: radial-gradient(ellipse at center, #0e1a30 0%, #050a10 100%);
-            border: 2px solid var(--border);
-            border-radius: 16px;
-            overflow: hidden;
-        }
-
-        /* Grid pattern on arena floor */
-        #arena-container::before {
-            content: '';
-            position: absolute;
-            inset: 0;
-            background-image:
-                linear-gradient(rgba(0,255,136,0.04) 1px, transparent 1px),
-                linear-gradient(90deg, rgba(0,255,136,0.04) 1px, transparent 1px);
-            background-size: 40px 40px;
-            pointer-events: none;
-        }
-
-        /* Team side panels */
-        #team-panels {
-            display: grid;
-            grid-template-columns: 1fr 3fr 1fr;
-            gap: 16px;
-            height: 100%;
-        }
-
-        .team-panel {
-            padding: 16px 12px;
-            border-radius: 12px;
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-            height: 100%;
-            overflow-y: auto;
-            scrollbar-width: thin;
-        }
-
-        #panel-a {
-            background: rgba(255,74,74,0.08);
-            border: 1px solid rgba(255,74,74,0.3);
-        }
-        #panel-b {
-            background: rgba(0,210,255,0.08);
-            border: 1px solid rgba(0,210,255,0.3);
-        }
-
-        .team-panel h3 {
-            font-family: 'Orbitron';
-            font-size: 0.9rem;
-            margin: 0 0 8px 0;
+        /* ─── LOBBY (step 1 — before room created) ─────────── */
+        #lobby-view {
+            max-width: 500px;
+            margin: 30px auto;
             text-align: center;
+        }
+
+        /* WEB TITLE */
+        .web-title-wrapper {
+            position: relative;
+            margin-bottom: 32px;
+            padding-bottom: 8px;
+        }
+        .web-title-glow {
+            position: absolute;
+            inset: -20px;
+            background: radial-gradient(ellipse at 50% 60%, rgba(0,255,136,.18) 0%, transparent 65%);
+            pointer-events: none;
+            animation: glowPulse 3s ease-in-out infinite;
+        }
+        @keyframes glowPulse {
+            0%,100% { opacity: .7; }
+            50%      { opacity: 1; }
+        }
+        .web-title {
+            font-family: 'Orbitron', sans-serif;
+            font-size: clamp(2.4rem, 7vw, 4rem);
+            font-weight: 900;
+            letter-spacing: 4px;
+            line-height: 1;
+            position: relative;
+            display: inline-block;
+            animation: titleIn .8s cubic-bezier(.175,.885,.32,1.275) both;
+        }
+        @keyframes titleIn {
+            from { opacity:0; transform: translateY(-22px) scale(.88); }
+            to   { opacity:1; transform: translateY(0) scale(1); }
+        }
+        .wt-phys { color: #fff; text-shadow: 0 0 24px rgba(255,255,255,.25); }
+        .wt-game {
+            color: var(--accent);
+            text-shadow: 0 0 22px rgba(0,255,136,.65);
+            position: relative;
+        }
+        .wt-game::after {
+            content: '';
+            position: absolute; inset: 0;
+            background: linear-gradient(105deg, transparent 38%, rgba(0,255,136,.28) 50%, transparent 62%);
+            background-size: 220% 100%;
+            animation: shimmer 3s linear infinite;
+        }
+        @keyframes shimmer {
+            0%   { background-position: 220% 0; }
+            100% { background-position: -220% 0; }
+        }
+        .web-subtitle {
+            font-size: .72rem;
+            color: rgba(148,163,184,.45);
+            letter-spacing: 3px;
+            font-style: italic;
+            margin-top: 6px;
+            animation: fadeIn 1.3s ease .5s both;
+        }
+        @keyframes fadeIn { from { opacity:0; } to { opacity:1; } }
+
+        #lobby-view h2 {
+            font-family: 'Orbitron', sans-serif;
+            color: var(--accent);
+            font-size: 1rem;
+            letter-spacing: 2px;
+            margin-bottom: 18px;
+        }
+
+        /* ─── ROOM VIEW (step 2 — after room created) ──────── */
+        #room-view { display: none; max-width: 1080px; margin: 0 auto; }
+
+        /* top bar: code + QR */
+        #room-topbar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 20px;
+            background: var(--panel);
+            border: 2px solid var(--border);
+            border-radius: 14px;
+            padding: 18px 28px;
+            margin-bottom: 18px;
+            flex-wrap: wrap;
+        }
+        #room-topbar .code-block { line-height: 1; }
+        #room-topbar .code-label {
+            font-size: .78rem;
+            color: #64748b;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            margin-bottom: 4px;
+        }
+        #room-code-txt {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 3rem;
+            font-weight: 900;
+            color: #fff;
+            letter-spacing: 6px;
+        }
+        #room-topbar .qr-wrap {
+            background: #fff;
+            border-radius: 10px;
+            padding: 8px;
+            width: 120px;
+            height: 120px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        #room-topbar .join-hint {
+            font-size: .88rem;
+            color: #64748b;
+            flex: 1;
+            min-width: 160px;
+        }
+        #room-topbar .join-hint span { color: var(--accent); }
+
+        /* 3-column layout: Team A | Info+Start | Team B */
+        #room-main {
+            display: grid;
+            grid-template-columns: 1fr 280px 1fr;
+            gap: 14px;
+            align-items: start;
+        }
+
+        /* Team panels */
+        .team-box {
+            border-radius: 14px;
+            padding: 0;
+            overflow: hidden;
+            border: 2px solid;
+        }
+        #box-a { border-color: rgba(255,74,74,.4); background: rgba(255,74,74,.05); }
+        #box-b { border-color: rgba(0,210,255,.4); background: rgba(0,210,255,.05); }
+
+        .team-box-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 12px 16px;
+            border-bottom: 1px solid rgba(255,255,255,.07);
+        }
+        #box-a .team-box-header { background: rgba(255,74,74,.12); }
+        #box-b .team-box-header { background: rgba(0,210,255,.12); }
+
+        .team-box-header .team-name {
+            font-family: 'Orbitron', sans-serif;
+            font-size: .9rem;
+            font-weight: 900;
             letter-spacing: 2px;
         }
+        #box-a .team-name { color: var(--team-a); }
+        #box-b .team-name { color: var(--team-b); }
 
-        .team-panel h3.a { color: var(--team-a); }
-        .team-panel h3.b { color: var(--team-b); }
-
-        .team-member-entry {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            background: rgba(255,255,255,0.05);
-            border-radius: 8px;
-            padding: 6px 10px;
-            font-size: 0.85rem;
-            animation: slideIn 0.4s ease;
-        }
-
-        @keyframes slideIn {
-            from { opacity: 0; transform: translateX(-20px); }
-            to { opacity: 1; transform: translateX(0); }
-        }
-
-        .team-member-entry .mini-avatar { font-size: 1.4rem; }
-        .team-member-entry .member-name { font-weight: 600; font-size: 0.8rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-
-        /* Player avatars in arena */
-        #arena-field {
-            position: absolute;
-            inset: 0;
-        }
-
-        .player-avatar {
-            position: absolute;
-            text-align: center;
-            transform: translate(-50%, -50%);
-            animation: popIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-            transition: left 0.6s ease, top 0.6s ease;
-            pointer-events: none;
-            z-index: 10;
-        }
-
-        @keyframes popIn {
-            from { opacity: 0; transform: translate(-50%, -50%) scale(0); }
-            to { opacity: 1; transform: translate(-50%, -50%) scale(1); }
-        }
-
-        .player-avatar .avatar-icon {
-            font-size: 2.6rem;
-            filter: drop-shadow(0 0 8px rgba(255,255,255,0.3));
-            display: block;
-            line-height: 1;
-        }
-
-        .player-avatar .avatar-label {
-            font-size: 0.7rem;
+        .team-count-pill {
+            font-family: 'Orbitron', sans-serif;
+            font-size: .78rem;
             font-weight: 700;
-            white-space: nowrap;
-            padding: 2px 6px;
-            border-radius: 4px;
-            margin-top: 4px;
-            display: inline-block;
+            padding: 3px 12px;
+            border-radius: 99px;
         }
-        .player-avatar .avatar-label.a { background: rgba(255,74,74,0.3); color: var(--team-a); border: 1px solid rgba(255,74,74,0.5); }
-        .player-avatar .avatar-label.b { background: rgba(0,210,255,0.3); color: var(--team-b); border: 1px solid rgba(0,210,255,0.5); }
+        #box-a .team-count-pill { background: rgba(255,74,74,.2); color: var(--team-a); border: 1px solid rgba(255,74,74,.4); }
+        #box-b .team-count-pill { background: rgba(0,210,255,.2); color: var(--team-b); border: 1px solid rgba(0,210,255,.4); }
 
-        /* Pulse ring under avatar */
-        .player-avatar::before {
-            content: '';
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -80%);
-            width: 48px;
-            height: 48px;
-            border-radius: 50%;
-            animation: pulseRing 2s ease-out infinite;
-            pointer-events: none;
-        }
-        .player-avatar.team-a::before { border: 2px solid rgba(255,74,74,0.6); }
-        .player-avatar.team-b::before { border: 2px solid rgba(0,210,255,0.6); }
-
-        @keyframes pulseRing {
-            0% { transform: translate(-50%, -80%) scale(0.8); opacity: 1; }
-            100% { transform: translate(-50%, -80%) scale(2); opacity: 0; }
-        }
-
-        /* ===================== CHAT ===================== */
-        #chat-area {
-            position: absolute;
-            bottom: 16px;
-            left: 50%;
-            transform: translateX(-50%);
-            width: 420px;
-            max-width: 90%;
-            background: rgba(10, 15, 30, 0.9);
-            border: 1px solid rgba(255,255,255,0.1);
-            border-radius: 12px;
-            backdrop-filter: blur(12px);
-            z-index: 50;
+        .team-member-list {
+            padding: 10px 12px;
             display: flex;
             flex-direction: column;
-            overflow: hidden;
+            gap: 7px;
+            min-height: 80px;
+            max-height: 420px;
+            overflow-y: auto;
+            scrollbar-width: thin;
+            scrollbar-color: var(--border) transparent;
         }
 
-        #chat-header {
-            padding: 8px 14px;
-            font-size: 0.75rem;
-            font-weight: 700;
-            color: #94a3b8;
-            letter-spacing: 1.5px;
-            text-transform: uppercase;
-            border-bottom: 1px solid rgba(255,255,255,0.08);
+        .member-card {
             display: flex;
             align-items: center;
-            gap: 6px;
+            gap: 10px;
+            background: rgba(255,255,255,.05);
+            border-radius: 9px;
+            padding: 8px 12px;
+            animation: memberIn .35s cubic-bezier(.175,.885,.32,1.275) both;
+        }
+        @keyframes memberIn {
+            from { opacity:0; transform: translateY(10px) scale(.92); }
+            to   { opacity:1; transform: translateY(0) scale(1); }
+        }
+        .member-card .m-avatar { font-size: 1.5rem; line-height: 1; flex-shrink: 0; }
+        .member-card .m-name {
+            font-weight: 600;
+            font-size: .85rem;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .member-card .m-num {
+            margin-left: auto;
+            font-size: .7rem;
+            color: #475569;
+            font-family: 'Orbitron', sans-serif;
+            flex-shrink: 0;
         }
 
-        #chat-header::before {
+        .team-empty {
+            text-align: center;
+            color: #334155;
+            font-size: .82rem;
+            padding: 20px 0;
+            font-style: italic;
+        }
+
+        /* Pulse dot on member */
+        .member-card::before {
+            content: '';
+            width: 6px; height: 6px;
+            border-radius: 50%;
+            flex-shrink: 0;
+            animation: dotBlink 2s ease-in-out infinite;
+        }
+        #box-a .member-card::before { background: var(--team-a); box-shadow: 0 0 6px var(--team-a); }
+        #box-b .member-card::before { background: var(--team-b); box-shadow: 0 0 6px var(--team-b); }
+        @keyframes dotBlink { 0%,100%{opacity:1;} 50%{opacity:.3;} }
+
+        /* Center column */
+        #room-center {
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+        }
+
+        /* Player counter card */
+        #player-counter-card {
+            background: var(--panel);
+            border: 2px solid var(--border);
+            border-radius: 14px;
+            padding: 18px 16px;
+            text-align: center;
+        }
+        #player-counter-card .counter-label {
+            font-size: .72rem;
+            color: #64748b;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            margin-bottom: 6px;
+        }
+        #player-counter-card .counter-num {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 2.8rem;
+            font-weight: 900;
+            color: var(--accent);
+            line-height: 1;
+            text-shadow: 0 0 20px rgba(0,255,136,.4);
+            transition: transform .25s cubic-bezier(.175,.885,.32,1.275);
+        }
+        #player-counter-card .counter-num.bump {
+            animation: counterBump .4s cubic-bezier(.175,.885,.32,1.275);
+        }
+        @keyframes counterBump {
+            0%{transform:scale(1);} 40%{transform:scale(1.3);} 100%{transform:scale(1);}
+        }
+        #player-counter-card .counter-sub {
+            font-size: .75rem;
+            color: #475569;
+            margin-top: 4px;
+        }
+
+        /* Live indicator */
+        .live-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: rgba(0,255,136,.1);
+            border: 1px solid rgba(0,255,136,.3);
+            border-radius: 99px;
+            padding: 4px 14px;
+            font-size: .72rem;
+            font-weight: 700;
+            color: var(--accent);
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+        }
+        .live-badge::before {
             content: '';
             width: 7px; height: 7px;
             border-radius: 50%;
             background: var(--accent);
             box-shadow: 0 0 6px var(--accent);
-            animation: blink 1.2s infinite;
+            animation: dotBlink 1.2s infinite;
         }
 
-        @keyframes blink {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.3; }
+        /* Start button */
+        #btn-start-game {
+            width: 100%;
+            background: linear-gradient(135deg, #00ff88, #00cc6a);
+            font-family: 'Orbitron', sans-serif;
+            letter-spacing: 2px;
+            font-size: .95rem;
+            padding: 16px 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 24px rgba(0,255,136,.25);
+            transition: box-shadow .2s, transform .15s, opacity .2s;
+        }
+        #btn-start-game:hover {
+            box-shadow: 0 6px 32px rgba(0,255,136,.45);
+            transform: translateY(-2px) scale(1.01);
+        }
+        #btn-start-game:disabled {
+            opacity: .35;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
         }
 
-        #chat-messages {
-            height: 130px;
-            overflow-y: auto;
-            padding: 8px 12px;
-            display: flex;
-            flex-direction: column;
-            gap: 5px;
-            scrollbar-width: thin;
-            scrollbar-color: var(--border) transparent;
+        #start-hint {
+            font-size: .72rem;
+            color: #475569;
+            text-align: center;
+            margin-top: -4px;
+        }
+        #start-hint span { color: var(--accent); }
+
+        /* ─── DASHBOARD VIEW ──────────────────────────────── */
+        #dashboard-view { display: none; }
+
+        .score-big {
+            font-family: 'Orbitron';
+            font-size: 3.5rem;
+            font-weight: 900;
+            margin: 12px 0;
+        }
+        .score-big.score-bump {
+            animation: scoreBump .45s cubic-bezier(.175,.885,.32,1.275);
+        }
+        @keyframes scoreBump {
+            0%{transform:scale(1);} 40%{transform:scale(1.28);} 70%{transform:scale(.95);} 100%{transform:scale(1);}
         }
 
-        .chat-msg {
-            font-size: 0.82rem;
-            line-height: 1.4;
-            animation: fadeUp 0.3s ease;
-        }
-
-        @keyframes fadeUp {
-            from { opacity: 0; transform: translateY(6px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-
-        .chat-msg .msg-sender { font-weight: 700; margin-right: 4px; }
-        .chat-msg .msg-sender.a { color: var(--team-a); }
-        .chat-msg .msg-sender.b { color: var(--team-b); }
-        .chat-msg .msg-text { color: rgba(255,255,255,0.85); }
-        .chat-msg.system .msg-text { color: var(--accent); font-style: italic; font-size: 0.78rem; }
-
-        /* ===================== DASHBOARD ===================== */
         .grid-layout {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-            gap: 20px;
-            margin-top: 20px;
+            gap: 18px;
+            margin-top: 18px;
         }
 
-        table { width: 100%; border-collapse: collapse; margin-top: 15px; text-align: left; }
-        th, td { padding: 12px; border-bottom: 1px solid var(--border); }
-        th { color: #94a3b8; }
+        .score-card-animated { transition: transform .3s ease, box-shadow .3s ease; }
+        .score-card-animated:hover { transform: translateY(-3px); box-shadow: 0 8px 32px rgba(0,0,0,.4); }
 
-        .delta-badge { font-size: 0.85rem; padding: 2px 6px; border-radius: 4px; margin-left: 8px; font-weight: bold; }
-        .delta-plus { background: rgba(0, 255, 136, 0.2); color: #00ff88; }
-        .delta-minus { background: rgba(255, 74, 74, 0.2); color: #ff4a4a; }
+        @keyframes cardFlash {
+            0%  { box-shadow: 0 0 0 rgba(0,0,0,0); }
+            30% { box-shadow: 0 0 30px var(--flash-color, rgba(0,255,136,.5)); }
+            100%{ box-shadow: 0 0 0 rgba(0,0,0,0); }
+        }
+        .card-flash-a { --flash-color: rgba(255,74,74,.5); animation: cardFlash .6s ease; }
+        .card-flash-b { --flash-color: rgba(0,210,255,.5); animation: cardFlash .6s ease; }
 
-        /* Count badge */
-        .count-badge {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            background: rgba(0,255,136,0.15);
-            color: var(--accent);
-            border: 1px solid rgba(0,255,136,0.3);
-            border-radius: 20px;
-            padding: 2px 12px;
-            font-weight: 700;
-            font-size: 0.9rem;
-            margin-left: 8px;
-        }
+        /* Leaderboard */
+        table { width: 100%; border-collapse: collapse; margin-top: 14px; text-align: left; }
+        th, td { padding: 11px 12px; border-bottom: 1px solid var(--border); }
+        th { color: #64748b; font-size: .8rem; letter-spacing: 1px; text-transform: uppercase; }
 
-        /* ===================== WAITING ROOM INFO BAR ===================== */
-        #wr-info-bar {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 24px;
-            flex-wrap: wrap;
-        }
-
-        .team-count-display {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            font-size: 0.95rem;
-            font-weight: 600;
-        }
-
-        .dot-a { width: 10px; height: 10px; border-radius: 50%; background: var(--team-a); box-shadow: 0 0 6px var(--team-a); }
-        .dot-b { width: 10px; height: 10px; border-radius: 50%; background: var(--team-b); box-shadow: 0 0 6px var(--team-b); }
-
-        /* ===================== WEB TITLE ===================== */
-        .web-title-wrapper {
-            position: relative;
-            margin-bottom: 28px;
-            padding-bottom: 20px;
-        }
-
-        .web-title-glow {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -60%);
-            width: 320px;
-            height: 80px;
-            background: radial-gradient(ellipse, rgba(0,255,136,0.18) 0%, transparent 70%);
-            pointer-events: none;
-            animation: titleGlowPulse 3s ease-in-out infinite;
-        }
-
-        @keyframes titleGlowPulse {
-            0%, 100% { opacity: 0.7; transform: translate(-50%, -60%) scale(1); }
-            50% { opacity: 1; transform: translate(-50%, -60%) scale(1.1); }
-        }
-
-        .web-title {
-            font-family: 'Orbitron', sans-serif;
-            font-size: clamp(2.4rem, 6vw, 4rem);
-            font-weight: 900;
-            margin: 0 0 6px 0;
-            letter-spacing: 4px;
-            line-height: 1;
-            position: relative;
-            display: inline-block;
-            animation: titleEntrance 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275) both;
-        }
-
-        @keyframes titleEntrance {
-            from { opacity: 0; transform: translateY(-20px) scale(0.9); }
-            to   { opacity: 1; transform: translateY(0) scale(1); }
-        }
-
-        .wt-phys {
-            color: #fff;
-            text-shadow: 0 0 20px rgba(255,255,255,0.3), 0 0 60px rgba(0,255,136,0.15);
-        }
-
-        .wt-game {
-            color: var(--accent);
-            text-shadow: 0 0 20px rgba(0,255,136,0.6), 0 0 60px rgba(0,255,136,0.3);
-            position: relative;
-        }
-
-        /* Scanline shimmer over GAMEE */
-        .wt-game::after {
-            content: '';
-            position: absolute;
-            inset: 0;
-            background: linear-gradient(105deg, transparent 40%, rgba(0,255,136,0.25) 50%, transparent 60%);
-            background-size: 200% 100%;
-            animation: shimmer 3s linear infinite;
-        }
-
-        @keyframes shimmer {
-            0%   { background-position: 200% 0; }
-            100% { background-position: -200% 0; }
-        }
-
-        .web-subtitle {
-            font-size: 0.75rem;
-            color: rgba(148,163,184,0.5);
-            margin: 0;
-            letter-spacing: 3px;
-            text-transform: lowercase;
-            font-style: italic;
-            animation: fadeIn 1.2s ease 0.4s both;
-        }
-
-        @keyframes fadeIn {
-            from { opacity: 0; }
-            to { opacity: 1; }
-        }
-
-        /* ===================== SCORE CARD ANIMATIONS ===================== */
-        .score-card-animated {
-            transition: transform 0.3s ease, box-shadow 0.3s ease;
-        }
-        .score-card-animated:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 8px 32px rgba(0,0,0,0.4);
-        }
-
-        .score-big {
-            transition: transform 0.25s cubic-bezier(0.175,0.885,0.32,1.275), color 0.2s;
-        }
-        .score-big.score-bump {
-            animation: scoreBump 0.45s cubic-bezier(0.175,0.885,0.32,1.275);
-        }
-        @keyframes scoreBump {
-            0%   { transform: scale(1); }
-            40%  { transform: scale(1.28); }
-            70%  { transform: scale(0.95); }
-            100% { transform: scale(1); }
-        }
-
-        /* ===================== LEADERBOARD ANIMATIONS ===================== */
         #leaderboard-rows tr {
-            transition: background 0.3s ease, transform 0.35s ease, opacity 0.35s ease;
-            animation: rowEnter 0.4s ease both;
+            animation: rowEnter .4s ease both;
+            transition: background .3s;
         }
-
+        #leaderboard-rows tr:nth-child(even) { background: rgba(255,255,255,.02); }
+        #leaderboard-rows tr:hover { background: rgba(0,255,136,.06); }
         @keyframes rowEnter {
-            from { opacity: 0; transform: translateX(-12px); }
-            to   { opacity: 1; transform: translateX(0); }
+            from { opacity:0; transform: translateX(-10px); }
+            to   { opacity:1; transform: translateX(0); }
         }
 
-        #leaderboard-rows tr:hover {
-            background: rgba(0,255,136,0.06);
-        }
+        .delta-badge { font-size: .8rem; padding: 2px 6px; border-radius: 4px; margin-left: 6px; font-weight: 700; }
+        .delta-plus  { background: rgba(0,255,136,.18); color: #00ff88; }
+        .delta-minus { background: rgba(255,74,74,.18); color: #ff4a4a; }
 
-        /* Rank medal styling */
         .rank-medal {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            width: 28px;
-            height: 28px;
-            border-radius: 50%;
-            font-weight: 900;
-            font-size: 0.85rem;
-            font-family: 'Orbitron', sans-serif;
+            display: inline-flex; align-items: center; justify-content: center;
+            width: 28px; height: 28px; border-radius: 50%;
+            font-weight: 900; font-size: .82rem; font-family: 'Orbitron', sans-serif;
         }
-        .rank-1 { background: linear-gradient(135deg, #ffd700, #ff8c00); color: #000; box-shadow: 0 0 10px rgba(255,215,0,0.6); animation: goldPulse 2s ease-in-out infinite; }
-        .rank-2 { background: linear-gradient(135deg, #c0c0c0, #808080); color: #000; }
-        .rank-3 { background: linear-gradient(135deg, #cd7f32, #8b4513); color: #fff; }
-        .rank-n  { background: rgba(255,255,255,0.08); color: #94a3b8; }
-
+        .rank-1 { background: linear-gradient(135deg,#ffd700,#ff8c00); color:#000; animation: goldPulse 2s ease-in-out infinite; }
+        .rank-2 { background: linear-gradient(135deg,#c0c0c0,#808080); color:#000; }
+        .rank-3 { background: linear-gradient(135deg,#cd7f32,#8b4513); color:#fff; }
+        .rank-n { background: rgba(255,255,255,.08); color:#64748b; }
         @keyframes goldPulse {
-            0%, 100% { box-shadow: 0 0 10px rgba(255,215,0,0.6); }
-            50%       { box-shadow: 0 0 20px rgba(255,215,0,0.9), 0 0 30px rgba(255,165,0,0.4); }
+            0%,100%{ box-shadow:0 0 10px rgba(255,215,0,.6); }
+            50%    { box-shadow:0 0 22px rgba(255,215,0,.9),0 0 32px rgba(255,165,0,.4); }
         }
 
-        /* Time display */
-        .time-display {
-            font-size: 0.85rem;
-            color: #64748b;
-            font-variant-numeric: tabular-nums;
+        .team-pill {
+            display: inline-block; padding: 2px 10px;
+            border-radius: 99px; font-size: .76rem; font-weight: 700; letter-spacing: .5px;
         }
+        .time-display { font-size: .83rem; color: #475569; font-variant-numeric: tabular-nums; }
         .time-fast { color: #00ff88; }
         .time-slow { color: #ff6b6b; }
+        .score-cell { font-weight: 700; display: flex; align-items: center; gap: 5px; font-variant-numeric: tabular-nums; }
 
-        /* Score cell */
-        .score-cell {
-            font-weight: bold;
-            font-variant-numeric: tabular-nums;
-            display: flex;
-            align-items: center;
-            gap: 6px;
-        }
-
-        /* Team pill */
-        .team-pill {
-            display: inline-block;
-            padding: 2px 10px;
-            border-radius: 99px;
-            font-size: 0.78rem;
-            font-weight: 700;
-            letter-spacing: 0.5px;
-        }
-
-        /* Leaderboard header glow */
-        .leaderboard-card h3 {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
+        .leaderboard-card h3 { display:flex; align-items:center; gap:10px; }
         .leaderboard-card h3::before {
-            content: '';
-            display: inline-block;
-            width: 4px;
-            height: 1.2em;
-            background: var(--accent);
-            border-radius: 2px;
-            box-shadow: 0 0 8px var(--accent);
-        }
-
-        /* Score cards team A/B glow on update */
-        @keyframes cardFlash {
-            0%   { box-shadow: 0 0 0 rgba(0,0,0,0); }
-            30%  { box-shadow: 0 0 30px var(--flash-color, rgba(0,255,136,0.5)); }
-            100% { box-shadow: 0 0 0 rgba(0,0,0,0); }
-        }
-        .card-flash-a { --flash-color: rgba(255,74,74,0.5); animation: cardFlash 0.6s ease; }
-        .card-flash-b { --flash-color: rgba(0,210,255,0.5); animation: cardFlash 0.6s ease; }
-
-        /* Table striping */
-        #leaderboard-rows tr:nth-child(even) {
-            background: rgba(255,255,255,0.02);
+            content:''; display:inline-block; width:4px; height:1.1em;
+            background:var(--accent); border-radius:2px; box-shadow:0 0 8px var(--accent);
         }
     </style>
 </head>
 <body>
 
-    <!-- ========== LOBBY VIEW ========== -->
-    <div id="lobby-view" class="card">
-        <div class="web-title-wrapper">
-            <div class="web-title-glow"></div>
-            <h1 class="web-title">
-                <span class="wt-phys">PHYSICS</span><span class="wt-game">GAMEE</span>
-            </h1>
-            <p class="web-subtitle">made by HYen</p>
+<!-- ═══════════════════════════════════════════════════
+     STEP 1 — Initial landing (before room is created)
+════════════════════════════════════════════════════ -->
+<div id="lobby-view" class="card">
+    <div class="web-title-wrapper">
+        <div class="web-title-glow"></div>
+        <h1 class="web-title"><span class="wt-phys">PHYSICS</span><span class="wt-game">GAMEE</span></h1>
+        <p class="web-subtitle">made by HYen</p>
+    </div>
+    <h2>KHỞI TẠO PHÒNG</h2>
+    <button id="btn-create" onclick="createRoom()">TẠO PHÒNG MỚI</button>
+</div>
+
+<!-- ═══════════════════════════════════════════════════
+     STEP 2 — Room created: QR + live team panels
+════════════════════════════════════════════════════ -->
+<div id="room-view">
+
+    <!-- Top bar: room code + QR + hint -->
+    <div id="room-topbar">
+        <div class="code-block">
+            <div class="code-label">Mã phòng</div>
+            <div id="room-code-txt">----</div>
         </div>
-        <h2 style="font-family:'Orbitron'; color:var(--accent); margin-top:0;">KHỞI TẠO PHÒNG ARENA</h2>
-        <button id="btn-create" onclick="createRoom()">TẠO PHÒNG MỚI</button>
 
-        <div id="room-info" style="display:none; margin-top:20px;">
-            <div style="font-size: 1.2rem; color: #94a3b8;">MÃ PHÒNG TRUY CẬP</div>
-            <div id="room-code-txt" style="font-family:'Orbitron'; font-size:4rem; font-weight:900; color:#fff; letter-spacing:4px; margin:10px 0;">----</div>
+        <div class="qr-wrap" id="qrcode"></div>
 
-            <div id="qrcode"></div>
-            <p style="color:#94a3b8; font-size:0.9rem;">📱 Người chơi quét mã QR hoặc vào link để chọn avatar & được xếp đội tự động</p>
-
-            <div style="margin-top:20px;">
-                <h3>Học sinh sẵn sàng (<span id="player-count">0</span>):</h3>
-                <div id="player-list" style="color:var(--accent); font-weight:600;">Chưa có ai tham gia...</div>
-            </div>
-            <button id="btn-enter-lobby" onclick="goToWaitingRoom()" style="margin-top:25px; width:100%; background:#1e2d4a; color:#94a3b8; border:2px dashed var(--border);">
-                📺 XEM SẢNH CHỜ THỰC GIAN
-            </button>
+        <div class="join-hint">
+            📱 Học sinh quét QR hoặc truy cập<br>
+            <span id="join-url-txt"></span><br>
+            để chọn avatar &amp; được ghép đội tự động.
         </div>
     </div>
 
-    <!-- ========== WAITING ROOM VIEW ========== -->
-    <div id="waiting-room-view">
-        <div id="waiting-room-header">
-            <div id="wr-info-bar">
-                <h2>⚔️ SẢNH CHỜ ARENA</h2>
-                <div class="team-count-display">
-                    <span class="dot-a"></span>
-                    <span style="color:var(--team-a);">Đội A: <strong id="wr-count-a">0</strong></span>
-                </div>
-                <div class="team-count-display">
-                    <span class="dot-b"></span>
-                    <span style="color:var(--team-b);">Đội B: <strong id="wr-count-b">0</strong></span>
-                </div>
-                <span style="color:#94a3b8;">Tổng: <span class="count-badge" id="wr-total">0</span></span>
-                <div style="display:flex; align-items:center; gap:8px; margin-left:12px;">
-                    <div id="room-code-mini" style="font-family:'Orbitron'; color:#fff; font-size:1.2rem; letter-spacing:3px;"></div>
-                </div>
+    <!-- 3-col layout -->
+    <div id="room-main">
+
+        <!-- TEAM A -->
+        <div class="team-box" id="box-a">
+            <div class="team-box-header">
+                <span class="team-name">ĐỘI A</span>
+                <span class="team-count-pill" id="count-a">0</span>
             </div>
-            <button id="btn-start-wr" onclick="startGame()" style="background: linear-gradient(135deg, #00ff88, #00cc6a); font-family:'Orbitron'; letter-spacing:1px; font-size:1rem; padding:12px 28px;">
+            <div class="team-member-list" id="list-a">
+                <div class="team-empty">Chưa có thành viên…</div>
+            </div>
+        </div>
+
+        <!-- CENTER: counter + start -->
+        <div id="room-center">
+            <div id="player-counter-card">
+                <div class="counter-label">Người chơi đã vào</div>
+                <div class="counter-num" id="total-count">0</div>
+                <div class="counter-sub">học sinh sẵn sàng</div>
+            </div>
+
+            <div style="text-align:center;">
+                <span class="live-badge">LIVE</span>
+            </div>
+
+            <button id="btn-start-game" onclick="startGame()">
                 KÍCH HOẠT TRẬN ĐẤU
             </button>
+            <p id="start-hint">Cần ít nhất <span>2</span> người để bắt đầu</p>
         </div>
 
-        <!-- Arena with team panels -->
-        <div id="arena-container">
-            <!-- Team panels rendered inside the grid -->
-            <div id="team-panels">
-                <div class="team-panel" id="panel-a">
-                    <h3 class="a">⚔ ĐỘI A</h3>
-                    <div id="team-a-list"></div>
-                </div>
-
-                <!-- Center field -->
-                <div style="position:relative; overflow:hidden; border-radius:8px;">
-                    <div id="arena-field"></div>
-                </div>
-
-                <div class="team-panel" id="panel-b">
-                    <h3 class="b">🛡 ĐỘI B</h3>
-                    <div id="team-b-list"></div>
-                </div>
+        <!-- TEAM B -->
+        <div class="team-box" id="box-b">
+            <div class="team-box-header">
+                <span class="team-name">ĐỘI B</span>
+                <span class="team-count-pill" id="count-b">0</span>
             </div>
-
-            <!-- Floating chat -->
-            <div id="chat-area">
-                <div id="chat-header">💬 CHAT SẢNH CHỜ – LIVE</div>
-                <div id="chat-messages"></div>
+            <div class="team-member-list" id="list-b">
+                <div class="team-empty">Chưa có thành viên…</div>
             </div>
+        </div>
+
+    </div><!-- /room-main -->
+</div><!-- /room-view -->
+
+<!-- ═══════════════════════════════════════════════════
+     STEP 3 — Dashboard (game running)
+════════════════════════════════════════════════════ -->
+<div id="dashboard-view">
+    <div style="display:flex; justify-content:space-between; align-items:center; background:var(--panel); padding:15px 20px; border-radius:12px; border:1px solid var(--border);">
+        <h2 id="current-stage-txt" style="font-family:'Orbitron'; margin:0; color:var(--accent);">STAGE 1</h2>
+        <h2 id="global-timer"      style="font-family:'Orbitron'; margin:0; color:#ffaa00;">60s</h2>
+    </div>
+
+    <div class="grid-layout">
+        <div class="card score-card-animated" id="card-team-a" style="border-color:var(--team-a); text-align:center;">
+            <h3 style="color:var(--team-a); margin:0;">TỔNG ĐIỂM ĐỘI A</h3>
+            <div class="score-big" id="score-a-view" style="color:var(--team-a);">0</div>
+        </div>
+        <div class="card score-card-animated" id="card-team-b" style="border-color:var(--team-b); text-align:center;">
+            <h3 style="color:var(--team-b); margin:0;">TỔNG ĐIỂM ĐỘI B</h3>
+            <div class="score-big" id="score-b-view" style="color:var(--team-b);">0</div>
+        </div>
+        <div class="card score-card-animated" id="card-team-c" style="border-color:var(--team-c); text-align:center; display:none;">
+            <h3 style="color:var(--team-c); margin:0;">ĐỘI C (NGƯỜI LẺ)</h3>
+            <div class="score-big" id="score-c-view" style="color:var(--team-c);">0</div>
         </div>
     </div>
 
-    <!-- ========== DASHBOARD VIEW ========== -->
-    <div id="dashboard-view" style="display:none;">
-        <div style="display:flex; justify-content:space-between; align-items:center; background:var(--panel); padding:15px; border-radius:12px; border:1px solid var(--border);">
-            <h2 id="current-stage-txt" style="font-family:'Orbitron'; margin:0; color:var(--accent);">STAGE 1</h2>
-            <h2 id="global-timer" style="font-family:'Orbitron'; margin:0; color:#ffaa00;">60s</h2>
-        </div>
-
-        <div class="grid-layout">
-            <div class="card score-card-animated" id="card-team-a" style="border-color: var(--team-a);">
-                <h3 style="color: var(--team-a); margin:0;">TỔNG ĐIỂM ĐỘI A</h3>
-                <div class="score-big" id="score-a-view" style="color: var(--team-a);">0</div>
-            </div>
-            <div class="card score-card-animated" id="card-team-b" style="border-color: var(--team-b);">
-                <h3 style="color: var(--team-b); margin:0;">TỔNG ĐIỂM ĐỘI B</h3>
-                <div class="score-big" id="score-b-view" style="color: var(--team-b);">0</div>
-            </div>
-            <div class="card score-card-animated" id="card-team-c" style="border-color: var(--team-c); display:none;">
-                <h3 style="color: var(--team-c); margin:0;">ĐỘI C (NGƯỜI LẺ)</h3>
-                <div class="score-big" id="score-c-view" style="color: var(--team-c);">0</div>
-            </div>
-        </div>
-
-        <div class="card leaderboard-card" style="margin-top:20px; text-align:left;">
-            <h3 style="margin-top:0; color:var(--accent); font-family:'Orbitron';">BẢNG XẾP HẠNG THỜI GIAN THỰC (REALTIME)</h3>
-            <table>
-                <thead>
-                    <tr>
-                        <th>Hạng</th>
-                        <th>Họ và Tên</th>
-                        <th>Avatar</th>
-                        <th>Phân Đội</th>
-                        <th>Điểm Số</th>
-                        <th>Thời Gian TL</th>
-                    </tr>
-                </thead>
-                <tbody id="leaderboard-rows"></tbody>
-            </table>
-        </div>
-
-        <div id="reset-zone" style="margin-top:30px; text-align:center; display:none;">
-            <button onclick="resetGame()" style="background:#ff4a4a; color:#fff;">RESET PHÒNG & BẮT ĐẦU LẠI</button>
-        </div>
+    <div class="card leaderboard-card" style="margin-top:18px; text-align:left;">
+        <h3 style="margin-top:0; color:var(--accent); font-family:'Orbitron';">BẢNG XẾP HẠNG THỜI GIAN THỰC</h3>
+        <table>
+            <thead>
+                <tr>
+                    <th>Hạng</th>
+                    <th>Tên</th>
+                    <th>Avatar</th>
+                    <th>Đội</th>
+                    <th>Điểm</th>
+                    <th>Thời gian</th>
+                </tr>
+            </thead>
+            <tbody id="leaderboard-rows"></tbody>
+        </table>
     </div>
 
-    <script>
-    // ============================================================
-    //  ANIMAL AVATAR LIST (30 animals — land + water)
-    // ============================================================
-    const ANIMAL_AVATARS = [
-        '🦁','🐯','🐻','🦊','🐺','🦝','🐗','🦌','🦒','🐘',
-        '🦏','🦛','🐆','🐅','🦓','🐪','🦘','🦙','🦫','🐴',
-        '🐬','🦈','🐋','🦭','🐙','🦀','🦞','🦑','🐠','🦐'
-    ];
+    <div id="reset-zone" style="margin-top:28px; text-align:center; display:none;">
+        <button onclick="resetGame()" style="background:#ff4a4a; color:#fff; font-family:'Orbitron';">
+            RESET PHÒNG &amp; BẮT ĐẦU LẠI
+        </button>
+    </div>
+</div>
 
-    // ============================================================
-    //  STATE
-    // ============================================================
-    const socket = io();
-    let myRoomId = '';
-    let playerMap = {};      // socketId → { name, avatar, team }
-    let arenaPositions = {}; // socketId → { x%, y% }
-    let inWaitingRoom = false;
+<!-- ═══════════════════════════════════════════════════
+     JAVASCRIPT
+════════════════════════════════════════════════════ -->
+<script>
+// ────────────────────────────────────────────────────
+//  STATE
+// ────────────────────────────────────────────────────
+const socket = io();
+let myRoomId  = '';
+let playerMap = {};   // id → { id, name, avatar, team }
 
-    // ============================================================
-    //  ROOM CREATION
-    // ============================================================
-    function createRoom() {
-        socket.emit('adminCreateRoom');
-        document.getElementById('btn-create').style.display = 'none';
+// ────────────────────────────────────────────────────
+//  ROOM CREATION
+// ────────────────────────────────────────────────────
+function createRoom() {
+    document.getElementById('btn-create').disabled = true;
+    socket.emit('adminCreateRoom');
+}
+
+socket.on('roomCreated', (roomId) => {
+    myRoomId = roomId;
+
+    // Hide step-1, show step-2
+    document.getElementById('lobby-view').style.display = 'none';
+    document.getElementById('room-view').style.display  = 'block';
+
+    document.getElementById('room-code-txt').innerText = roomId;
+
+    const fullUrl = `${window.location.origin}/play?room=${roomId}`;
+    document.getElementById('join-url-txt').innerText  = fullUrl;
+
+    // QR code
+    document.getElementById('qrcode').innerHTML = '';
+    new QRCode(document.getElementById('qrcode'), {
+        text: fullUrl,
+        width: 104, height: 104,
+        colorDark: '#000', colorLight: '#fff',
+        correctLevel: QRCode.CorrectLevel.H
+    });
+});
+
+// ────────────────────────────────────────────────────
+//  PLAYER LIST UPDATE
+// ────────────────────────────────────────────────────
+socket.on('updatePlayerList', (players) => {
+    playerMap = {};
+    players.forEach(p => { playerMap[p.id] = p; });
+    renderLobbyTeams(players);
+});
+
+function renderLobbyTeams(players) {
+    const teamA = players.filter(p => p.team === 'A');
+    const teamB = players.filter(p => p.team === 'B');
+    const total = players.length;
+
+    // Counts
+    document.getElementById('count-a').innerText     = teamA.length;
+    document.getElementById('count-b').innerText     = teamB.length;
+
+    // Animated total counter
+    const totalEl = document.getElementById('total-count');
+    const prev    = parseInt(totalEl.innerText) || 0;
+    totalEl.innerText = total;
+    if (total !== prev) {
+        totalEl.classList.remove('bump');
+        void totalEl.offsetWidth;
+        totalEl.classList.add('bump');
     }
 
-    socket.on('roomCreated', (roomId) => {
-        myRoomId = roomId;
-        document.getElementById('room-info').style.display = 'block';
-        document.getElementById('room-code-txt').innerText = roomId;
-        document.getElementById('room-code-mini').innerText = roomId;
+    // Start button state
+    const btn = document.getElementById('btn-start-game');
+    btn.disabled = total < 2;
 
-        const fullPlayUrl = `${window.location.origin}/play?room=${roomId}`;
-        document.getElementById('qrcode').innerHTML = '';
-        new QRCode(document.getElementById('qrcode'), {
-            text: fullPlayUrl,
-            width: 180,
-            height: 180,
-            colorDark: "#000000",
-            colorLight: "#ffffff",
-            correctLevel: QRCode.CorrectLevel.H
-        });
-    });
+    // Render member cards
+    renderMemberList('list-a', teamA);
+    renderMemberList('list-b', teamB);
+}
 
-    // ============================================================
-    //  PLAYER JOINS — Auto Team Assignment (balanced ±1)
-    // ============================================================
-    socket.on('updatePlayerList', (players) => {
-        // players: [{ id, name, avatar (emoji), team }]
-        // server already assigned teams; we mirror the state here
-        playerMap = {};
-        players.forEach(p => { playerMap[p.id] = p; });
+function renderMemberList(containerId, members) {
+    const container = document.getElementById(containerId);
 
-        const countEl = document.getElementById('player-count');
-        if (countEl) countEl.innerText = players.length;
+    // Build a set of current IDs already rendered
+    const rendered = new Set(
+        [...container.querySelectorAll('[data-mid]')].map(el => el.dataset.mid)
+    );
+    const incoming = new Set(members.map(p => p.id));
 
-        const listEl = document.getElementById('player-list');
-        if (listEl) {
-            if (players.length === 0) {
-                listEl.innerText = "Chưa có ai tham gia...";
-            } else {
-                listEl.innerText = players.map(p => `${p.avatar || '🐾'} ${p.name}`).join('  ·  ');
+    // Remove players who left
+    rendered.forEach(id => {
+        if (!incoming.has(id)) {
+            const el = container.querySelector(`[data-mid="${CSS.escape(id)}"]`);
+            if (el) {
+                el.style.opacity = '0';
+                el.style.transform = 'scale(.85)';
+                el.style.transition = 'opacity .25s, transform .25s';
+                setTimeout(() => el.remove(), 250);
             }
         }
-
-        if (inWaitingRoom) renderWaitingRoom(players);
     });
 
-    // ============================================================
-    //  WAITING ROOM RENDER
-    // ============================================================
-    function goToWaitingRoom() {
-        inWaitingRoom = true;
-        document.getElementById('lobby-view').style.display = 'none';
-        document.getElementById('waiting-room-view').style.display = 'block';
-        renderWaitingRoom(Object.values(playerMap));
+    // Remove empty placeholder if any player exists
+    if (members.length > 0) {
+        const empty = container.querySelector('.team-empty');
+        if (empty) empty.remove();
     }
 
-    function renderWaitingRoom(players) {
-        const teamA = players.filter(p => p.team === 'A');
-        const teamB = players.filter(p => p.team === 'B');
+    // Add new players
+    members.forEach((p, idx) => {
+        if (rendered.has(p.id)) return; // already there
+        const el = document.createElement('div');
+        el.className = 'member-card';
+        el.dataset.mid = p.id;
+        el.style.animationDelay = `${idx * 0.04}s`;
+        el.innerHTML = `
+            <span class="m-avatar">${p.avatar || '🐾'}</span>
+            <span class="m-name">${escapeHtml(p.name)}</span>
+            <span class="m-num">#${idx + 1}</span>
+        `;
+        container.appendChild(el);
+    });
 
-        document.getElementById('wr-count-a').innerText = teamA.length;
-        document.getElementById('wr-count-b').innerText = teamB.length;
-        document.getElementById('wr-total').innerText = players.length;
+    // Re-number existing cards (in case order shifted)
+    [...container.querySelectorAll('[data-mid]')].forEach((el, i) => {
+        const num = el.querySelector('.m-num');
+        if (num) num.innerText = `#${i + 1}`;
+    });
 
-        // ---- Team panel lists ----
-        renderTeamPanel('team-a-list', teamA, 'a');
-        renderTeamPanel('team-b-list', teamB, 'b');
+    // Show empty placeholder if no members
+    if (members.length === 0 && container.children.length === 0) {
+        container.innerHTML = '<div class="team-empty">Chưa có thành viên…</div>';
+    }
+}
 
-        // ---- Arena avatars ----
-        renderArenaAvatars(players);
+// ────────────────────────────────────────────────────
+//  START GAME
+// ────────────────────────────────────────────────────
+function startGame() {
+    socket.emit('adminStartGame', myRoomId);
+}
+
+socket.on('gameStarted', () => {
+    document.getElementById('room-view').style.display      = 'none';
+    document.getElementById('lobby-view').style.display     = 'none';
+    document.getElementById('dashboard-view').style.display = 'block';
+});
+
+// ────────────────────────────────────────────────────
+//  DASHBOARD — stage / timer
+// ────────────────────────────────────────────────────
+socket.on('stageUpdate', (data) => {
+    document.getElementById('current-stage-txt').innerText =
+        `STAGE ${data.stageNum}${data.isDouble ? ' – (VÒNG X2 ĐIỂM)' : ''}`;
+});
+
+socket.on('timerUpdate', (timeLeft) => {
+    document.getElementById('global-timer').innerText = timeLeft + 's';
+});
+
+socket.on('intermissionStart', () => {
+    document.getElementById('current-stage-txt').innerText = 'ĐANG TRONG THỜI GIAN GIẢI LAO (15S)';
+});
+
+
+socket.on('gameOver', () => {
+    document.getElementById('current-stage-txt').innerText = 'TRÒ CHƠI KẾT THÚC';
+    document.getElementById('global-timer').innerText      = 'END';
+    document.getElementById('reset-zone').style.display    = 'block';
+});
+
+// ────────────────────────────────────────────────────
+//  SCORE ANIMATION
+// ────────────────────────────────────────────────────
+function animateScoreBump(elId, newVal, team) {
+    const el = document.getElementById(elId);
+    if (!el) return;
+    if (parseInt(el.innerText) === newVal) return;
+    el.innerText = newVal;
+    el.classList.remove('score-bump');
+    void el.offsetWidth;
+    el.classList.add('score-bump');
+
+    const cardIds = { A:'card-team-a', B:'card-team-b', C:'card-team-c' };
+    const card = document.getElementById(cardIds[team]);
+    if (card) {
+        card.classList.remove('card-flash-a','card-flash-b');
+        void card.offsetWidth;
+        card.classList.add(team === 'A' ? 'card-flash-a' : 'card-flash-b');
+    }
+}
+
+// ────────────────────────────────────────────────────
+//  REALTIME SCORE UPDATE + LEADERBOARD
+// ────────────────────────────────────────────────────
+socket.on('realtimeScoreUpdate', (data) => {
+    animateScoreBump('score-a-view', data.scoreA, 'A');
+    animateScoreBump('score-b-view', data.scoreB, 'B');
+
+    if (data.scoreC !== undefined && (data.scoreC > 0 || data.players.some(p => p.team === 'C'))) {
+        document.getElementById('card-team-c').style.display = 'block';
+        animateScoreBump('score-c-view', data.scoreC, 'C');
     }
 
-    function renderTeamPanel(containerId, members, teamClass) {
-        const container = document.getElementById(containerId);
-        container.innerHTML = '';
-        members.forEach(p => {
-            const el = document.createElement('div');
-            el.className = 'team-member-entry';
-            el.innerHTML = `<span class="mini-avatar">${p.avatar || '🐾'}</span><span class="member-name">${p.name}</span>`;
-            container.appendChild(el);
-        });
-    }
+    // Sort: higher score first; tie → faster time first
+    const sorted = [...data.players].sort((a, b) => {
+        if (b.score !== a.score) return b.score - a.score;
+        return a.totalTimeTaken - b.totalTimeTaken;
+    });
 
-    function renderArenaAvatars(players) {
-        const field = document.getElementById('arena-field');
-        const existingIds = new Set(Object.keys(arenaPositions));
-        const currentIds = new Set(players.map(p => p.id));
+    const times  = sorted.map(p => p.totalTimeTaken).filter(t => t > 0);
+    const minT   = times.length ? Math.min(...times) : 0;
+    const maxT   = times.length ? Math.max(...times) : 0;
+    const tbody  = document.getElementById('leaderboard-rows');
 
-        // Remove departed players
-        existingIds.forEach(id => {
-            if (!currentIds.has(id)) {
-                delete arenaPositions[id];
-                const el = document.getElementById('av-' + id);
-                if (el) el.remove();
-            }
-        });
+    // Cache existing rows
+    const cache = {};
+    [...tbody.querySelectorAll('tr[data-pid]')].forEach(r => { cache[r.dataset.pid] = r; });
 
-        // Add new players with random non-overlapping positions
-        players.forEach(p => {
-            if (!arenaPositions[p.id]) {
-                arenaPositions[p.id] = getRandomPosition();
-            }
-            let el = document.getElementById('av-' + p.id);
-            if (!el) {
-                el = document.createElement('div');
-                el.id = 'av-' + p.id;
-                el.className = `player-avatar team-${p.team ? p.team.toLowerCase() : 'a'}`;
-                el.innerHTML = `
-                    <span class="avatar-icon">${p.avatar || '🐾'}</span>
-                    <span class="avatar-label ${p.team ? p.team.toLowerCase() : 'a'}">${p.name}</span>
-                `;
-                field.appendChild(el);
-            }
-            // Update position
-            const pos = arenaPositions[p.id];
-            el.style.left = pos.x + '%';
-            el.style.top  = pos.y + '%';
-        });
-    }
+    sorted.forEach((p, idx) => {
+        let tColor = 'var(--accent)', tTxt = 'Đơn Lẻ', tBg = 'rgba(0,255,136,.12)';
+        if (p.team === 'A') { tColor = 'var(--team-a)'; tTxt = 'Đội A'; tBg = 'rgba(255,74,74,.15)'; }
+        if (p.team === 'B') { tColor = 'var(--team-b)'; tTxt = 'Đội B'; tBg = 'rgba(0,210,255,.15)'; }
+        if (p.team === 'C') { tColor = 'var(--team-c)'; tTxt = 'Đội C'; tBg = 'rgba(255,170,0,.15)'; }
 
-    function getRandomPosition() {
-        // Keep avatars away from edges and out of team panel area (covered by CSS grid)
-        return {
-            x: 15 + Math.random() * 70,
-            y: 10 + Math.random() * 65
-        };
-    }
+        let deltaHtml = '';
+        if (p.lastDelta > 0) deltaHtml = `<span class="delta-badge delta-plus">+${p.lastDelta}</span>`;
+        if (p.lastDelta < 0) deltaHtml = `<span class="delta-badge delta-minus">${p.lastDelta}</span>`;
 
-    // ============================================================
-    //  CHAT (lobby chat messages from players)
-    // ============================================================
-    socket.on('lobbyChatMessage', (msg) => {
-        // msg: { name, team, text, isSystem }
-        const chatBox = document.getElementById('chat-messages');
-        if (!chatBox) return;
+        const rank = idx + 1;
+        const rankHtml = rank === 1
+            ? `<span class="rank-medal rank-1">1</span>`
+            : rank === 2 ? `<span class="rank-medal rank-2">2</span>`
+            : rank === 3 ? `<span class="rank-medal rank-3">3</span>`
+            : `<span class="rank-medal rank-n">${rank}</span>`;
 
-        const div = document.createElement('div');
-        div.className = 'chat-msg' + (msg.isSystem ? ' system' : '');
-
-        if (msg.isSystem) {
-            div.innerHTML = `<span class="msg-text">✦ ${msg.text}</span>`;
-        } else {
-            const teamLabel = msg.team ? `[${msg.team}]` : '';
-            div.innerHTML = `<span class="msg-sender ${msg.team ? msg.team.toLowerCase() : ''}">${msg.name} ${teamLabel}</span><span class="msg-text">${escapeHtml(msg.text)}</span>`;
+        let tClass = 'time-display';
+        if (times.length > 1) {
+            if (p.totalTimeTaken === minT) tClass += ' time-fast';
+            else if (p.totalTimeTaken === maxT) tClass += ' time-slow';
         }
 
-        chatBox.appendChild(div);
-        chatBox.scrollTop = chatBox.scrollHeight;
+        const pid = p.id || p.name;
+        let row = cache[pid];
+        if (!row) { row = document.createElement('tr'); row.dataset.pid = pid; }
 
-        // Keep max 60 messages
-        while (chatBox.children.length > 60) chatBox.removeChild(chatBox.firstChild);
+        row.innerHTML = `
+            <td>${rankHtml}</td>
+            <td style="font-weight:600;">${escapeHtml(p.name)}</td>
+            <td style="font-size:1.35rem; line-height:1;">${p.avatar || '🐾'}</td>
+            <td><span class="team-pill" style="color:${tColor};background:${tBg};border:1px solid ${tColor}40;">${tTxt}</span></td>
+            <td><span class="score-cell">${p.score}đ ${deltaHtml}</span></td>
+            <td><span class="${tClass}">${p.totalTimeTaken.toFixed(1)}s</span></td>
+        `;
+        row.style.animationDelay = `${idx * 0.04}s`;
     });
 
-    function escapeHtml(str) {
-        return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    tbody.innerHTML = '';
+    sorted.forEach((p, idx) => {
+        const pid = p.id || p.name;
+        const row = cache[pid];
+        if (row) { row.style.animationDelay = `${idx * 0.04}s`; tbody.appendChild(row); }
+    });
+});
+
+// ────────────────────────────────────────────────────
+//  RESET
+// ────────────────────────────────────────────────────
+function resetGame() {
+    if (confirm('Bạn có chắc chắn muốn reset lại phòng và bắt đầu lượt chơi mới?')) {
+        socket.emit('adminResetGame', myRoomId);
     }
+}
+socket.on('roomResetByAdmin', () => {
+    alert('Phòng đã được làm mới thành công!');
+    window.location.reload();
+});
 
-    // ============================================================
-    //  START GAME
-    // ============================================================
-    function startGame() {
-        socket.emit('adminStartGame', myRoomId);
-    }
+// ────────────────────────────────────────────────────
+//  UTILS
+// ────────────────────────────────────────────────────
+function escapeHtml(str) {
+    return String(str)
+        .replace(/&/g,'&amp;').replace(/</g,'&lt;')
+        .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+</script>
 
-    socket.on('gameStarted', () => {
-        document.getElementById('lobby-view').style.display    = 'none';
-        document.getElementById('waiting-room-view').style.display = 'none';
-        document.getElementById('dashboard-view').style.display = 'block';
-        inWaitingRoom = false;
-    });
-
-    // ============================================================
-    //  DASHBOARD EVENTS
-    // ============================================================
-    socket.on('stageUpdate', (data) => {
-        document.getElementById('current-stage-txt').innerText =
-            `STAGE ${data.stageNum}${data.isDouble ? ' – (VÒNG X2 ĐIỂM)' : ''}`;
-    });
-
-    socket.on('timerUpdate', (timeLeft) => {
-        document.getElementById('global-timer').innerText = timeLeft + 's';
-    });
-
-    // ============================================================
-    //  SCORE ANIMATION HELPERS
-    // ============================================================
-    const _prevScores = { A: 0, B: 0, C: 0 };
-
-    function animateScoreBump(elId, newVal, team) {
-        const el = document.getElementById(elId);
-        if (!el) return;
-        const prev = parseInt(el.innerText) || 0;
-        if (newVal !== prev) {
-            el.innerText = newVal;
-            el.classList.remove('score-bump');
-            void el.offsetWidth; // reflow
-            el.classList.add('score-bump');
-
-            // Flash card border
-            const cardMap = { A: 'card-team-a', B: 'card-team-b', C: 'card-team-c' };
-            const card = document.getElementById(cardMap[team]);
-            if (card) {
-                card.classList.remove('card-flash-a', 'card-flash-b');
-                void card.offsetWidth;
-                card.classList.add(team === 'A' ? 'card-flash-a' : 'card-flash-b');
-            }
-        }
-    }
-
-    socket.on('realtimeScoreUpdate', (data) => {
-        animateScoreBump('score-a-view', data.scoreA, 'A');
-        animateScoreBump('score-b-view', data.scoreB, 'B');
-
-        if (data.scoreC !== undefined && (data.scoreC > 0 || data.players.some(p => p.team === 'C'))) {
-            document.getElementById('card-team-c').style.display = 'block';
-            animateScoreBump('score-c-view', data.scoreC, 'C');
-        }
-
-        // Sort: higher score first; tie-break by faster totalTimeTaken (ascending)
-        const sorted = [...data.players].sort((a, b) => {
-            if (b.score !== a.score) return b.score - a.score;
-            return a.totalTimeTaken - b.totalTimeTaken;
-        });
-
-        // Find min/max time for colouring
-        const times = sorted.map(p => p.totalTimeTaken).filter(t => t > 0);
-        const minTime = times.length ? Math.min(...times) : 0;
-        const maxTime = times.length ? Math.max(...times) : 0;
-
-        const tbody = document.getElementById('leaderboard-rows');
-
-        // Keep track of existing rows by player id to animate position changes
-        const existingRows = {};
-        [...tbody.querySelectorAll('tr[data-pid]')].forEach(r => {
-            existingRows[r.dataset.pid] = r;
-        });
-
-        sorted.forEach((p, idx) => {
-            let teamColor = 'var(--accent)', teamTxt = 'Đơn Lẻ', teamBg = 'rgba(0,255,136,0.12)';
-            if (p.team === 'A') { teamColor = 'var(--team-a)'; teamTxt = 'Đội A'; teamBg = 'rgba(255,74,74,0.15)'; }
-            if (p.team === 'B') { teamColor = 'var(--team-b)'; teamTxt = 'Đội B'; teamBg = 'rgba(0,210,255,0.15)'; }
-            if (p.team === 'C') { teamColor = 'var(--team-c)'; teamTxt = 'Đội C'; teamBg = 'rgba(255,170,0,0.15)'; }
-
-            let deltaHtml = '';
-            if (p.lastDelta > 0)  deltaHtml = `<span class="delta-badge delta-plus">+${p.lastDelta}</span>`;
-            if (p.lastDelta < 0)  deltaHtml = `<span class="delta-badge delta-minus">${p.lastDelta}</span>`;
-
-            const rank = idx + 1;
-            let rankHtml;
-            if      (rank === 1) rankHtml = `<span class="rank-medal rank-1">1</span>`;
-            else if (rank === 2) rankHtml = `<span class="rank-medal rank-2">2</span>`;
-            else if (rank === 3) rankHtml = `<span class="rank-medal rank-3">3</span>`;
-            else                 rankHtml = `<span class="rank-medal rank-n">${rank}</span>`;
-
-            // Time colouring: fastest = green, slowest = red
-            let timeClass = 'time-display';
-            if (times.length > 1) {
-                if (p.totalTimeTaken === minTime) timeClass += ' time-fast';
-                else if (p.totalTimeTaken === maxTime) timeClass += ' time-slow';
-            }
-
-            const pid = p.id || p.name; // fallback to name if no id
-            let row = existingRows[pid];
-
-            if (!row) {
-                row = document.createElement('tr');
-                row.dataset.pid = pid;
-            }
-
-            row.innerHTML = `
-                <td>${rankHtml}</td>
-                <td style="font-weight:600;">${p.name}</td>
-                <td style="font-size:1.4rem; line-height:1;">${p.avatar || '🐾'}</td>
-                <td><span class="team-pill" style="color:${teamColor}; background:${teamBg}; border:1px solid ${teamColor}40;">${teamTxt}</span></td>
-                <td><span class="score-cell">${p.score}đ ${deltaHtml}</span></td>
-                <td><span class="${timeClass}">${p.totalTimeTaken.toFixed(1)}s</span></td>
-            `;
-            row.style.animationDelay = `${idx * 0.04}s`;
-        });
-
-        // Re-insert rows in sorted order (this triggers the row re-ordering)
-        tbody.innerHTML = '';
-        sorted.forEach((p, idx) => {
-            const pid = p.id || p.name;
-            const row = existingRows[pid] || tbody.querySelector(`tr[data-pid="${CSS.escape(pid)}"]`);
-            if (row) {
-                row.style.animationDelay = `${idx * 0.04}s`;
-                tbody.appendChild(row);
-            }
-        });
-    });
-
-    socket.on('intermissionStart', () => {
-        document.getElementById('current-stage-txt').innerText = "ĐANG TRONG THỜI GIAN GIẢI LAO (15S)";
-    });
-
-    socket.on('startFastQuestionPhase', (d) => {
-        document.getElementById('current-stage-txt').innerText =
-            `VÒNG ĐẤU PHỤ TỰ LUẬN NHANH (KHẢO THÍ: ${d.hostName})`;
-    });
-
-    socket.on('gameOver', () => {
-        document.getElementById('current-stage-txt').innerText = "TRÒ CHƠI KẾT THÚC";
-        document.getElementById('global-timer').innerText = "END";
-        document.getElementById('reset-zone').style.display = 'block';
-    });
-
-    // ============================================================
-    //  RESET
-    // ============================================================
-    function resetGame() {
-        if (confirm("Bạn có chắc chắn muốn reset lại phòng và bắt đầu lượt chơi mới?")) {
-            socket.emit('adminResetGame', myRoomId);
-        }
-    }
-
-    socket.on('roomResetByAdmin', () => {
-        alert("Phòng đã được làm mới thành công!");
-        window.location.reload();
-    });
-    </script>
-
-    <!-- ================================================================
-         PLAYER-SIDE LOGIC (for /play route — embedded here for reference)
-         The server should serve a separate play.html. Below is the
-         client-side contract this admin.html expects from the server:
-
-         SERVER EVENTS the server must emit to all room members:
-           updatePlayerList   → [{ id, name, avatar, team }]
-           lobbyChatMessage   → { name, team, text, isSystem? }
-           gameStarted        →
-           stageUpdate        → { stageNum, isDouble }
-           timerUpdate        → timeLeft (number)
-           realtimeScoreUpdate→ { scoreA, scoreB, scoreC?, players:[{name,avatar,team,score,lastDelta,totalTimeTaken}] }
-           intermissionStart  →
-           startFastQuestionPhase → { hostName }
-           gameOver           →
-           roomResetByAdmin   →
-
-         CLIENT EVENTS admin emits:
-           adminCreateRoom    →
-           adminStartGame     → roomId
-           adminResetGame     → roomId
-
-         SERVER-SIDE TEAM ASSIGNMENT LOGIC:
-           On playerJoin(roomId, name, avatar):
-             countA = players.filter(p => p.team === 'A').length
-             countB = players.filter(p => p.team === 'B').length
-             if (countA <= countB) assign 'A' else assign 'B'
-             // This guarantees |countA - countB| <= 1 at all times
-    ================================================================ -->
+<!--
+    SERVER CONTRACT (unchanged):
+    Events received  : roomCreated, updatePlayerList, gameStarted, stageUpdate,
+                       timerUpdate, realtimeScoreUpdate, intermissionStart,
+                       startFastQuestionPhase, gameOver, roomResetByAdmin
+    Events emitted   : adminCreateRoom, adminStartGame(roomId), adminResetGame(roomId)
+-->
 </body>
 </html>
