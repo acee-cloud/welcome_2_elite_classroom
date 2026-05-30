@@ -228,7 +228,7 @@
             text-align: left;
         }
 
-        #room-code-group { display: none; }
+        #room-code-group { display: block; }
 
         .room-hint {
             font-size: 0.75rem;
@@ -1138,64 +1138,6 @@ function switchScreen(screenId) {
     const el = document.getElementById(screenId);
     if (el) el.classList.add('active');
 }
-
-// ═══════════════════════════════════════
-//  VÀO PHÒNG
-// ═══════════════════════════════════════
-function joinRoom() {
-    const name = document.getElementById('input-name').value.trim();
-    let roomId = urlRoomId;
-
-    if (!isQRMode) {
-        roomId = document.getElementById('input-room').value.trim().toUpperCase();
-        if (!roomId) return showError('Vui lòng nhập mã phòng!');
-    }
-
-    if (!name) return showError('Vui lòng nhập tên của bạn!');
-    if (!myAvatar) return showError('Vui lòng chọn 1 biểu tượng đại diện!');
-
-    if (!socket.connected) {
-        showError('Đang kết nối lại server... Thử lại sau vài giây!');
-        socket.connect();
-        return;
-    }
-
-    myName = name;
-    currentRoomId = roomId;
-
-    const btn = document.getElementById('join-btn');
-    btn.disabled = true;
-    btn.textContent = '⏳ Đang kết nối...';
-
-    socket.emit('playerJoinRoom', {
-        roomId: currentRoomId,
-        name: myName,
-        avatar: myAvatar
-    });
-
-    const joinTimeout = setTimeout(() => {
-        if (document.getElementById('lobby-screen').classList.contains('active')) {
-            showError('Không nhận được phản hồi. Kiểm tra mã phòng hoặc kết nối!');
-        }
-    }, 8000);
-    socket._joinTimeout = joinTimeout;
-}
-
-function showError(msg) {
-    let errEl = document.getElementById('join-error');
-    if (!errEl) {
-        errEl = document.createElement('div');
-        errEl.id = 'join-error';
-        errEl.style.cssText = 'color:var(--danger);font-size:0.85rem;margin-top:10px;padding:8px 12px;background:rgba(255,74,106,0.1);border-radius:6px;border:1px solid rgba(255,74,106,0.3)';
-        document.getElementById('join-btn').after(errEl);
-    }
-    errEl.textContent = '⚠ ' + msg;
-    setTimeout(() => { if (errEl) errEl.textContent = ''; }, 4000);
-    const btn = document.getElementById('join-btn');
-    btn.disabled = false;
-    btn.textContent = '⚡ VÀO PHÒNG CHỜ';
-}
-
 // ═══════════════════════════════════════
 //  SOCKET – VÀO PHÒNG & PHÂN ĐỘI
 // ═══════════════════════════════════════
