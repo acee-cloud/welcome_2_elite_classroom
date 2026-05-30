@@ -1753,64 +1753,6 @@ socket.on('receiveGlobalMessage', (data) => {
     logs.scrollTop = logs.scrollHeight;
 });
 
-// ═══════════════════════════════════════
-//  VÒNG NHANH
-// ═══════════════════════════════════════
-socket.on('startFastQuestionPhase', (d) => {
-    isAnsweringState = false;
-    switchScreen('fast-phase-screen');
-    if (myTeam === 'C') {
-        document.getElementById('host-controls').style.display = 'block';
-        document.getElementById('player-controls').style.display = 'none';
-    } else {
-        document.getElementById('host-controls').style.display = 'none';
-        document.getElementById('player-controls').style.display = 'block';
-        document.getElementById('fast-question-display').textContent = `Đang đợi chủ khảo ${d.hostName} đặt đề bài tự luận nhanh...`;
-    }
-});
-
-function hostPublishQuestion() {
-    const text = document.getElementById('fast-question-input').value.trim();
-    if (!text) return alert('Vui lòng điền nội dung câu hỏi!');
-    socket.emit('hostSubmitFastQuestion', { roomId: currentRoomId, questionText: text });
-}
-
-socket.on('fastQuestionBroadcast', (d) => {
-    if (myTeam !== 'C') {
-        document.getElementById('fast-question-display').innerHTML = `CÂU HỎI TỰ LUẬN:<br>${d.questionText}`;
-        document.getElementById('fast-answer-zone').style.display = 'block';
-        renderMath('fast-phase-screen');
-    }
-});
-
-function playerSubmitFastAnswer() {
-    const ans = document.getElementById('player-fast-answer-input').value.trim();
-    if (!ans) return;
-    socket.emit('playerSubmitFastAnswer', { roomId: currentRoomId, answerText: ans });
-    document.getElementById('fast-answer-zone').innerHTML = '<h4>Đã gửi! Đang chờ chủ khảo duyệt...</h4>';
-}
-
-socket.on('hostReceiveSubmissions', (subs) => {
-    if (myTeam === 'C') {
-        const container = document.getElementById('host-submission-list');
-        container.innerHTML = '';
-        subs.forEach(s => {
-            container.innerHTML += `
-                <div style="background:#1e293b; padding:10px; border-radius:7px; margin:8px 0; display:flex; justify-content:space-between; align-items:center;">
-                    <div><strong>${escapeHtml(s.name)} (Đội ${s.team}):</strong> <span>${escapeHtml(s.answerText)}</span></div>
-                    <button onclick="approveWinner('${s.id}')" style="padding:6px 12px; background:var(--success); border:none; border-radius:6px; cursor:pointer; font-weight:700; color:#000;">✓ Đúng</button>
-                </div>`;
-        });
-    }
-});
-
-function approveWinner(socketId) {
-    socket.emit('hostApproveWinner', { roomId: currentRoomId, winnerSocketId: socketId });
-}
-
-socket.on('fastPhaseEnded', (data) => {
-    alert(`Vòng phụ kết thúc! ${data.winnerName} (Đội ${data.winningTeam}) trả lời đúng và mang về ${data.pointsAwarded}đ!`);
-});
 
 // ═══════════════════════════════════════
 //  KẾT THÚC GAME
