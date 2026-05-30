@@ -347,6 +347,7 @@
             position: fixed; top: 52px; left: 150px; right: 150px; bottom: 148px;
             overflow: hidden;
         }
+        /* Team panels also sit above the full-width chat */
         #arena-floor::before {
             content: '';
             position: absolute; inset: 0;
@@ -421,9 +422,10 @@
             100% { opacity:0; transform: translateX(-50%) translateY(-40px) scale(0.8); }
         }
 
+        /* Click-to-move cursor hint */
         #arena-floor { cursor: crosshair; }
 
-        /* Score Popup Overlay */
+        /* Score Popup Overlay – hiện giữa màn hình khi trả lời xong */
         .score-popup-overlay {
             position: fixed;
             left: 50%; top: 48%;
@@ -545,6 +547,7 @@
         #timer-text.warn { color: #ffaa00; }
         #timer-text.danger { color: var(--danger); }
 
+        /* Score display in game */
         .game-my-score {
             display: flex; align-items: center; gap: 10px;
         }
@@ -617,6 +620,7 @@
         .fb-correct { color: var(--success); }
         .fb-wrong { color: var(--danger); }
 
+        /* Score delta pop in feedback */
         .score-delta {
             display: inline-block;
             font-family: 'Orbitron', sans-serif;
@@ -645,6 +649,7 @@
         .live-score-val.team-b { color: var(--team-b); }
         .live-score-val.my-score { color: var(--gold); }
 
+        /* Floating delta on score strip */
         .strip-delta {
             position: absolute; top: -18px; left: 50%;
             transform: translateX(-50%);
@@ -661,6 +666,7 @@
             100% { opacity: 0; transform: translateX(-50%) translateY(-30px) scale(0.8); }
         }
 
+        /* Score number bump animation */
         .score-bump {
             animation: scoreBump 0.35s cubic-bezier(0.175,0.885,0.32,1.275);
         }
@@ -744,11 +750,12 @@
             border-radius: 10px; line-height: 1.6;
         }
 
-        /* Scrollbar */
+        /* Scrollbar global */
         ::-webkit-scrollbar { width: 5px; }
         ::-webkit-scrollbar-track { background: var(--bg); }
         ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
 
+        /* Responsive small screens */
         @media (max-width: 600px) {
             .team-panel { width: 110px; }
             #arena-floor { left: 110px; right: 110px; }
@@ -765,6 +772,9 @@
     <div id="top-progress-bar"></div>
 </div>
 
+<!-- ────────────────────────────
+     SCREEN 1 – NHẬP TÊN & PHÒNG
+──────────────────────────────── -->
 <div id="lobby-screen" class="screen active">
     <div class="arena-logo">
         <div class="arena-title">⚛ ARENA VẬT LÍ</div>
@@ -772,17 +782,20 @@
     </div>
 
     <div id="join-form">
+        <!-- Badge QR mode -->
         <div class="qr-badge" id="qr-mode-badge">
             <span>📷</span>
             <span>Đã quét QR — Phòng <strong id="qr-room-display"></strong></span>
         </div>
 
         <div class="login-card">
+            <!-- Nhập mã phòng (chỉ hiện khi mở bằng link không có QR) -->
             <div class="field-group" id="room-code-group">
                 <div class="field-label"><span class="fl-icon">🔑</span> MÃ PHÒNG</div>
-                <input type="text" id="input-room" placeholder="Nhập chuẩn mã phòng hiển thị..."
-                    maxlength="20" style="letter-spacing:2px;">
-                <div class="room-hint">Nhập chính xác cả chữ hoa, chữ thường hoặc số từ màn hình Admin</div>
+                <input type="text" id="input-room" placeholder="Nhập mã phòng (VD: ABC123)..."
+                    maxlength="10" style="text-transform:uppercase; letter-spacing:2px;"
+                    oninput="this.value=this.value.toUpperCase()">
+                <div class="room-hint">Nhập mã phòng do giáo viên cung cấp</div>
             </div>
 
             <div class="field-group">
@@ -805,6 +818,7 @@
     </div>
 </div>
 
+<!-- Team Reveal Banner -->
 <div class="team-reveal-banner" id="team-reveal">
     <div class="team-reveal-card" id="team-reveal-card">
         <div class="reveal-avatar" id="reveal-avatar-display"></div>
@@ -814,6 +828,9 @@
     </div>
 </div>
 
+<!-- ────────────────────────────
+     SCREEN 2 – SẢNH CHỜ
+──────────────────────────────── -->
 <div id="waiting-screen" class="screen">
     <div class="waiting-header">
         <div class="waiting-title">⚔ SẢNH CHỜ</div>
@@ -824,6 +841,7 @@
         <div class="waiting-badge" id="my-team-badge">TEAM ?</div>
     </div>
 
+    <!-- Team A (trái) -->
     <div class="team-panel left">
         <div class="team-panel-title">⚔ TEAM A</div>
         <div class="team-score-pill" id="team-a-score-pill">0đ</div>
@@ -831,6 +849,7 @@
         <div class="member-count" id="team-a-count">0 thành viên</div>
     </div>
 
+    <!-- Team B (phải) -->
     <div class="team-panel right">
         <div class="team-panel-title">🛡 TEAM B</div>
         <div class="team-score-pill" id="team-b-score-pill">0đ</div>
@@ -838,15 +857,17 @@
         <div class="member-count" id="team-b-count">0 thành viên</div>
     </div>
 
+    <!-- Arena floor -->
     <div id="arena-floor" role="region" aria-label="Không gian sảnh chờ">
         <div id="click-move-hint" style="
             position:absolute; bottom:8px; left:50%; transform:translateX(-50%);
             font-size:0.68rem; color:rgba(0,210,255,0.35); pointer-events:none;
             letter-spacing:1px; white-space:nowrap; user-select:none;">
-            👆 Chạm / Click để di chuyển (hoặc dùng phím WASD / mũi tên)
+            👆 Chạm / Click để di chuyển
         </div>
     </div>
 
+    <!-- Lobby Chat -->
     <div id="lobby-chat">
         <div id="lobby-chat-messages"></div>
         <div class="chat-input-row">
@@ -857,7 +878,11 @@
     </div>
 </div>
 
+<!-- ────────────────────────────
+     SCREEN 3 – GAME
+──────────────────────────────── -->
 <div id="game-screen" class="screen">
+    <!-- Live score strip -->
     <div id="live-score-strip">
         <div class="live-score-item">
             <div class="live-score-label">Đội A</div>
@@ -873,6 +898,7 @@
         </div>
     </div>
 
+    <!-- Game header -->
     <div class="game-header">
         <span class="stage-label" id="stage-title">VÒNG 1</span>
         <span id="timer-text">50s</span>
@@ -881,6 +907,9 @@
     <div id="question-box"></div>
 </div>
 
+<!-- ────────────────────────────
+     SCREEN 4 – GIẢI LAO
+──────────────────────────────── -->
 <div id="intermission-screen" class="screen">
     <div class="intermission-header">
         <div class="intermission-title">⏸ GIẢI LAO GIỮA CHẶNG</div>
@@ -906,6 +935,9 @@
     </div>
 </div>
 
+<!-- ────────────────────────────
+     SCREEN 5 – VÒNG NHANH
+──────────────────────────────── -->
 <div id="fast-phase-screen" class="screen">
     <h2 style="font-family:'Orbitron'; color:#ffaa00; margin-bottom:16px;">⚡ VÒNG TRANH ĐIỂM NHANH</h2>
     <div id="host-controls" style="display:none;">
@@ -926,6 +958,9 @@
     </div>
 </div>
 
+<!-- ────────────────────────────
+     SCREEN 6 – KẾT QUẢ
+──────────────────────────────── -->
 <div id="summary-screen" class="screen">
     <div class="game-over-card" id="game-over-box"></div>
     <h3 style="color:var(--accent); font-family:'Orbitron'; text-align:left; margin-bottom:14px; font-size:0.9rem; letter-spacing:2px;">📋 XEM LẠI CHI TIẾT ĐÁP ÁN</h3>
@@ -933,22 +968,72 @@
 </div>
 
 <script>
+// ═══════════════════════════════════════
+//  50 AVATAR ĐỘNG VẬT
+// ═══════════════════════════════════════
 const animals = [
-    { emoji: '🦁', name: 'Sư Tử' }, { emoji: '🐯', name: 'Hổ' }, { emoji: '🦊', name: 'Cáo' }, { emoji: '🐺', name: 'Sói' },
-    { emoji: '🦌', name: 'Nai' }, { emoji: 'Elephant', name: 'Voi' }, { emoji: '🦒', name: 'Hươu Cao Cổ' }, { emoji: '🦓', name: 'Ngựa Vằn' },
-    { emoji: '🐆', name: 'Báo' }, { emoji: '🐻', name: 'Gấu' }, { emoji: '🐼', name: 'Gấu Trúc' }, { emoji: '🦘', name: 'Kangaroo' },
-    { emoji: '🐪', name: 'Lạc Đà' }, { emoji: '🦝', name: 'Gấu Mèo' }, { emoji: '🦔', name: 'Nhím' }, { emoji: '🦦', name: 'Rái Cá' },
-    { emoji: '🦥', name: 'Lười' }, { emoji: 'Koala', name: 'Koala' }, { emoji: '🐵', name: 'Khỉ' }, { emoji: '🐱', name: 'Mèo' },
-    { emoji: '🐶', name: 'Chó' }, { emoji: '🐷', name: 'Heo' }, { emoji: '🐴', name: 'Ngựa' }, { emoji: '🐮', name: 'Bò' },
-    { emoji: '🐰', name: 'Thỏ' }, { emoji: '🐭', name: 'Chuột' }, { emoji: '🦅', name: 'Đại Bàng' }, { emoji: '🦉', name: 'Cú' },
-    { emoji: '🦜', name: 'Vẹt' }, { emoji: '🦩', name: 'Hồng Hạc' }, { emoji: '🦚', name: 'Công' }, { emoji: '🦢', name: 'Thiên Nga' },
-    { emoji: '🦤', name: 'Dodo' }, { emoji: '🦇', name: 'Dơi' }, { emoji: '🐧', name: 'Cánh Cụt' }, { emoji: '🦆', name: 'Vịt' },
-    { emoji: '🐔', name: 'Gà' }, { emoji: '🐓', name: 'Gà Trống' }, { emoji: '🐉', name: 'Rồng' }, { emoji: '🐊', name: 'Cá Sấu' },
-    { emoji: '🐢', name: 'Rùa' }, { emoji: '🐸', name: 'Ếch' }, { emoji: '🦈', name: 'Cá Mập' }, { emoji: '🐬', name: 'Cá Heo' },
-    { emoji: '🐋', name: 'Cá Voi' }, { emoji: '🐳', name: 'Cá Voi Xanh' }, { emoji: '🦭', name: 'Hải Cẩu' }, { emoji: '🐙', name: 'Bạch Tuộc' },
-    { emoji: '🦑', name: 'Mực' }, { emoji: '🦀', name: 'Cua' }
+    // Thú trên cạn (Thú rừng)
+    { emoji: '🦁', name: 'Sư Tử' },
+    { emoji: '🐯', name: 'Hổ' },
+    { emoji: '🦊', name: 'Cáo' },
+    { emoji: '🐺', name: 'Sói' },
+    { emoji: '🦌', name: 'Nai' },
+    { emoji: '🐘', name: 'Voi' },
+    { emoji: '🦒', name: 'Hươu Cao Cổ' },
+    { emoji: '🦓', name: 'Ngựa Vằn' },
+    { emoji: '🐆', name: 'Báo' },
+    { emoji: '🐻', name: 'Gấu' },
+    { emoji: '🐼', name: 'Gấu Trúc' },
+    { emoji: '🦘', name: 'Kangaroo' },
+    { emoji: '🐪', name: 'Lạc Đà' },
+    { emoji: '🦝', name: 'Gấu Mèo' },
+    { emoji: '🦔', name: 'Nhím' },
+    { emoji: '🦦', name: 'Rái Cá' },
+    { emoji: '🦥', name: 'Lười' },
+    { emoji: '🐨', name: 'Koala' },
+    { emoji: '🐵', name: 'Khỉ' },
+
+    // Thú cưng & Gia súc
+    { emoji: '🐱', name: 'Mèo' },
+    { emoji: '🐶', name: 'Chó' },
+    { emoji: '🐷', name: 'Heo' },
+    { emoji: '🐴', name: 'Ngựa' },
+    { emoji: '🐮', name: 'Bò' },
+    { emoji: '🐰', name: 'Thỏ' },
+    { emoji: '🐭', name: 'Chuột' },
+
+    // Chim, Gia cầm & Bò sát, Lưỡng cư
+    { emoji: '🦅', name: 'Đại Bàng' },
+    { emoji: '🦉', name: 'Cú' },
+    { emoji: '🦜', name: 'Vẹt' },
+    { emoji: '🦩', name: 'Hồng Hạc' },
+    { emoji: '🦚', name: 'Công' },
+    { emoji: '🦢', name: 'Thiên Nga' },
+    { emoji: '🦤', name: 'Dodo' },
+    { emoji: '🦇', name: 'Dơi' },
+    { emoji: '🐧', name: 'Cánh Cụt' },
+    { emoji: '🦆', name: 'Vịt' },
+    { emoji: '🐔', name: 'Gà' },
+    { emoji: '🐓', name: 'Gà Trống' },
+    { emoji: '🐉', name: 'Rồng' },
+    { emoji: '🐊', name: 'Cá Sấu' },
+    { emoji: '🐢', name: 'Rùa' },
+    { emoji: '🐸', name: 'Ếch' },
+
+    // Dưới nước
+    { emoji: '🦈', name: 'Cá Mập' },
+    { emoji: '🐬', name: 'Cá Heo' },
+    { emoji: '🐋', name: 'Cá Voi' },
+    { emoji: '🐳', name: 'Cá Voi Xanh' },
+    { emoji: '🦭', name: 'Hải Cẩu' },
+    { emoji: '🐙', name: 'Bạch Tuộc' },
+    { emoji: '🦑', name: 'Mực' },
+    { emoji: '🦀', name: 'Cua' }
 ];
 
+// ═══════════════════════════════════════
+//  BIẾN TRẠNG THÁI
+// ═══════════════════════════════════════
 const socket = io();
 let currentRoomId = '';
 let myTeam = '';
@@ -957,40 +1042,50 @@ let myAvatar = null;
 let currentQuestions = [];
 let questionIndex = 0;
 let isAnsweringState = false;
-let urlRoomId = '';          
-let isQRMode = false;        
-let allPlayers = {};         
+let urlRoomId = '';          // roomId từ QR / URL param
+let isQRMode = false;        // true = quét QR (có room param)
+let allPlayers = {};         // { socketId: { name, avatar, team, score } }
 let revealTimeout = null;
 let myScore = 0;
 let teamScores = { A: 0, B: 0 };
+
+// Vị trí nhân vật trên sảnh
 let myTokenPos = { x: 0, y: 0 };
 
+// ═══════════════════════════════════════
+//  KHỞI TẠO
+// ═══════════════════════════════════════
 window.addEventListener('DOMContentLoaded', () => {
     buildAvatarGrid();
     setupClickToMove();
     setupKeyboard();
 
+    // ✅ FIX: Đọc ?room= từ cả /play?room=, /player?room= và /
     const params = new URLSearchParams(window.location.search);
     const roomParam = params.get('room');
 
-    // ĐÃ SỬA: Bỏ .toUpperCase() để giữ nguyên hoa thường từ URL (Mã định danh hệ thống)
     if (roomParam) {
+        // Chế độ QR: đã có room trong URL
         isQRMode = true;
-        urlRoomId = roomParam.trim(); 
+        urlRoomId = roomParam.toUpperCase().trim();
         document.getElementById('qr-mode-badge').classList.add('show');
         document.getElementById('qr-room-display').textContent = urlRoomId;
         document.getElementById('room-code-group').style.display = 'none';
         document.getElementById('input-name').focus();
     } else {
+        // Chế độ Link: cần nhập mã phòng
         isQRMode = false;
         document.getElementById('room-code-group').style.display = 'block';
         document.getElementById('input-room').focus();
     }
 });
 
+// ═══════════════════════════════════════
+//  BUILD AVATAR GRID
+// ═══════════════════════════════════════
 function buildAvatarGrid() {
     const grid = document.getElementById('avatar-grid');
-    animals.forEach((av, i) => {
+    AVATARS.forEach((av, i) => {
         const cell = document.createElement('div');
         cell.className = 'avatar-cell';
         cell.dataset.index = i;
@@ -1003,31 +1098,37 @@ function buildAvatarGrid() {
 function selectAvatar(index, cell) {
     document.querySelectorAll('.avatar-cell').forEach(c => c.classList.remove('selected'));
     cell.classList.add('selected');
-    myAvatar = animals[index];
+    myAvatar = AVATARS[index];
     const preview = document.getElementById('avatar-preview');
     preview.style.display = 'block';
     preview.innerHTML = `<strong>${myAvatar.emoji} ${myAvatar.name}</strong> đã được chọn làm biểu tượng`;
 }
 
+// ═══════════════════════════════════════
+//  SCREEN SWITCH
+// ═══════════════════════════════════════
 function switchScreen(screenId) {
     document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
     const el = document.getElementById(screenId);
     if (el) el.classList.add('active');
 }
 
+// ═══════════════════════════════════════
+//  VÀO PHÒNG
+// ═══════════════════════════════════════
 function joinRoom() {
     const name = document.getElementById('input-name').value.trim();
     let roomId = urlRoomId;
 
-    // ĐÃ SỬA: Tuyệt đối không ép in hoa khi người chơi tự nhập mã phòng
     if (!isQRMode) {
-        roomId = document.getElementById('input-room').value.trim();
+        roomId = document.getElementById('input-room').value.trim().toUpperCase();
         if (!roomId) return showError('Vui lòng nhập mã phòng!');
     }
 
     if (!name) return showError('Vui lòng nhập tên của bạn!');
     if (!myAvatar) return showError('Vui lòng chọn 1 biểu tượng đại diện!');
 
+    // ✅ Kiểm tra socket đã kết nối
     if (!socket.connected) {
         showError('Đang kết nối lại server... Thử lại sau vài giây!');
         socket.connect();
@@ -1047,6 +1148,7 @@ function joinRoom() {
         avatar: myAvatar
     });
 
+    // ✅ Timeout nếu không nhận được phản hồi
     const joinTimeout = setTimeout(() => {
         if (document.getElementById('lobby-screen').classList.contains('active')) {
             showError('Không nhận được phản hồi. Kiểm tra mã phòng hoặc kết nối!');
@@ -1070,8 +1172,13 @@ function showError(msg) {
     btn.textContent = '⚡ VÀO PHÒNG CHỜ';
 }
 
+// ═══════════════════════════════════════
+//  SOCKET – VÀO PHÒNG & PHÂN ĐỘI
+// ═══════════════════════════════════════
 socket.on('joinedRoom', (data) => {
+    // ✅ Xoá timeout chờ
     if (socket._joinTimeout) clearTimeout(socket._joinTimeout);
+    // Lưu team nếu server trả về ngay
     if (data && data.team) myTeam = data.team;
 });
 
@@ -1083,6 +1190,7 @@ socket.on('joinError', (msg) => {
 socket.on('roleAssignment', (data) => {
     if (socket._joinTimeout) clearTimeout(socket._joinTimeout);
     myTeam = data.team;
+    // ✅ Hiện reveal ngắn gọn rồi TỰ ĐỘNG vào sảnh chờ (không cần click)
     showTeamReveal(data.team, myAvatar, myName);
 });
 
@@ -1097,6 +1205,7 @@ function showTeamReveal(team, avatar, name) {
     card.className = 'team-reveal-card ' + (team === 'A' ? 'team-a' : 'team-b');
     banner.classList.add('show');
 
+    // ✅ Tự động vào sảnh chờ sau 2.5s, KHÔNG cần click
     const goToWaiting = () => {
         banner.classList.remove('show');
         switchScreen('waiting-screen');
@@ -1108,20 +1217,18 @@ function showTeamReveal(team, avatar, name) {
     revealTimeout = setTimeout(goToWaiting, 2500);
 }
 
+// ═══════════════════════════════════════
+//  SOCKET – CẬP NHẬT SẢNH CHỜ
+// ═══════════════════════════════════════
 socket.on('lobbyUpdate', (data) => {
     allPlayers = {};
     data.players.forEach(p => { allPlayers[p.id] = p; });
     renderLobby();
 });
 
-socket.on('playerLeft', (playerId) => {
-    if (allPlayers[playerId]) {
-        delete allPlayers[playerId];
-        renderLobby();
-    }
-});
-
+// Realtime score update in lobby
 socket.on('scoreUpdate', (data) => {
+    // data: { playerId, personalScore, delta, teamScores: {A, B} }
     if (allPlayers[data.playerId]) {
         allPlayers[data.playerId].score = data.personalScore;
     }
@@ -1129,6 +1236,7 @@ socket.on('scoreUpdate', (data) => {
         const oldA = teamScores.A, oldB = teamScores.B;
         teamScores = data.teamScores;
         updateTeamScorePills();
+        // Animate team score change on live strip if we're on game screen
         if (document.getElementById('game-screen').classList.contains('active')) {
             if (Math.round(oldA) !== Math.round(teamScores.A))
                 animateScoreChange('live-score-a', Math.round(oldA), Math.round(teamScores.A), Math.round(teamScores.A - oldA));
@@ -1139,13 +1247,16 @@ socket.on('scoreUpdate', (data) => {
     if (data.playerId === socket.id && data.personalScore !== undefined) {
         const oldScore = myScore;
         myScore = data.personalScore;
+        // Only animate if server-driven update differs (avoid double-animate with singleAnswerResult)
         if (document.getElementById('game-screen').classList.contains('active') && oldScore !== myScore) {
             animateScoreChange('live-score-me', oldScore, myScore, data.delta || (myScore - oldScore));
         } else {
             document.getElementById('live-score-me').textContent = myScore;
         }
     }
+    // Show pop on token
     if (data.delta) showScorePopOnToken(data.playerId, data.delta);
+    // Update member list scores
     renderLobbyLists();
 });
 
@@ -1160,10 +1271,18 @@ function updateLiveScoreStrip() {
     document.getElementById('live-score-me').textContent = myScore;
 }
 
+/**
+ * Animate a score element: show floating delta, then count from oldVal to newVal.
+ * @param {string} elId   - id of the .live-score-val element
+ * @param {number} oldVal - previous score
+ * @param {number} newVal - new score after delta
+ * @param {number} delta  - signed change (+10 or -3)
+ */
 function animateScoreChange(elId, oldVal, newVal, delta) {
     const el = document.getElementById(elId);
     if (!el) return;
 
+    // 1. Show floating +/- delta
     const parent = el.closest('.live-score-item') || el.parentElement;
     const pop = document.createElement('span');
     pop.className = 'strip-delta ' + (delta > 0 ? 'pos' : 'neg');
@@ -1171,19 +1290,22 @@ function animateScoreChange(elId, oldVal, newVal, delta) {
     parent.appendChild(pop);
     setTimeout(() => pop.remove(), 1700);
 
-    const duration = 600;   
+    // 2. Animate the number counting up/down
+    const duration = 600;   // ms
     const steps = 20;
     const stepTime = duration / steps;
     let step = 0;
 
+    // Bump scale animation
     el.classList.remove('score-bump');
-    void el.offsetWidth; 
+    void el.offsetWidth; // reflow to restart animation
     el.classList.add('score-bump');
     setTimeout(() => el.classList.remove('score-bump'), 400);
 
     const interval = setInterval(() => {
         step++;
         const progress = step / steps;
+        // easeOut
         const eased = 1 - Math.pow(1 - progress, 3);
         const current = Math.round(oldVal + (newVal - oldVal) * eased);
         el.textContent = current;
@@ -1210,6 +1332,7 @@ function renderLobby() {
     const teamA = Object.values(allPlayers).filter(p => p.team === 'A');
     const teamB = Object.values(allPlayers).filter(p => p.team === 'B');
 
+    // Badge
     const badgeEl = document.getElementById('my-team-badge');
     if (myTeam === 'A') {
         badgeEl.textContent = '⚔ TEAM A';
@@ -1261,6 +1384,9 @@ function renderLobbyLists() {
     document.getElementById('team-b-count').textContent = `${teamB.length} thành viên`;
 }
 
+// ═══════════════════════════════════════
+//  RENDER TOKENS
+// ═══════════════════════════════════════
 function renderArenaTokens(teamA, teamB) {
     const floor = document.getElementById('arena-floor');
     const floorW = floor.offsetWidth || 400;
@@ -1314,6 +1440,9 @@ function renderArenaTokens(teamA, teamB) {
     placeTokens(teamB, 0.72, 'team-b');
 }
 
+// ═══════════════════════════════════════
+//  CLICK / TOUCH TO MOVE
+// ═══════════════════════════════════════
 function setupClickToMove() {
     const floor = document.getElementById('arena-floor');
 
@@ -1338,11 +1467,13 @@ function setupClickToMove() {
             socket.emit('playerMove', { roomId: currentRoomId, x: myTokenPos.x, y: myTokenPos.y });
         }
 
+        // Ẩn hint sau lần đầu di chuyển
         const hint = document.getElementById('click-move-hint');
         if (hint) hint.style.opacity = '0';
     };
 
     floor.addEventListener('click', (e) => {
+        // Không di chuyển nếu click vào token của player khác
         if (e.target.closest('.player-token')) return;
         handleMove(e.clientX, e.clientY);
     });
@@ -1357,27 +1488,23 @@ function setupClickToMove() {
 function setupKeyboard() {
     const STEP = 0.055;
     const keyMap = {
-        'ArrowUp':    { dx: 0, dy: -STEP }, 'ArrowDown':  { dx: 0, dy:  STEP },
-        'ArrowLeft':  { dx: -STEP, dy: 0 }, 'ArrowRight': { dx:  STEP, dy: 0 },
-        'w': { dx: 0, dy: -STEP }, 's': { dx: 0, dy:  STEP }, 'a': { dx: -STEP, dy: 0 }, 'd': { dx:  STEP, dy: 0 },
-        'W': { dx: 0, dy: -STEP }, 'S': { dx: 0, dy:  STEP }, 'A': { dx: -STEP, dy: 0 }, 'D': { dx:  STEP, dy: 0 }
+        'ArrowUp':    { dx: 0, dy: -STEP },
+        'ArrowDown':  { dx: 0, dy:  STEP },
+        'ArrowLeft':  { dx: -STEP, dy: 0 },
+        'ArrowRight': { dx:  STEP, dy: 0 },
+        'w': { dx: 0, dy: -STEP },
+        's': { dx: 0, dy:  STEP },
+        'a': { dx: -STEP, dy: 0 },
+        'd': { dx:  STEP, dy: 0 },
     };
     const held = {};
     document.addEventListener('keydown', (e) => {
-        if (document.activeElement) {
-            const activeTag = document.activeElement.tagName.toUpperCase();
-            if (activeTag === 'INPUT' || activeTag === 'TEXTAREA') {
-                return; // Đã xử lý: Tránh xung đột phím WASD khi gõ chat
-            }
-        }
-
-        const key = e.key;
-        if (held[key]) return;
+        if (held[e.key]) return;
         if (!document.getElementById('waiting-screen').classList.contains('active')) return;
-        if (keyMap[key]) {
-            held[key] = true;
+        if (keyMap[e.key]) {
+            held[e.key] = true;
             e.preventDefault();
-            moveMyToken(keyMap[key].dx, keyMap[key].dy);
+            moveMyToken(keyMap[e.key].dx, keyMap[e.key].dy);
         }
     });
     document.addEventListener('keyup', (e) => { held[e.key] = false; });
@@ -1389,6 +1516,7 @@ function moveMyToken(dx, dy) {
     myTokenPos.x = Math.max(0.02, Math.min(0.93, myTokenPos.x + dx));
     myTokenPos.y = Math.max(0.04, Math.min(0.87, myTokenPos.y + dy));
 
+    // Update token position visually
     const floor = document.getElementById('arena-floor');
     const myToken = floor.querySelector('.player-token.is-me');
     if (myToken) {
@@ -1398,12 +1526,19 @@ function moveMyToken(dx, dy) {
         myToken.style.top  = (myTokenPos.y * floorH) + 'px';
     }
 
+    // Broadcast position
     if (currentRoomId) {
-        socket.emit('playerMove', { roomId: currentRoomId, x: myTokenPos.x, y: myTokenPos.y });
+        socket.emit('playerMove', {
+            roomId: currentRoomId,
+            x: myTokenPos.x,
+            y: myTokenPos.y
+        });
     }
 }
 
+// Nhận vị trí từ server (các player khác di chuyển)
 socket.on('playerMoved', (data) => {
+    // data: { playerId, x, y }
     const floor = document.getElementById('arena-floor');
     const token = floor.querySelector(`[data-playerid="${data.playerId}"]`);
     if (token && data.playerId !== socket.id) {
@@ -1414,6 +1549,9 @@ socket.on('playerMoved', (data) => {
     }
 });
 
+// ═══════════════════════════════════════
+//  CHAT SẢNH CHỜ
+// ═══════════════════════════════════════
 function sendLobbyChat() {
     const input = document.getElementById('lobby-chat-input');
     const msg = input.value.trim();
@@ -1426,15 +1564,10 @@ socket.on('receiveLobbyMessage', (data) => {
     const container = document.getElementById('lobby-chat-messages');
     const div = document.createElement('div');
     div.className = 'chat-msg';
-    
-    let teamLabel = '';
-    let teamClass = '';
-    
-    if (data.team === 'A') { teamLabel = '[Đội A]'; teamClass = 'team-a-name'; }
-    else if (data.team === 'B') { teamLabel = '[Đội B]'; teamClass = 'team-b-name'; }
-    else { teamLabel = '[Khán giả]'; }
-
-    div.innerHTML = `<span class="msg-author ${teamClass}">${teamLabel} ${escapeHtml(data.name)}:</span> <span style="color: #cbd5e1">${escapeHtml(data.msg)}</span>`;
+    let teamClass = '', teamLabel = '';
+    if (data.team === 'A') { teamClass = 'team-a-name'; teamLabel = '[A]'; }
+    else if (data.team === 'B') { teamClass = 'team-b-name'; teamLabel = '[B]'; }
+    div.innerHTML = `<span class="msg-author ${teamClass}">${escapeHtml(data.name)} ${teamLabel}:</span> ${escapeHtml(data.msg)}`;
     container.appendChild(div);
     container.scrollTop = container.scrollHeight;
 });
@@ -1448,24 +1581,35 @@ socket.on('lobbyChatSystem', (text) => {
     container.scrollTop = container.scrollHeight;
 });
 
+// ═══════════════════════════════════════
+//  GAME BẮT ĐẦU – ẨN SẢNH CHỜ HOÀN TOÀN
+// ═══════════════════════════════════════
+// ✅ FIX: Server gửi 'gameStarted' (không phải 'gameStart')
 socket.on('gameStarted', () => {
     switchScreen('game-screen');
-    document.getElementById('question-box').innerHTML = '<div style="padding:40px 10px;"><h3 style="color:var(--accent)">⚡ Game đang bắt đầu...</h3></div>';
+    document.getElementById('question-box').innerHTML =
+        '<div style="padding:40px 10px;"><h3 style="color:var(--accent)">⚡ Game đang bắt đầu...</h3></div>';
     document.getElementById('top-progress-container').style.display = 'none';
 });
 
+// Giữ lại 'gameStart' để tương thích nếu server cũ vẫn dùng
 socket.on('gameStart', () => {
     switchScreen('game-screen');
-    document.getElementById('question-box').innerHTML = '<div style="padding:40px 10px;"><h3 style="color:var(--accent)">⚡ Game đang bắt đầu...</h3></div>';
+    document.getElementById('question-box').innerHTML =
+        '<div style="padding:40px 10px;"><h3 style="color:var(--accent)">⚡ Game đang bắt đầu...</h3></div>';
     document.getElementById('top-progress-container').style.display = 'none';
 });
 
+// ═══════════════════════════════════════
+//  STAGE / VÒNG
+// ═══════════════════════════════════════
 socket.on('startStage', (data) => {
     isAnsweringState = true;
-    currentQuestions = data.questions; 
+    currentQuestions = data.questions;  // đã được shuffle riêng cho player này
     questionIndex = 0;
 
     const isBonus = data.isDouble || data.stageNum === 5;
+    // Tối đa 5 vòng; vòng 5 = nhân đôi
     const stageLabel = `VÒNG ${Math.min(data.stageNum, 5)} / 5` + (isBonus ? ' ★ NHÂN ĐÔI' : '');
     document.getElementById('stage-title').textContent = stageLabel;
     document.getElementById('top-progress-container').style.display = 'block';
@@ -1500,6 +1644,7 @@ function renderSingleQuestion() {
             <div style="display:flex; flex-direction:column; gap:2px;">
     `;
 
+    // choices đã được shuffle phía server cho từng player
     q.choices.forEach(c => {
         html += `
             <button class="choice-btn" onclick="selectAnswer('${q.id}', '${c.key}')">
@@ -1517,10 +1662,15 @@ function renderSingleQuestion() {
 
 function selectAnswer(questionId, choiceKey) {
     document.querySelectorAll('.choice-btn').forEach(b => b.disabled = true);
-    socket.emit('submitSingleAnswer', { roomId: currentRoomId, questionId, answer: choiceKey });
+    socket.emit('submitSingleAnswer', {
+        roomId: currentRoomId,
+        questionId,
+        answer: choiceKey
+    });
 }
 
 socket.on('singleAnswerResult', (data) => {
+    // Highlight đáp án
     document.querySelectorAll('.choice-btn').forEach(btn => {
         const key = btn.querySelector('.choice-key')?.textContent;
         if (key === data.correctAnswer) btn.classList.add('correct');
@@ -1531,6 +1681,7 @@ socket.on('singleAnswerResult', (data) => {
     const delta = data.isCorrect
         ? (data.points !== undefined ? data.points : 10)
         : (data.points !== undefined ? data.points : -3);
+    const sign = delta > 0 ? '+' : '';
 
     if (data.isCorrect) {
         badge.innerHTML = `<span class="fb-correct">✓ ĐÁP ÁN CHÍNH XÁC</span>`;
@@ -1538,16 +1689,27 @@ socket.on('singleAnswerResult', (data) => {
         badge.innerHTML = `<span class="fb-wrong">✗ SAI RỒI</span>`;
     }
 
+    // ── HIỂN THỊ POPUP ĐIỂM LỚN GIỮA MÀN HÌNH ──
     showScorePopupOverlay(delta, data.isCorrect);
 
+    // Cộng dồn điểm cá nhân, delay nhẹ để popup hiện ra trước
     const oldScore = myScore;
     myScore += delta;
-    setTimeout(() => { animateScoreChange('live-score-me', oldScore, myScore, delta); }, 350);
+    setTimeout(() => {
+        animateScoreChange('live-score-me', oldScore, myScore, delta);
+    }, 350);
 
-    setTimeout(() => { questionIndex++; renderSingleQuestion(); }, 1800);
+    setTimeout(() => {
+        questionIndex++;
+        renderSingleQuestion();
+    }, 1800);
 });
 
+/**
+ * Hiện popup điểm nổi bật giữa màn hình, tự biến mất sau ~1.8s
+ */
 function showScorePopupOverlay(delta, isCorrect) {
+    // Xoá popup cũ nếu có
     const old = document.getElementById('score-popup-overlay');
     if (old) old.remove();
 
@@ -1564,11 +1726,16 @@ function showScorePopupOverlay(delta, isCorrect) {
     setTimeout(() => el.remove(), 1850);
 }
 
+// ═══════════════════════════════════════
+//  TIMER
+// ═══════════════════════════════════════
 socket.on('timerUpdate', (timeLeft) => {
     if (isAnsweringState) {
         const timerEl = document.getElementById('timer-text');
         timerEl.textContent = timeLeft + 's';
-        const maxTime = 60; 
+        // Vòng 5: tổng 50s; các vòng khác: 60s (hoặc giá trị server gửi)
+        const maxTime = 60; // server sẽ gửi đúng
+        const pct = (timeLeft / maxTime) * 100;
         const bar = document.getElementById('top-progress-bar');
         bar.style.width = Math.max(0, (timeLeft / maxTime) * 100) + '%';
 
@@ -1582,10 +1749,14 @@ socket.on('timerUpdate', (timeLeft) => {
     }
 });
 
+// ═══════════════════════════════════════
+//  GIẢI LAO
+// ═══════════════════════════════════════
 socket.on('intermissionStart', (data) => {
     isAnsweringState = false;
     document.getElementById('top-progress-container').style.display = 'none';
 
+    // data.teamAvgA, data.teamAvgB = điểm trung bình cộng
     document.getElementById('score-a').textContent = data.teamAvgA !== undefined ? Math.round(data.teamAvgA) : data.scoreA;
     document.getElementById('score-b').textContent = data.teamAvgB !== undefined ? Math.round(data.teamAvgB) : data.scoreB;
 
@@ -1594,7 +1765,8 @@ socket.on('intermissionStart', (data) => {
     updateTeamScorePills();
     updateLiveScoreStrip();
 
-    document.getElementById('chat-logs').innerHTML = '<p style="color:#4b6280; font-style:italic; margin:0; font-size:0.85rem;">Phòng hội ý chiến thuật mở ra trong thời gian nghỉ...</p>';
+    document.getElementById('chat-logs').innerHTML =
+        '<p style="color:#4b6280; font-style:italic; margin:0; font-size:0.85rem;">Phòng hội ý chiến thuật mở ra trong thời gian nghỉ...</p>';
     switchScreen('intermission-screen');
 });
 
@@ -1615,6 +1787,10 @@ socket.on('receiveGlobalMessage', (data) => {
     logs.scrollTop = logs.scrollHeight;
 });
 
+
+// ═══════════════════════════════════════
+//  KẾT THÚC GAME
+// ═══════════════════════════════════════
 socket.on('gameSummaryReport', (historyLog) => {
     const container = document.getElementById('review-list-zone');
     container.innerHTML = '';
@@ -1648,6 +1824,7 @@ socket.on('gameOver', (d) => {
     document.getElementById('top-progress-container').style.display = 'none';
     isAnsweringState = false;
 
+    // ✅ Hiện kết quả rõ ràng sau 5 vòng
     const scoreA = d && d.scoreA !== undefined ? Math.round(d.scoreA) : 0;
     const scoreB = d && d.scoreB !== undefined ? Math.round(d.scoreB) : 0;
 
@@ -1689,6 +1866,9 @@ socket.on('roomResetByAdmin', () => {
 
 socket.on('errorMsg', m => showError(m));
 
+// ═══════════════════════════════════════
+//  KATEX RENDER
+// ═══════════════════════════════════════
 function renderMath(elementId) {
     const el = document.getElementById(elementId);
     if (el && window.renderMathInElement) {
@@ -1704,11 +1884,15 @@ function renderMath(elementId) {
     }
 }
 
+// ═══════════════════════════════════════
+//  UTILITIES
+// ═══════════════════════════════════════
 function escapeHtml(str) {
     if (!str) return '';
     return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
 
+// Re-render tokens on resize
 window.addEventListener('resize', () => {
     if (document.getElementById('waiting-screen').classList.contains('active')) {
         const teamA = Object.values(allPlayers).filter(p => p.team === 'A');
