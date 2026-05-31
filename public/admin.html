@@ -628,27 +628,47 @@ function createRoom() {
     }, 3000);
 }
 
-socket.on('roomCreated', (roomId) => {
+// ── HELPER: Tạo/cập nhật QR và hiển thị UI phòng ─────────────────────────────
+function setupRoomUI(roomId) {
     myRoomId = roomId;
-    document.getElementById('lobby-view').style.display = 'none';
-    document.getElementById('room-view').classList.add('active');
-    document.getElementById('room-code-txt').innerText = roomId;
-
     const fullUrl = `${window.location.origin}/player?room=${roomId}`;
-    document.getElementById('join-url-txt').innerText = fullUrl;
 
+    document.getElementById('room-code-txt').innerText = roomId;
+    document.getElementById('join-url-txt').innerText  = fullUrl;
+
+    // QR nhỏ trong panel
     document.getElementById('qrcode').innerHTML = '';
     new QRCode(document.getElementById('qrcode'), {
         text: fullUrl, width: 220, height: 220,
         colorDark: '#000', colorLight: '#fff', correctLevel: QRCode.CorrectLevel.H
     });
 
+    // QR fullscreen
     document.getElementById('qrcode-fs').innerHTML = '';
     const fsSize = Math.min(window.innerWidth * 0.8, window.innerHeight * 0.6, 400);
     new QRCode(document.getElementById('qrcode-fs'), {
         text: fullUrl, width: fsSize, height: fsSize,
         colorDark: '#000', colorLight: '#fff', correctLevel: QRCode.CorrectLevel.H
     });
+}
+
+socket.on('roomCreated', (roomId) => {
+    setupRoomUI(roomId);
+
+    // Ẩn lobby, hiện room view
+    document.getElementById('lobby-view').style.display  = 'none';
+    document.getElementById('dashboard-view').style.display = 'none';
+    document.getElementById('room-view').classList.add('active');
+
+    // Reset danh sách player
+    playerMap = {};
+    document.getElementById('list-a').innerHTML = '<div class="team-empty">Chưa có thành viên…</div>';
+    document.getElementById('list-b').innerHTML = '<div class="team-empty">Chưa có thành viên…</div>';
+    document.getElementById('count-a').innerText = '0';
+    document.getElementById('count-b').innerText = '0';
+    document.getElementById('total-count').innerText = '0';
+    document.getElementById('total-count-topbar').innerText = '0';
+    document.getElementById('btn-start-game').disabled = true;
 });
 
 // ── QR FULLSCREEN ─────────────────────────────────────────────────────────────
@@ -690,7 +710,6 @@ function renderMemberList(containerId, members) {
     const children    = [...container.children].filter(el => el.hasAttribute('data-mid'));
     const incomingIds = new Set(members.map(p => p.id));
 
-    // Xoá người đã rời
     children.forEach(el => {
         if (!incomingIds.has(el.dataset.mid)) {
             el.style.opacity   = '0';
@@ -709,7 +728,6 @@ function renderMemberList(containerId, members) {
         if (empty) empty.remove();
     }
 
-    // Thêm người mới
     members.forEach((p, idx) => {
         if ([...container.children].some(el => el.dataset.mid === p.id)) return;
         const el = document.createElement('div');
@@ -725,7 +743,6 @@ function renderMemberList(containerId, members) {
         container.appendChild(el);
     });
 
-    // Đồng bộ số thứ tự
     setTimeout(() => {
         [...container.children]
             .filter(el => el.hasAttribute('data-mid') && el.style.opacity !== '0')
@@ -742,7 +759,6 @@ function renderMemberList(containerId, members) {
 
 // ── BẮT ĐẦU TRẬN ─────────────────────────────────────────────────────────────
 function startGame() {
-    // Mở modal chọn số vòng
     document.getElementById('round-overlay').classList.add('show');
     document.getElementById('input-rounds').focus();
 }
@@ -766,6 +782,7 @@ socket.on('gameStarted', () => {
     document.getElementById('room-view').style.display   = 'none';
     document.getElementById('lobby-view').style.display  = 'none';
     document.getElementById('dashboard-view').style.display = 'block';
+    document.getElementById('reset-zone').style.display  = 'none';
 });
 
 // ── DASHBOARD ─────────────────────────────────────────────────────────────────
@@ -900,14 +917,20 @@ socket.on('realtimeScoreUpdate', (data) => {
 });
 
 // ── RESET ─────────────────────────────────────────────────────────────────────
+// FIX: Admin nhận {newRoomId} từ server, sau đó server tự emit 'roomCreated'
+// với newRoomId. Handler roomCreated sẽ setup UI phòng mới + QR mới.
 function resetGame() {
-    if (confirm('Bạn có chắc muốn reset phòng và bắt đầu lượt chơi mới?')) {
+    if (confirm('Bạn có chắc muốn reset phòng và bắt đầu lượt chơi mới?\nMã phòng mới sẽ được tạo.')) {
         socket.emit('adminResetGame', myRoomId);
     }
 }
-socket.on('roomResetByAdmin', () => {
-    alert('Phòng đã được làm mới thành công!');
-    window.location.reload();
+
+// FIX: roomResetByAdmin cho admin chỉ là xác nhận — phòng mới sẽ đến qua 'roomCreated'
+socket.on('roomResetByAdmin', (data) => {
+    // Đóng winner overlay nếu đang mở
+    document.getElementById('winner-overlay').classList.remove('show');
+    // roomCreated sẽ được emit ngay sau từ server với newRoomId
+    // UI sẽ tự cập nhật trong handler roomCreated bên trên
 });
 
 // ── UTILS ─────────────────────────────────────────────────────────────────────
