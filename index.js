@@ -3,6 +3,20 @@ const http = require('http');
 const { Server } = require('socket.io');
 const path = require('path');
 const ExcelJS = require('exceljs');
+const dns = require('dns').promises;
+
+// ─── KIỂM TRA EMAIL CÓ DOMAIN HỢP LỆ (MX record) ────────────────────────────
+async function isEmailDomainValid(email) {
+  const match = email.match(/@([^@]+)$/);
+  if (!match) return false;
+  const domain = match[1];
+  try {
+    const records = await dns.resolveMx(domain);
+    return records && records.length > 0;
+  } catch {
+    return false;
+  }
+}
 
 const app = express();
 const server = http.createServer(app);
@@ -164,7 +178,7 @@ io.on('connection', (socket) => {
   });
 
   // ── PLAYER: Tham gia phòng ────────────────────────────────────────────────────
-  socket.on('playerJoinRoom', ({ roomId, name, avatar, email }) => {
+  socket.on('playerJoinRoom', async ({ roomId, name, avatar, email }) => {
     const rId = roomId.toUpperCase();
     const room = rooms[rId];
     if (!room) {
@@ -176,10 +190,15 @@ io.on('connection', (socket) => {
     const playerName = (name || '').trim().substring(0, 20);
     if (!playerName) return socket.emit('joinError', 'Tên không hợp lệ!');
 
-    // Validate email
+    // Validate email - format + DNS MX check
     const playerEmail = (email || '').trim().toLowerCase();
     if (!playerEmail || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(playerEmail)) {
-      return socket.emit('joinError', 'Email không hợp lệ! Vui lòng nhập email đúng định dạng.');
+      return socket.emit('joinError', 'Email không hợp lệ! Vui lòng nhập đúng định dạng (VD: ten@gmail.com).');
+    }
+    // Kiểm tra domain email có tồn tại thực sự không (MX record)
+    const domainOk = await isEmailDomainValid(playerEmail);
+    if (!domainOk) {
+      return socket.emit('joinError', 'Email không tồn tại! Domain email không hợp lệ. Vui lòng nhập email thật.');
     }
 
     const playerAvatar = (avatar || 'default_animal');
@@ -267,7 +286,7 @@ io.on('connection', (socket) => {
       ? (isFinalStage ? 20 : 10)
       : (isFinalStage ? -5 : -3);
 
-    player.score = Math.max(0, player.score + points);
+    player.score = player.score + points;
     player.lastDelta = points;
 
     player.history.push({
@@ -581,7 +600,7 @@ function startIntermission(roomId) {
         if (!qData.answered) {
           qData.answered = true;
           const penaltyPoints = isFinalStage ? -5 : -3;
-          p.score = Math.max(0, p.score + penaltyPoints);
+          p.score = p.score + penaltyPoints;
           p.lastDelta = penaltyPoints;
 
           // Thêm vào history với flag skipped
@@ -637,7 +656,6 @@ async function endGameFinal(roomId) {
   const room = rooms[roomId];
   if (!room) return;
 
-  // FIX: Đặt status 'finished' trước để tránh gọi lại
   room.status = 'finished';
 
   const { scoreA, scoreB } = getScores(room);
@@ -653,155 +671,223 @@ async function endGameFinal(roomId) {
   });
 
   // ── TẠO FILE EXCEL KẾT QUẢ ────────────────────────────────────────────────
+  // Cấu trúc: 1 bảng duy nhất
+  // Cột: STT | Câu hỏi | Đáp án đúng | [Tên Player 1 (Email)] | [Tên Player 2] | ...
+  // Hàng: mỗi câu hỏi = 1 hàng, ô của player = câu trả lời + ký hiệu ✓/✗/—
   try {
     const workbook = new ExcelJS.Workbook();
     workbook.creator = 'PhysicsGame';
     workbook.created = new Date();
 
-    // ── Sheet 1: Bảng xếp hạng tổng ──────────────────────────────────────────
-    const sheetRanking = workbook.addWorksheet('Bảng Xếp Hạng', {
-      pageSetup: { fitToPage: true, fitToWidth: 1 }
-    });
-    sheetRanking.columns = [
-      { header: 'Hạng',        key: 'rank',       width: 8  },
-      { header: 'Tên',         key: 'name',        width: 22 },
-      { header: 'Email',       key: 'email',       width: 30 },
-      { header: 'Đội',         key: 'team',        width: 8  },
-      { header: 'Điểm',        key: 'score',       width: 10 },
-      { header: 'Thời gian (s)',key: 'time',        width: 14 },
-    ];
-
-    // Style header
-    sheetRanking.getRow(1).eachCell(cell => {
-      cell.font = { bold: true, color: { argb: 'FFFFFFFF' } };
-      cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF1F3A5F' } };
-      cell.alignment = { horizontal: 'center', vertical: 'middle' };
-      cell.border = {
-        top: { style: 'thin' }, left: { style: 'thin' },
-        bottom: { style: 'thin' }, right: { style: 'thin' }
-      };
+    const sheet = workbook.addWorksheet('Kết Quả Game', {
+      pageSetup: { fitToPage: true }
     });
 
-    const lb = getLeaderboard(room);
-    lb.forEach((p, i) => {
-      const row = sheetRanking.addRow({
-        rank:  i + 1,
-        name:  p.name,
-        email: room.players.find(pl => pl.name === p.name)?.email || '',
-        team:  `Đội ${p.team}`,
-        score: p.score,
-        time:  parseFloat(p.totalTimeTaken.toFixed(1))
-      });
-      row.eachCell(cell => {
-        cell.border = {
-          top: { style: 'thin' }, left: { style: 'thin' },
-          bottom: { style: 'thin' }, right: { style: 'thin' }
-        };
-        cell.alignment = { vertical: 'middle' };
-      });
-      // Màu theo đội
-      const teamColor = p.team === 'A' ? 'FFFFE0E0' : 'FFE0F4FF';
-      row.eachCell(cell => {
-        cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: teamColor } };
-      });
-    });
-
-    // ── Sheet 2+: Chi tiết từng player ───────────────────────────────────────
-    // Tạo 1 sheet tổng hợp chi tiết
-    const sheetDetail = workbook.addWorksheet('Chi Tiết Câu Hỏi', {
-      pageSetup: { fitToPage: true, fitToWidth: 1 }
-    });
-    sheetDetail.columns = [
-      { header: 'Tên',              key: 'name',      width: 22 },
-      { header: 'Email',            key: 'email',     width: 30 },
-      { header: 'Đội',              key: 'team',      width: 8  },
-      { header: 'STT Câu',          key: 'qNum',      width: 10 },
-      { header: 'Nội dung câu hỏi', key: 'question',  width: 50 },
-      { header: 'Đáp án đúng',      key: 'correct',   width: 20 },
-      { header: 'Học sinh chọn',    key: 'chosen',    width: 20 },
-      { header: 'Kết quả',          key: 'result',    width: 14 },
-      { header: 'Điểm +/-',         key: 'points',    width: 10 },
-      { header: 'Ghi chú',          key: 'note',      width: 18 },
-    ];
-
-    // Style header
-    sheetDetail.getRow(1).eachCell(cell => {
-      cell.font = { bold: true, color: { argb: 'FFFFFFFF' } };
-      cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF1F3A5F' } };
-      cell.alignment = { horizontal: 'center', vertical: 'middle', wrapText: true };
-      cell.border = {
-        top: { style: 'thin' }, left: { style: 'thin' },
-        bottom: { style: 'thin' }, right: { style: 'thin' }
-      };
-    });
-
-    // Sắp xếp player theo đội rồi theo tên
+    // Sắp xếp player: đội A trước, rồi đội B, theo tên
     const sortedPlayers = [...room.players].sort((a, b) => {
       if (a.team !== b.team) return a.team.localeCompare(b.team);
       return a.name.localeCompare(b.name);
     });
 
+    // ── Build danh sách câu hỏi theo thứ tự từ history của player đầu tiên ──
+    // Mỗi player có thể có thứ tự câu khác nhau → dùng questionText làm key
+    // Thu thập tất cả câu hỏi duy nhất theo thứ tự xuất hiện
+    const allQMap = new Map(); // questionText → { correctAnswer, choices }
+    const allQOrder = [];      // mảng questionText theo thứ tự
+
     sortedPlayers.forEach(p => {
-      p.history.forEach((h, idx) => {
-        const isSkipped = h.skipped || (h.chosenAnswer === null || h.chosenAnswer === undefined);
-        // Tìm text đáp án đúng và câu đã chọn
-        const correctChoice = (h.choices || []).find(c => c.key === h.correctAnswer);
-        const correctText   = correctChoice ? `${h.correctAnswer}. ${correctChoice.text}` : (h.correctAnswer || '');
-        let chosenText = '(bỏ qua)';
-        if (!isSkipped && h.chosenAnswer) {
-          const chosenChoice = (h.choices || []).find(c => c.key === h.chosenAnswer);
-          chosenText = chosenChoice ? `${h.chosenAnswer}. ${chosenChoice.text}` : h.chosenAnswer;
+      p.history.forEach(h => {
+        if (!allQMap.has(h.questionText)) {
+          allQMap.set(h.questionText, {
+            correctAnswer: h.correctAnswer,
+            choices: h.choices
+          });
+          allQOrder.push(h.questionText);
         }
-
-        const row = sheetDetail.addRow({
-          name:     p.name,
-          email:    p.email || '',
-          team:     `Đội ${p.team}`,
-          qNum:     idx + 1,
-          question: h.questionText || '',
-          correct:  correctText,
-          chosen:   chosenText,
-          result:   isSkipped ? 'Bỏ qua' : (h.isCorrect ? 'Đúng' : 'Sai'),
-          points:   h.pointsDelta !== undefined ? h.pointsDelta : (h.isCorrect ? 10 : -3),
-          note:     isSkipped ? '⚠ Hết giờ / Bỏ qua' : ''
-        });
-
-        row.eachCell(cell => {
-          cell.border = {
-            top: { style: 'thin' }, left: { style: 'thin' },
-            bottom: { style: 'thin' }, right: { style: 'thin' }
-          };
-          cell.alignment = { vertical: 'middle', wrapText: true };
-        });
-
-        // Màu nền theo kết quả
-        let bgColor = 'FFFFFFFF';
-        if (isSkipped)      bgColor = 'FFFFF0CC';   // vàng nhạt – bỏ qua
-        else if (h.isCorrect) bgColor = 'FFE6FFEE'; // xanh nhạt – đúng
-        else                bgColor = 'FFFFE6E6';   // đỏ nhạt – sai
-
-        row.eachCell(cell => {
-          cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: bgColor } };
-        });
       });
     });
 
-    // Tạo buffer và gửi cho admin
+    // ── Dòng 1: Thông tin tổng quan ───────────────────────────────────────────
+    const infoRow = sheet.addRow([
+      `Phòng: ${roomId}`,
+      `Ngày: ${new Date().toLocaleString('vi-VN')}`,
+      `Tổng vòng: ${room.totalStages}`,
+      `Tổng câu hỏi: ${allQOrder.length}`,
+      `Số học sinh: ${sortedPlayers.length}`
+    ]);
+    infoRow.font = { italic: true, color: { argb: 'FF64748B' } };
+    sheet.mergeCells(1, 1, 1, 2);
+
+    // Dòng trống
+    sheet.addRow([]);
+
+    // ── Dòng 3: Header ────────────────────────────────────────────────────────
+    const headerValues = ['STT', 'Câu hỏi', 'Đáp án đúng'];
+    sortedPlayers.forEach(p => {
+      // Tên + email + đội trong 1 ô header
+      headerValues.push(`${p.name}
+(${p.email || ''})
+Đội ${p.team}`);
+    });
+    // Thêm cột tổng kết cuối
+    headerValues.push('Số người đúng');
+    headerValues.push('Tỉ lệ đúng (%)');
+
+    const headerRow = sheet.addRow(headerValues);
+    headerRow.height = 52;
+    headerRow.eachCell((cell, colNum) => {
+      cell.font = { bold: true, color: { argb: 'FFFFFFFF' }, size: 10 };
+      cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF1F3A5F' } };
+      cell.alignment = { horizontal: 'center', vertical: 'middle', wrapText: true };
+      cell.border = {
+        top: { style: 'thin', color: { argb: 'FF3A5F8F' } },
+        left: { style: 'thin', color: { argb: 'FF3A5F8F' } },
+        bottom: { style: 'thin', color: { argb: 'FF3A5F8F' } },
+        right: { style: 'thin', color: { argb: 'FF3A5F8F' } }
+      };
+    });
+
+    // ── Dòng 4+: Mỗi câu hỏi 1 hàng ─────────────────────────────────────────
+    allQOrder.forEach((qText, qIdx) => {
+      const qInfo = allQMap.get(qText);
+
+      // Tìm text đáp án đúng
+      const correctChoice = (qInfo.choices || []).find(c => c.key === qInfo.correctAnswer);
+      const correctText = correctChoice
+        ? `${qInfo.correctAnswer}. ${correctChoice.text}`
+        : (qInfo.correctAnswer || '');
+
+      const rowValues = [qIdx + 1, qText, correctText];
+
+      let correctCount = 0;
+      let answeredCount = 0;
+
+      sortedPlayers.forEach(p => {
+        // Tìm câu trả lời của player cho câu hỏi này
+        const entry = p.history.find(h => h.questionText === qText);
+        if (!entry) {
+          rowValues.push('—');
+        } else {
+          const isSkipped = entry.skipped || entry.chosenAnswer === null || entry.chosenAnswer === undefined;
+          if (isSkipped) {
+            rowValues.push('— (bỏ qua)');
+          } else {
+            const chosenChoice = (entry.choices || []).find(c => c.key === entry.chosenAnswer);
+            const chosenText = chosenChoice
+              ? `${entry.chosenAnswer}. ${chosenChoice.text}`
+              : (entry.chosenAnswer || '');
+            rowValues.push(entry.isCorrect ? `✓ ${chosenText}` : `✗ ${chosenText}`);
+            answeredCount++;
+            if (entry.isCorrect) correctCount++;
+          }
+        }
+      });
+
+      // Cột tổng kết
+      rowValues.push(correctCount);
+      const pct = answeredCount > 0 ? Math.round((correctCount / sortedPlayers.length) * 100) : 0;
+      rowValues.push(pct + '%');
+
+      const dataRow = sheet.addRow(rowValues);
+      dataRow.height = 38;
+
+      dataRow.eachCell((cell, colNum) => {
+        cell.alignment = { vertical: 'middle', wrapText: true };
+        cell.border = {
+          top: { style: 'thin', color: { argb: 'FFCBD5E1' } },
+          left: { style: 'thin', color: { argb: 'FFCBD5E1' } },
+          bottom: { style: 'thin', color: { argb: 'FFCBD5E1' } },
+          right: { style: 'thin', color: { argb: 'FFCBD5E1' } }
+        };
+
+        const val = cell.value ? String(cell.value) : '';
+
+        if (colNum === 1) {
+          // STT - căn giữa
+          cell.alignment = { horizontal: 'center', vertical: 'middle' };
+          cell.font = { bold: true, color: { argb: 'FF475569' } };
+          cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF8FAFC' } };
+        } else if (colNum === 2) {
+          // Câu hỏi
+          cell.font = { size: 10 };
+          cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: qIdx % 2 === 0 ? 'FFFFFEF' : 'FFF1F5F9' } };
+        } else if (colNum === 3) {
+          // Đáp án đúng - xanh lá nhạt
+          cell.font = { bold: true, color: { argb: 'FF166534' }, size: 10 };
+          cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFD1FAE5' } };
+          cell.alignment = { horizontal: 'center', vertical: 'middle', wrapText: true };
+        } else if (colNum >= 4 && colNum < 4 + sortedPlayers.length) {
+          // Ô trả lời của từng player
+          if (val.startsWith('✓')) {
+            cell.font = { color: { argb: 'FF166534' }, size: 10 };
+            cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFD1FAE5' } };
+          } else if (val.startsWith('✗')) {
+            cell.font = { color: { argb: 'FF991B1B' }, size: 10 };
+            cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFECACA' } };
+          } else {
+            // Bỏ qua
+            cell.font = { color: { argb: 'FF92400E' }, size: 10 };
+            cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFEF3C7' } };
+          }
+          cell.alignment = { horizontal: 'center', vertical: 'middle', wrapText: true };
+        } else {
+          // Cột tổng kết
+          cell.alignment = { horizontal: 'center', vertical: 'middle' };
+          cell.font = { bold: true, size: 10 };
+          cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFE0F2FE' } };
+        }
+      });
+    });
+
+    // ── Dòng tổng điểm mỗi player ─────────────────────────────────────────────
+    sheet.addRow([]); // dòng trống
+
+    const scoreValues = ['', 'TỔNG ĐIỂM CUỐI', ''];
+    sortedPlayers.forEach(p => {
+      scoreValues.push(p.score + 'đ');
+    });
+    scoreValues.push('', '');
+    const scoreRow = sheet.addRow(scoreValues);
+    scoreRow.height = 28;
+    scoreRow.eachCell((cell, colNum) => {
+      if (colNum >= 2) {
+        cell.font = { bold: true, size: 11, color: { argb: colNum === 2 ? 'FF1F3A5F' : 'FF0F172A' } };
+        cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFE2E8F0' } };
+        cell.alignment = { horizontal: 'center', vertical: 'middle' };
+        cell.border = {
+          top: { style: 'medium', color: { argb: 'FF94A3B8' } },
+          bottom: { style: 'medium', color: { argb: 'FF94A3B8' } },
+          left: { style: 'thin', color: { argb: 'FFCBD5E1' } },
+          right: { style: 'thin', color: { argb: 'FFCBD5E1' } }
+        };
+      }
+    });
+
+    // ── Độ rộng cột ───────────────────────────────────────────────────────────
+    sheet.getColumn(1).width = 6;   // STT
+    sheet.getColumn(2).width = 52;  // Câu hỏi
+    sheet.getColumn(3).width = 28;  // Đáp án đúng
+    for (let i = 0; i < sortedPlayers.length; i++) {
+      sheet.getColumn(4 + i).width = 22; // Mỗi player
+    }
+    sheet.getColumn(4 + sortedPlayers.length).width = 14;     // Số đúng
+    sheet.getColumn(4 + sortedPlayers.length + 1).width = 12; // Tỉ lệ
+
+    // Freeze header row
+    sheet.views = [{ state: 'frozen', xSplit: 3, ySplit: 3 }];
+
+    // ── Gửi cho admin ─────────────────────────────────────────────────────────
     const buffer = await workbook.xlsx.writeBuffer();
     const base64 = buffer.toString('base64');
     const timestamp = new Date().toISOString().replace(/[:.]/g, '-').substring(0, 19);
     const filename = `KetQua_PhysicsGame_${roomId}_${timestamp}.xlsx`;
 
-    io.to('admin_' + roomId).emit('gameResultExcel', {
-      filename,
-      data: base64
-    });
+    io.to('admin_' + roomId).emit('gameResultExcel', { filename, data: base64 });
 
   } catch (err) {
     console.error('[Excel] Lỗi khi tạo file Excel:', err);
   }
 }
-
 // ─── KHỞI ĐỘNG SERVER ─────────────────────────────────────────────────────────
 const PORT = process.env.PORT || 3000;
 server.listen(PORT, () => {
