@@ -2,6 +2,7 @@ const express = require('express');
 const http = require('http');
 const { Server } = require('socket.io');
 const path = require('path');
+const ExcelJS = require('exceljs');
 
 const app = express();
 const server = http.createServer(app);
@@ -15,8 +16,8 @@ app.use(express.static(path.join(__dirname, 'public')));
 
 // ─── CÀI ĐẶT TRẬN ĐẤU ────────────────────────────────────────────────────────
 const QUESTIONS_PER_STAGE = 5;
-const TIMER_NORMAL        = 60;
-const TIMER_FINAL         = 50;
+const TIMER_NORMAL        = 50;   // Giảm từ 60 → 50s
+const TIMER_FINAL         = 40;   // Giảm từ 50 → 40s
 const INTERMISSION_TIME   = 15;
 
 const questionsData = require('./data/questions.js');
@@ -163,7 +164,7 @@ io.on('connection', (socket) => {
   });
 
   // ── PLAYER: Tham gia phòng ────────────────────────────────────────────────────
-  socket.on('playerJoinRoom', ({ roomId, name, avatar }) => {
+  socket.on('playerJoinRoom', ({ roomId, name, avatar, email }) => {
     const rId = roomId.toUpperCase();
     const room = rooms[rId];
     if (!room) {
@@ -174,6 +175,12 @@ io.on('connection', (socket) => {
     }
     const playerName = (name || '').trim().substring(0, 20);
     if (!playerName) return socket.emit('joinError', 'Tên không hợp lệ!');
+
+    // Validate email
+    const playerEmail = (email || '').trim().toLowerCase();
+    if (!playerEmail || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(playerEmail)) {
+      return socket.emit('joinError', 'Email không hợp lệ! Vui lòng nhập email đúng định dạng.');
+    }
 
     const playerAvatar = (avatar || 'default_animal');
 
@@ -186,10 +193,12 @@ io.on('connection', (socket) => {
 
     const player = {
       id: socket.id, name: playerName, avatar: playerAvatar,
+      email: playerEmail,
       score: 0, team: assignedTeam,
       submittedCurrentStage: false, _stageAnswers: {}, _answeredCount: 0,
       totalTimeTaken: 0, lastDelta: 0, history: [],
-      _lastAnswerTime: 0
+      _lastAnswerTime: 0,
+      doneEarly: false   // flag: hoàn thành sớm trước khi hết giờ
     };
 
     room.players.push(player);
@@ -297,6 +306,11 @@ io.on('connection', (socket) => {
     const totalQs = Object.keys(player._stageAnswers).length;
     if (player._answeredCount >= totalQs) {
       player.submittedCurrentStage = true;
+      player.doneEarly = true;
+      // Gửi riêng cho player này để chuyển về màn hình giải lao sớm
+      socket.emit('playerDoneEarly', {
+        message: 'Bạn đã hoàn thành tất cả câu hỏi! Đang chờ vòng kết thúc...'
+      });
     }
 
     if (room.players.length > 0 && room.players.every(p => p.submittedCurrentStage)) {
@@ -339,7 +353,7 @@ io.on('connection', (socket) => {
   });
 
   // ── PLAYER: Kết nối lại sau khi mất mạng ──────────────────────────────────────
-  socket.on('playerRejoin', ({ roomId, name, avatar, team }) => {
+  socket.on('playerRejoin', ({ roomId, name, avatar, team, email }) => {
     const rId = (roomId || '').toUpperCase().trim();
     const room = rooms[rId];
     if (!room) return;
@@ -351,6 +365,8 @@ io.on('connection', (socket) => {
     if (player) {
       const oldId = player.id;
       player.id = socket.id;
+      // Cập nhật email nếu chưa có
+      if (email && !player.email) player.email = email.trim().toLowerCase();
       const teamArr = team === 'A' ? room.teamA : room.teamB;
       const tp = teamArr.find(p => p.id === oldId);
       if (tp) tp.id = socket.id;
@@ -511,6 +527,7 @@ function startStage(roomId, stageNum) {
     p._answeredCount        = 0;
     p._stageAnswers         = {};
     p._lastAnswerTime       = Date.now();
+    p.doneEarly             = false;
 
     const shuffledQs   = [...stageQs].sort(() => Math.random() - 0.5);
     const randomizedQs = shuffledQs.map((q, idx) => {
@@ -553,9 +570,43 @@ function startIntermission(roomId) {
   // FIX: Guard chống double-call (cả 'intermission' lẫn 'finished')
   if (!room || room.status === 'intermission' || room.status === 'finished') return;
   room.status = 'intermission';
-  room.players.forEach(p => (p.submittedCurrentStage = true));
+
+  const isFinalStage = (room.currentStage === room.finalStage);
+
+  // Xử lý các câu hỏi chưa trả lời: tính như câu sai và trừ điểm
+  room.players.forEach(p => {
+    if (!p.submittedCurrentStage) {
+      // Duyệt qua các câu chưa trả lời
+      Object.values(p._stageAnswers).forEach(qData => {
+        if (!qData.answered) {
+          qData.answered = true;
+          const penaltyPoints = isFinalStage ? -5 : -3;
+          p.score = Math.max(0, p.score + penaltyPoints);
+          p.lastDelta = penaltyPoints;
+
+          // Thêm vào history với flag skipped
+          p.history.push({
+            questionText:  qData.text,
+            choices:       qData.choices,
+            chosenAnswer:  null,
+            correctAnswer: qData.correctKey,
+            isCorrect:     false,
+            pointsDelta:   penaltyPoints,
+            skipped:       true
+          });
+        }
+      });
+      p.submittedCurrentStage = true;
+    }
+    p.doneEarly = false;  // reset cho vòng tiếp theo
+  });
 
   const { scoreA, scoreB } = getScores(room);
+
+  // Gửi cập nhật điểm realtime cho admin sau khi xử lý câu bỏ qua
+  io.to('admin_' + roomId).emit('realtimeScoreUpdate', {
+    scoreA, scoreB, players: getLeaderboard(room)
+  });
 
   if (room.currentStage >= room.totalStages) {
     endGameFinal(roomId);
@@ -582,7 +633,7 @@ function startIntermission(roomId) {
 }
 
 // ─── KẾT THÚC TRẬN ───────────────────────────────────────────────────────────
-function endGameFinal(roomId) {
+async function endGameFinal(roomId) {
   const room = rooms[roomId];
   if (!room) return;
 
@@ -600,6 +651,155 @@ function endGameFinal(roomId) {
     scoreA, scoreB,
     topPlayers: getLeaderboard(room).slice(0, 5)
   });
+
+  // ── TẠO FILE EXCEL KẾT QUẢ ────────────────────────────────────────────────
+  try {
+    const workbook = new ExcelJS.Workbook();
+    workbook.creator = 'PhysicsGame';
+    workbook.created = new Date();
+
+    // ── Sheet 1: Bảng xếp hạng tổng ──────────────────────────────────────────
+    const sheetRanking = workbook.addWorksheet('Bảng Xếp Hạng', {
+      pageSetup: { fitToPage: true, fitToWidth: 1 }
+    });
+    sheetRanking.columns = [
+      { header: 'Hạng',        key: 'rank',       width: 8  },
+      { header: 'Tên',         key: 'name',        width: 22 },
+      { header: 'Email',       key: 'email',       width: 30 },
+      { header: 'Đội',         key: 'team',        width: 8  },
+      { header: 'Điểm',        key: 'score',       width: 10 },
+      { header: 'Thời gian (s)',key: 'time',        width: 14 },
+    ];
+
+    // Style header
+    sheetRanking.getRow(1).eachCell(cell => {
+      cell.font = { bold: true, color: { argb: 'FFFFFFFF' } };
+      cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF1F3A5F' } };
+      cell.alignment = { horizontal: 'center', vertical: 'middle' };
+      cell.border = {
+        top: { style: 'thin' }, left: { style: 'thin' },
+        bottom: { style: 'thin' }, right: { style: 'thin' }
+      };
+    });
+
+    const lb = getLeaderboard(room);
+    lb.forEach((p, i) => {
+      const row = sheetRanking.addRow({
+        rank:  i + 1,
+        name:  p.name,
+        email: room.players.find(pl => pl.name === p.name)?.email || '',
+        team:  `Đội ${p.team}`,
+        score: p.score,
+        time:  parseFloat(p.totalTimeTaken.toFixed(1))
+      });
+      row.eachCell(cell => {
+        cell.border = {
+          top: { style: 'thin' }, left: { style: 'thin' },
+          bottom: { style: 'thin' }, right: { style: 'thin' }
+        };
+        cell.alignment = { vertical: 'middle' };
+      });
+      // Màu theo đội
+      const teamColor = p.team === 'A' ? 'FFFFE0E0' : 'FFE0F4FF';
+      row.eachCell(cell => {
+        cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: teamColor } };
+      });
+    });
+
+    // ── Sheet 2+: Chi tiết từng player ───────────────────────────────────────
+    // Tạo 1 sheet tổng hợp chi tiết
+    const sheetDetail = workbook.addWorksheet('Chi Tiết Câu Hỏi', {
+      pageSetup: { fitToPage: true, fitToWidth: 1 }
+    });
+    sheetDetail.columns = [
+      { header: 'Tên',              key: 'name',      width: 22 },
+      { header: 'Email',            key: 'email',     width: 30 },
+      { header: 'Đội',              key: 'team',      width: 8  },
+      { header: 'STT Câu',          key: 'qNum',      width: 10 },
+      { header: 'Nội dung câu hỏi', key: 'question',  width: 50 },
+      { header: 'Đáp án đúng',      key: 'correct',   width: 20 },
+      { header: 'Học sinh chọn',    key: 'chosen',    width: 20 },
+      { header: 'Kết quả',          key: 'result',    width: 14 },
+      { header: 'Điểm +/-',         key: 'points',    width: 10 },
+      { header: 'Ghi chú',          key: 'note',      width: 18 },
+    ];
+
+    // Style header
+    sheetDetail.getRow(1).eachCell(cell => {
+      cell.font = { bold: true, color: { argb: 'FFFFFFFF' } };
+      cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF1F3A5F' } };
+      cell.alignment = { horizontal: 'center', vertical: 'middle', wrapText: true };
+      cell.border = {
+        top: { style: 'thin' }, left: { style: 'thin' },
+        bottom: { style: 'thin' }, right: { style: 'thin' }
+      };
+    });
+
+    // Sắp xếp player theo đội rồi theo tên
+    const sortedPlayers = [...room.players].sort((a, b) => {
+      if (a.team !== b.team) return a.team.localeCompare(b.team);
+      return a.name.localeCompare(b.name);
+    });
+
+    sortedPlayers.forEach(p => {
+      p.history.forEach((h, idx) => {
+        const isSkipped = h.skipped || (h.chosenAnswer === null || h.chosenAnswer === undefined);
+        // Tìm text đáp án đúng và câu đã chọn
+        const correctChoice = (h.choices || []).find(c => c.key === h.correctAnswer);
+        const correctText   = correctChoice ? `${h.correctAnswer}. ${correctChoice.text}` : (h.correctAnswer || '');
+        let chosenText = '(bỏ qua)';
+        if (!isSkipped && h.chosenAnswer) {
+          const chosenChoice = (h.choices || []).find(c => c.key === h.chosenAnswer);
+          chosenText = chosenChoice ? `${h.chosenAnswer}. ${chosenChoice.text}` : h.chosenAnswer;
+        }
+
+        const row = sheetDetail.addRow({
+          name:     p.name,
+          email:    p.email || '',
+          team:     `Đội ${p.team}`,
+          qNum:     idx + 1,
+          question: h.questionText || '',
+          correct:  correctText,
+          chosen:   chosenText,
+          result:   isSkipped ? 'Bỏ qua' : (h.isCorrect ? 'Đúng' : 'Sai'),
+          points:   h.pointsDelta !== undefined ? h.pointsDelta : (h.isCorrect ? 10 : -3),
+          note:     isSkipped ? '⚠ Hết giờ / Bỏ qua' : ''
+        });
+
+        row.eachCell(cell => {
+          cell.border = {
+            top: { style: 'thin' }, left: { style: 'thin' },
+            bottom: { style: 'thin' }, right: { style: 'thin' }
+          };
+          cell.alignment = { vertical: 'middle', wrapText: true };
+        });
+
+        // Màu nền theo kết quả
+        let bgColor = 'FFFFFFFF';
+        if (isSkipped)      bgColor = 'FFFFF0CC';   // vàng nhạt – bỏ qua
+        else if (h.isCorrect) bgColor = 'FFE6FFEE'; // xanh nhạt – đúng
+        else                bgColor = 'FFFFE6E6';   // đỏ nhạt – sai
+
+        row.eachCell(cell => {
+          cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: bgColor } };
+        });
+      });
+    });
+
+    // Tạo buffer và gửi cho admin
+    const buffer = await workbook.xlsx.writeBuffer();
+    const base64 = buffer.toString('base64');
+    const timestamp = new Date().toISOString().replace(/[:.]/g, '-').substring(0, 19);
+    const filename = `KetQua_PhysicsGame_${roomId}_${timestamp}.xlsx`;
+
+    io.to('admin_' + roomId).emit('gameResultExcel', {
+      filename,
+      data: base64
+    });
+
+  } catch (err) {
+    console.error('[Excel] Lỗi khi tạo file Excel:', err);
+  }
 }
 
 // ─── KHỞI ĐỘNG SERVER ─────────────────────────────────────────────────────────
