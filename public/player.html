@@ -995,12 +995,39 @@ window.addEventListener('DOMContentLoaded', () => {
     if (roomParam) {
         isQRMode = true;
         urlRoomId = roomParam.toUpperCase().trim();
-        document.getElementById('step-1-room').style.display = 'none';
-        document.getElementById('step-2-profile').style.display = 'block';
-        document.getElementById('qr-mode-badge').classList.add('show');
-        document.getElementById('qr-room-display').textContent = urlRoomId;
-        document.getElementById('input-name').focus();
         currentRoomId = urlRoomId;
+
+        // Verify phòng tồn tại TRƯỚC khi hiện form đặt tên
+        // (xử lý trường hợp admin reset → QR cũ không còn hợp lệ)
+        const doVerify = () => {
+            if (!socket.connected) {
+                setTimeout(doVerify, 300);
+                return;
+            }
+            socket.emit('verifyRoom', urlRoomId, (response) => {
+                if (response && response.success) {
+                    currentRoomId = response.roomId || urlRoomId;
+                    document.getElementById('step-1-room').style.display = 'none';
+                    document.getElementById('step-2-profile').style.display = 'block';
+                    document.getElementById('qr-mode-badge').classList.add('show');
+                    document.getElementById('qr-room-display').textContent = currentRoomId;
+                    document.getElementById('input-name').focus();
+                } else {
+                    // Phòng không tồn tại (admin đã reset) → hiện form nhập mã
+                    isQRMode = false;
+                    currentRoomId = '';
+                    // Xóa ?room= khỏi URL để tránh loop
+                    const cleanUrl = new URL(window.location.href);
+                    cleanUrl.searchParams.delete('room');
+                    window.history.replaceState({}, '', cleanUrl.toString());
+                    document.getElementById('step-1-room').style.display = 'block';
+                    document.getElementById('step-2-profile').style.display = 'none';
+                    document.getElementById('input-room').focus();
+                    showError((response && response.message) || 'Phòng không còn tồn tại! Hãy nhập mã phòng mới.', 'verify-btn');
+                }
+            });
+        };
+        doVerify();
     } else {
         isQRMode = false;
         document.getElementById('step-1-room').style.display = 'block';
@@ -1219,10 +1246,10 @@ socket.on('scoreUpdate', (data) => {
         teamScores = data.teamScores;
         updateTeamScorePills();
         if (document.getElementById('game-screen').classList.contains('active')) {
-            if (Math.round(oldA) !== Math.round(teamScores.A))
-                animateScoreChange('live-score-a', Math.round(oldA), Math.round(teamScores.A), Math.round(teamScores.A - oldA));
-            if (Math.round(oldB) !== Math.round(teamScores.B))
-                animateScoreChange('live-score-b', Math.round(oldB), Math.round(teamScores.B), Math.round(teamScores.B - oldB));
+            if (Math.abs(oldA - teamScores.A) >= 0.1)
+                animateScoreChange('live-score-a', oldA, teamScores.A, parseFloat((teamScores.A - oldA).toFixed(1)));
+            if (Math.abs(oldB - teamScores.B) >= 0.1)
+                animateScoreChange('live-score-b', oldB, teamScores.B, parseFloat((teamScores.B - oldB).toFixed(1)));
         }
     }
     if (data.playerId === socket.id && data.personalScore !== undefined) {
@@ -1243,13 +1270,13 @@ socket.on('scoreUpdate', (data) => {
 });
 
 function updateTeamScorePills() {
-    document.getElementById('team-a-score-pill').textContent = Math.round(teamScores.A) + 'đ';
-    document.getElementById('team-b-score-pill').textContent = Math.round(teamScores.B) + 'đ';
+    document.getElementById('team-a-score-pill').textContent = teamScores.A.toFixed(1) + 'đ';
+    document.getElementById('team-b-score-pill').textContent = teamScores.B.toFixed(1) + 'đ';
 }
 
 function updateLiveScoreStrip() {
-    document.getElementById('live-score-a').textContent  = Math.round(teamScores.A);
-    document.getElementById('live-score-b').textContent  = Math.round(teamScores.B);
+    document.getElementById('live-score-a').textContent  = teamScores.A.toFixed(1);
+    document.getElementById('live-score-b').textContent  = teamScores.B.toFixed(1);
     document.getElementById('live-score-me').textContent = myScore;
 }
 
@@ -1904,8 +1931,8 @@ socket.on('gameOver', (d) => {
     document.getElementById('top-progress-container').style.display = 'none';
     isAnsweringState = false;
 
-    const scoreA = d && d.scoreA !== undefined ? Math.round(d.scoreA) : 0;
-    const scoreB = d && d.scoreB !== undefined ? Math.round(d.scoreB) : 0;
+    const scoreA = d && d.scoreA !== undefined ? parseFloat(d.scoreA).toFixed(1) : '0.0';
+    const scoreB = d && d.scoreB !== undefined ? parseFloat(d.scoreB).toFixed(1) : '0.0';
 
     let winText, winColor;
     if (!d || d.winningTeam === 'Hòa') {
