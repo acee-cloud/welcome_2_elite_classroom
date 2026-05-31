@@ -114,8 +114,8 @@ function createRoomState(roomId, adminSocketId) {
 function getScores(room) {
   const lenA = room.teamA.length || 1;
   const lenB = room.teamB.length || 1;
-  const scoreA = Math.round(room.teamA.reduce((s, p) => s + p.score, 0) / lenA);
-  const scoreB = Math.round(room.teamB.reduce((s, p) => s + p.score, 0) / lenB);
+  const scoreA = parseFloat((room.teamA.reduce((s, p) => s + p.score, 0) / lenA).toFixed(1));
+  const scoreB = parseFloat((room.teamB.reduce((s, p) => s + p.score, 0) / lenB).toFixed(1));
   return { scoreA, scoreB };
 }
 
@@ -432,6 +432,22 @@ io.on('connection', (socket) => {
 
   // ── Ngắt kết nối ─────────────────────────────────────────────────────────────
   socket.on('disconnect', () => {
+    // ── Xử lý khi ADMIN ngắt kết nối (reload trang / đóng tab) ─────────────
+    const adminRoomId = socket.data.adminRoomId;
+    if (adminRoomId && rooms[adminRoomId] && rooms[adminRoomId].adminSocketId === socket.id) {
+      const adminRoom = rooms[adminRoomId];
+      clearInterval(adminRoom.timer);
+      // Thông báo tất cả player bị kick vì admin rời phòng
+      io.to('room_' + adminRoomId).emit('roomResetByAdmin', { newRoomId: null });
+      // Kick tất cả socket khỏi room
+      io.in('room_' + adminRoomId).socketsLeave('room_' + adminRoomId);
+      io.in('admin_' + adminRoomId).socketsLeave('admin_' + adminRoomId);
+      // Xóa phòng khỏi bộ nhớ
+      delete rooms[adminRoomId];
+      return; // Không cần xử lý player bên dưới vì phòng đã bị xóa
+    }
+
+    // ── Xử lý khi PLAYER ngắt kết nối ───────────────────────────────────────
     const roomId = socket.data.roomId;
     if (!roomId || !rooms[roomId]) return;
 
