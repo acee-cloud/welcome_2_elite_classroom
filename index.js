@@ -40,7 +40,7 @@ function countAllQuestions() {
 }
 
 // ─── CHỌN CÂU HỎI CÂN BẰNG THEO CHƯƠNG ─────────────────────────────────────
-function pickRoundQuestions() {
+function pickRoundQuestions(totalRounds = 5) {
   const pools = CHAPTER_KEYS
     .map(key => {
       const chapter = questionsData[key];
@@ -70,7 +70,7 @@ function pickRoundQuestions() {
   const extra = QUESTIONS_PER_STAGE % numChapters;
 
   const rounds = [];
-  for (let r = 0; r < TOTAL_STAGES; r++) {
+  for (let r = 0; r < totalRounds; r++) {
     const roundQs = [];
     const chapterOrder = [...Array(numChapters).keys()].sort(() => Math.random() - 0.5);
 
@@ -104,6 +104,8 @@ function createRoomState(roomId, adminSocketId) {
     adminSocketId,
     status: 'lobby',
     currentStage: 0,
+    totalStages: 5,  // Sẽ được cập nhật khi Admin bấm Bắt đầu
+    finalStage: 5,   // Sẽ được cập nhật khi Admin bấm Bắt đầu
     players: [],
     teamA: [],
     teamB: [],
@@ -112,8 +114,7 @@ function createRoomState(roomId, adminSocketId) {
     bonusTeamB: 0,
     timer: null,
     stageStartTime: 0,
-    fastPhase: { questionText: '', active: false, submissions: [] },
-    roundQuestions: pickRoundQuestions()
+    roundQuestions: [] // Chờ Admin nhập số vòng rồi mới bốc câu hỏi
   };
 }
 
@@ -223,18 +224,27 @@ io.on('connection', (socket) => {
   });
 
   // ── ADMIN: Bắt đầu trận ────────────────────────────────────────────────────
-  socket.on('adminStartGame', (roomId) => {
+  socket.on('adminStartGame', (data) => {
+    const roomId = data.roomId;
+    const totalRounds = data.totalRounds || 5; // Lấy số vòng từ Admin, mặc định là 5 nếu lỗi
+    
     const room = rooms[roomId];
     if (!room || room.players.length === 0) return;
 
+    // Cập nhật số vòng chơi vào trạng thái phòng
     room.status = 'playing';
+    room.totalStages = totalRounds;
+    room.finalStage = totalRounds; 
+    
+    // Bây giờ mới bốc câu hỏi theo đúng số vòng Admin yêu cầu
+    room.roundQuestions = pickRoundQuestions(totalRounds);
 
-    io.to('admin_' + roomId).emit('gameStarted', { totalStages: TOTAL_STAGES });
-    io.to('room_' + roomId).emit('gameStarted', { totalStages: TOTAL_STAGES });
+    io.to('admin_' + roomId).emit('gameStarted', { totalStages: room.totalStages });
+    io.to('room_' + roomId).emit('gameStarted', { totalStages: room.totalStages });
 
     startStage(roomId, 1);
   });
-
+  
   // ── PLAYER: Nộp câu trả lời từng câu ───────────────────────────────────────
   socket.on('submitSingleAnswer', ({ roomId, questionId, answer }) => {
     const room = rooms[roomId];
@@ -250,7 +260,7 @@ io.on('connection', (socket) => {
 
     const isCorrect = (answer === currentQData.correctKey);
 
-    const isFinalStage = (room.currentStage === FINAL_STAGE);
+    const isFinalStage = (room.currentStage === room.finalStage);
     const points = isCorrect ? (isFinalStage ? 20 : 10) : -3;
 
     player.score = Math.max(0, player.score + points);
@@ -417,14 +427,14 @@ function startStage(roomId, stageNum) {
   room.currentStage = stageNum;
   room.stageStartTime = Date.now();
 
-  const isFinalStage = (stageNum === FINAL_STAGE);
+  const isFinalStage = (stageNum === room.finalStage);
   const timeLimit    = isFinalStage ? TIMER_FINAL : TIMER_NORMAL;
   const letters      = ['A', 'B', 'C', 'D'];
 
   const stageQs = room.roundQuestions[stageNum - 1];
 
   io.to('admin_' + roomId).emit('stageUpdate', {
-    stageNum, totalStages: TOTAL_STAGES,
+    stageNum, totalStages: room.totalStages,
     isDouble: isFinalStage,
     questionCount: QUESTIONS_PER_STAGE,
     timeLimit
@@ -452,7 +462,7 @@ function startStage(roomId, stageNum) {
 
     p.lastDelta = 0;
     io.to(p.id).emit('startStage', {
-      stageNum, totalStages: TOTAL_STAGES,
+      stageNum, totalStages: room.totalStages,
       isDouble: isFinalStage,
       questions: randomizedQs,
       timeLimit
@@ -481,7 +491,7 @@ function startIntermission(roomId) {
   const { scoreA, scoreB, scoreC } = getScores(room);
 
   // ✅ Nếu vừa xong vòng cuối → kết thúc game ngay, KHÔNG giải lao
-  if (room.currentStage >= TOTAL_STAGES) {
+  if (room.currentStage >= room.totalStages) {
     endGameFinal(roomId);
     return;
   }
@@ -490,7 +500,7 @@ function startIntermission(roomId) {
     scoreA, scoreB, scoreC,
     leaderboard: getLeaderboard(room),
     currentStage: room.currentStage,
-    totalStages: TOTAL_STAGES
+    totalStages: room.totalStages
   });
 
   let timeLeft = INTERMISSION_TIME;
