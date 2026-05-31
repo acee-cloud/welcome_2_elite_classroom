@@ -673,7 +673,7 @@
                         <div class="rules-item-icon">⏱</div>
                         <div>
                             <div class="rules-item-label">Thời gian / vòng</div>
-                            <div class="rules-item-val">60 giây &nbsp;·&nbsp; Vòng cuối: 50 giây</div>
+                            <div class="rules-item-val">50 giây &nbsp;·&nbsp; Vòng cuối: 40 giây</div>
                         </div>
                     </div>
                     <div class="rules-item">
@@ -857,6 +857,16 @@
     </div>
 
     <div id="reset-zone" style="margin-top:24px; text-align:center; display:none;">
+        <div id="excel-download-zone" style="margin-bottom:16px; display:none;">
+            <div style="background:rgba(0,255,136,.08); border:1px solid rgba(0,255,136,.3); border-radius:10px; padding:16px 20px; margin-bottom:12px;">
+                <p style="color:#00ff88; font-family:'Orbitron'; font-size:.8rem; letter-spacing:1.5px; margin-bottom:10px;">📊 FILE KẾT QUẢ ĐÃ ĐƯỢC TẠO</p>
+                <p style="color:#94a3b8; font-size:.78rem; margin-bottom:12px;">Tải file Excel để phân tích kết quả học sinh chi tiết.</p>
+                <button id="btn-download-excel" onclick="downloadExcel()"
+                    style="background:linear-gradient(135deg,#00ff88,#00cc6a); color:#000; font-family:'Orbitron'; letter-spacing:1px; padding:12px 24px; border-radius:8px; font-size:.85rem;">
+                    📥 TẢI FILE EXCEL KẾT QUẢ
+                </button>
+            </div>
+        </div>
         <button onclick="resetGame()" style="background:#ff4a4a; color:#fff; font-family:'Orbitron';">
             RESET PHÒNG &amp; BẮT ĐẦU LẠI
         </button>
@@ -1235,9 +1245,45 @@ function resetGame() {
 socket.on('roomResetByAdmin', (data) => {
     // Đóng winner overlay nếu đang mở
     document.getElementById('winner-overlay').classList.remove('show');
+    // Reset excel data
+    _excelData = null;
+    document.getElementById('excel-download-zone').style.display = 'none';
     // roomCreated sẽ được emit ngay sau từ server với newRoomId
     // UI sẽ tự cập nhật trong handler roomCreated bên trên
 });
+
+
+// ── EXCEL DOWNLOAD ────────────────────────────────────────────────────────────
+let _excelData = null;
+let _excelFilename = 'KetQua_PhysicsGame.xlsx';
+
+socket.on('gameResultExcel', (data) => {
+    _excelData     = data.data;
+    _excelFilename = data.filename || _excelFilename;
+    document.getElementById('excel-download-zone').style.display = 'block';
+});
+
+function downloadExcel() {
+    if (!_excelData) return;
+    try {
+        const binary = atob(_excelData);
+        const bytes  = new Uint8Array(binary.length);
+        for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+        const blob = new Blob([bytes], {
+            type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+        });
+        const url = URL.createObjectURL(blob);
+        const a   = document.createElement('a');
+        a.href     = url;
+        a.download = _excelFilename;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+    } catch (err) {
+        alert('Lỗi khi tải file: ' + err.message);
+    }
+}
 
 // ── UTILS ─────────────────────────────────────────────────────────────────────
 function escapeHtml(str) {
