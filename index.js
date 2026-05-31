@@ -12,16 +12,12 @@ app.get('/',       (req, res) => { res.sendFile(path.join(__dirname, 'public', '
 app.get('/admin',  (req, res) => { res.sendFile(path.join(__dirname, 'public', 'admin.html')); });
 app.get('/player', (req, res) => { res.sendFile(path.join(__dirname, 'public', 'player.html')); });
 app.use(express.static(path.join(__dirname, 'public')));
-// ─────────────────────────────────────────────────────────────────────────────
 
-// ─── CÀI ĐẶT TRẬN ĐẤU ─────────────────────────────────────────────────────
-const TOTAL_STAGES        = 5;
+// ─── CÀI ĐẶT TRẬN ĐẤU ────────────────────────────────────────────────────────
 const QUESTIONS_PER_STAGE = 5;
-const FINAL_STAGE         = 5;
 const TIMER_NORMAL        = 60;
 const TIMER_FINAL         = 50;
 const INTERMISSION_TIME   = 15;
-// ──────────────────────────────────────────────────────────────────────────────
 
 const questionsData = require('./data/questions.js');
 const CHAPTER_KEYS = ['chapter1', 'chapter2', 'chapter3', 'chapter4'];
@@ -36,7 +32,7 @@ function countAllQuestions() {
   return total;
 }
 
-// ─── CHỌN CÂU HỎI CÂN BẰNG THEO CHƯƠNG ─────────────────────────────────────
+// ─── CHỌN CÂU HỎI CÂN BẰNG THEO CHƯƠNG ──────────────────────────────────────
 function pickRoundQuestions(totalRounds = 5) {
   const pools = CHAPTER_KEYS
     .map(key => {
@@ -84,11 +80,9 @@ function pickRoundQuestions(totalRounds = 5) {
 
   return rounds;
 }
-// ─────────────────────────────────────────────────────────────────────────────
 
 const rooms = {};
 
-// FIX 1: Kiểm tra trùng mã phòng trước khi trả về
 function generateRoomId() {
   const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
   let id;
@@ -110,31 +104,20 @@ function createRoomState(roomId, adminSocketId) {
     players: [],
     teamA: [],
     teamB: [],
-    teamC: null,
-    bonusTeamA: 0,
-    bonusTeamB: 0,
     timer: null,
     stageStartTime: 0,
     roundQuestions: []
   };
 }
 
+// ─── ĐIỂM TRUNG BÌNH MỖI ĐỘI ─────────────────────────────────────────────────
+// Điểm đội = trung bình điểm các thành viên
 function getScores(room) {
-  const scoreA = room.teamA.reduce((s, p) => s + p.score, 0) + room.bonusTeamA;
-  const scoreB = room.teamB.reduce((s, p) => s + p.score, 0) + room.bonusTeamB;
-  const scoreC = room.teamC ? room.teamC.score : 0;
-  return { scoreA, scoreB, scoreC };
-}
-
-// FIX 2: Hàm tính điểm trung bình mỗi đội (dùng cho giải lao)
-function getTeamAverages(room) {
   const lenA = room.teamA.length || 1;
   const lenB = room.teamB.length || 1;
-  const { scoreA, scoreB } = getScores(room);
-  return {
-    avgA: Math.round(scoreA / lenA),
-    avgB: Math.round(scoreB / lenB)
-  };
+  const scoreA = Math.round(room.teamA.reduce((s, p) => s + p.score, 0) / lenA);
+  const scoreB = Math.round(room.teamB.reduce((s, p) => s + p.score, 0) / lenB);
+  return { scoreA, scoreB };
 }
 
 function getLeaderboard(room) {
@@ -156,7 +139,7 @@ function getLeaderboard(room) {
 
 io.on('connection', (socket) => {
 
-  // ── PLAYER: Xác minh phòng tồn tại ────────────────────────────────────────
+  // ── PLAYER: Xác minh phòng tồn tại ──────────────────────────────────────────
   socket.on('verifyRoom', (roomId, callback) => {
     const rId = (roomId || '').toUpperCase().trim();
     const room = rooms[rId];
@@ -170,7 +153,7 @@ io.on('connection', (socket) => {
     callback({ success: true, roomId: rId });
   });
 
-  // ── ADMIN: Tạo phòng mới ────────────────────────────────────────────────────
+  // ── ADMIN: Tạo phòng mới ──────────────────────────────────────────────────────
   socket.on('adminCreateRoom', () => {
     const roomId = generateRoomId();
     rooms[roomId] = createRoomState(roomId, socket.id);
@@ -179,7 +162,7 @@ io.on('connection', (socket) => {
     socket.emit('roomCreated', roomId);
   });
 
-  // ── PLAYER: Tham gia phòng ──────────────────────────────────────────────────
+  // ── PLAYER: Tham gia phòng ────────────────────────────────────────────────────
   socket.on('playerJoinRoom', ({ roomId, name, avatar }) => {
     const rId = roomId.toUpperCase();
     const room = rooms[rId];
@@ -206,7 +189,7 @@ io.on('connection', (socket) => {
       score: 0, team: assignedTeam,
       submittedCurrentStage: false, _stageAnswers: {}, _answeredCount: 0,
       totalTimeTaken: 0, lastDelta: 0, history: [],
-      _lastAnswerTime: 0  // FIX 4: theo dõi thời gian từng câu
+      _lastAnswerTime: 0
     };
 
     room.players.push(player);
@@ -232,27 +215,27 @@ io.on('connection', (socket) => {
     });
   });
 
-  // ── ADMIN: Bắt đầu trận ────────────────────────────────────────────────────
+  // ── ADMIN: Bắt đầu trận (với số vòng tuỳ chọn) ────────────────────────────────
   socket.on('adminStartGame', (data) => {
     const roomId = data.roomId;
-    const totalRounds = data.totalRounds || 5;
+    const totalRounds = Math.max(1, Math.min(50, parseInt(data.totalRounds) || 5));
 
     const room = rooms[roomId];
     if (!room || room.players.length === 0) return;
 
     room.status = 'playing';
     room.totalStages = totalRounds;
-    room.finalStage = totalRounds;
+    room.finalStage  = totalRounds;  // Vòng cuối = vòng cuối cùng admin chọn
 
     room.roundQuestions = pickRoundQuestions(totalRounds);
 
     io.to('admin_' + roomId).emit('gameStarted', { totalStages: room.totalStages });
-    io.to('room_' + roomId).emit('gameStarted', { totalStages: room.totalStages });
+    io.to('room_'  + roomId).emit('gameStarted', { totalStages: room.totalStages });
 
     startStage(roomId, 1);
   });
 
-  // ── PLAYER: Nộp câu trả lời từng câu ───────────────────────────────────────
+  // ── PLAYER: Nộp câu trả lời từng câu ──────────────────────────────────────────
   socket.on('submitSingleAnswer', ({ roomId, questionId, answer }) => {
     const room = rooms[roomId];
     if (!room || room.status !== 'playing') return;
@@ -260,31 +243,32 @@ io.on('connection', (socket) => {
     if (!player || player.submittedCurrentStage) return;
 
     const currentQData = player._stageAnswers[questionId];
-    // FIX 3: Chặn nộp bài 2 lần cùng một câu
     if (!currentQData || currentQData.answered) return;
     currentQData.answered = true;
 
-    // FIX 4: Tính thời gian từ câu trước, không phải từ đầu vòng
     const now = Date.now();
     const sinceLastAnswer = (now - (player._lastAnswerTime || room.stageStartTime)) / 1000;
     player._lastAnswerTime = now;
     player.totalTimeTaken += parseFloat(sinceLastAnswer.toFixed(2));
 
-    const isCorrect = (answer === currentQData.correctKey);
-
+    const isCorrect    = (answer === currentQData.correctKey);
     const isFinalStage = (room.currentStage === room.finalStage);
-    const points = isCorrect ? (isFinalStage ? 20 : 10) : -3;
+
+    // Vòng cuối: đúng +20đ, sai -5đ  |  Vòng thường: đúng +10đ, sai -3đ
+    const points = isCorrect
+      ? (isFinalStage ? 20 : 10)
+      : (isFinalStage ? -5 : -3);
 
     player.score = Math.max(0, player.score + points);
     player.lastDelta = points;
 
     player.history.push({
-      questionText: currentQData.text,
-      choices: currentQData.choices,
-      chosenAnswer: answer,
+      questionText:  currentQData.text,
+      choices:       currentQData.choices,
+      chosenAnswer:  answer,
       correctAnswer: currentQData.correctKey,
       isCorrect,
-      pointsDelta: points
+      pointsDelta:   points
     });
 
     player._answeredCount++;
@@ -292,22 +276,23 @@ io.on('connection', (socket) => {
     socket.emit('singleAnswerResult', {
       questionId,
       isCorrect,
-      pointsDelta: points,
-      chosenAnswer: answer,
+      pointsDelta:   points,
+      chosenAnswer:  answer,
       correctAnswer: currentQData.correctKey,
-      currentScore: player.score
+      currentScore:  player.score
     });
 
-    const { scoreA, scoreB, scoreC } = getScores(room);
+    const { scoreA, scoreB } = getScores(room);
+
     io.to('admin_' + roomId).emit('realtimeScoreUpdate', {
-      scoreA, scoreB, scoreC, players: getLeaderboard(room)
+      scoreA, scoreB, players: getLeaderboard(room)
     });
 
     io.to('room_' + roomId).emit('scoreUpdate', {
-      playerId: socket.id,
+      playerId:      socket.id,
       personalScore: player.score,
-      delta: points,
-      teamScores: { A: scoreA, B: scoreB }
+      delta:         points,
+      teamScores:    { A: scoreA, B: scoreB }
     });
 
     const totalQs = Object.keys(player._stageAnswers).length;
@@ -321,17 +306,13 @@ io.on('connection', (socket) => {
     }
   });
 
-  // FIX 5: Thêm handler playerMove để broadcast vị trí token sang người chơi khác
+  // ── PLAYER MOVE ───────────────────────────────────────────────────────────────
   socket.on('playerMove', ({ roomId, x, y }) => {
     if (!roomId || !rooms[roomId]) return;
-    // Chỉ gửi cho những người KHÁC trong phòng (không gửi lại cho mình)
-    socket.to('room_' + roomId).emit('playerMoved', {
-      playerId: socket.id,
-      x, y
-    });
+    socket.to('room_' + roomId).emit('playerMoved', { playerId: socket.id, x, y });
   });
 
-  // ── PHÒNG CHAT (LOBBY) ──────────────────────────────────────────────────────
+  // ── CHAT SẢNH CHỜ ─────────────────────────────────────────────────────────────
   socket.on('sendLobbyMessage', ({ roomId, msg }) => {
     const room = rooms[roomId];
     if (!room || room.status !== 'lobby' || !msg?.trim()) return;
@@ -344,13 +325,12 @@ io.on('connection', (socket) => {
     });
   });
 
-  // ── PHÒNG CHAT (GIẢI LAO) ─────────────────────────────────────────────────
+  // ── CHAT GIẢI LAO ─────────────────────────────────────────────────────────────
   socket.on('sendGlobalMessage', ({ roomId, msg }) => {
     const room = rooms[roomId];
     if (!room || (room.status !== 'lobby' && room.status !== 'intermission') || !msg?.trim()) return;
     const player = room.players.find(p => p.id === socket.id);
     if (!player) return;
-
     io.to('room_' + roomId).emit('receiveGlobalMessage', {
       name: player.name,
       msg: msg.trim().substring(0, 150),
@@ -358,7 +338,7 @@ io.on('connection', (socket) => {
     });
   });
 
-  // ── PLAYER: Kết nối lại sau khi mất mạng ───────────────────────────────────
+  // ── PLAYER: Kết nối lại sau khi mất mạng ──────────────────────────────────────
   socket.on('playerRejoin', ({ roomId, name, avatar, team }) => {
     const rId = (roomId || '').toUpperCase().trim();
     const room = rooms[rId];
@@ -393,7 +373,7 @@ io.on('connection', (socket) => {
     }
   });
 
-  // ── ADMIN: Reset phòng ─────────────────────────────────────────────────────
+  // ── ADMIN: Reset phòng ────────────────────────────────────────────────────────
   socket.on('adminResetGame', (roomId) => {
     const room = rooms[roomId];
     if (!room) return;
@@ -402,7 +382,7 @@ io.on('connection', (socket) => {
     io.to('room_' + roomId).emit('roomResetByAdmin');
   });
 
-  // ── Xử lý ngắt kết nối ─────────────────────────────────────────────────────
+  // ── Ngắt kết nối ─────────────────────────────────────────────────────────────
   socket.on('disconnect', () => {
     const roomId = socket.data.roomId;
     if (!roomId || !rooms[roomId]) return;
@@ -411,7 +391,6 @@ io.on('connection', (socket) => {
     room.players = room.players.filter(p => p.id !== socket.id);
     room.teamA   = room.teamA.filter(p => p.id !== socket.id);
     room.teamB   = room.teamB.filter(p => p.id !== socket.id);
-    if (room.teamC?.id === socket.id) room.teamC = null;
 
     io.to('room_' + roomId).emit('updatePlayerList', room.players.map(p => ({
       id: p.id, name: p.name, avatar: p.avatar, team: p.team
@@ -436,27 +415,25 @@ io.on('connection', (socket) => {
   });
 });
 
-// ─── BẮT ĐẦU VÒNG ──────────────────────────────────────────────────────────
+// ─── BẮT ĐẦU VÒNG ─────────────────────────────────────────────────────────────
 function startStage(roomId, stageNum) {
   const room = rooms[roomId];
   if (!room) return;
 
-  // FIX: Kiểm tra câu hỏi vòng này có tồn tại không
   if (!room.roundQuestions[stageNum - 1]) {
     console.error(`[ERROR] Vòng ${stageNum} không có câu hỏi! Kết thúc game sớm.`);
     endGameFinal(roomId);
     return;
   }
 
-  room.status       = 'playing';
-  room.currentStage = stageNum;
+  room.status         = 'playing';
+  room.currentStage   = stageNum;
   room.stageStartTime = Date.now();
 
   const isFinalStage = (stageNum === room.finalStage);
   const timeLimit    = isFinalStage ? TIMER_FINAL : TIMER_NORMAL;
   const letters      = ['A', 'B', 'C', 'D'];
-
-  const stageQs = room.roundQuestions[stageNum - 1];
+  const stageQs      = room.roundQuestions[stageNum - 1];
 
   io.to('admin_' + roomId).emit('stageUpdate', {
     stageNum, totalStages: room.totalStages,
@@ -469,18 +446,17 @@ function startStage(roomId, stageNum) {
     p.submittedCurrentStage = false;
     p._answeredCount        = 0;
     p._stageAnswers         = {};
-    p._lastAnswerTime       = Date.now(); // FIX 4: reset mốc thời gian câu đầu tiên
+    p._lastAnswerTime       = Date.now();
 
-    const shuffledQs = [...stageQs].sort(() => Math.random() - 0.5);
-
+    const shuffledQs   = [...stageQs].sort(() => Math.random() - 0.5);
     const randomizedQs = shuffledQs.map((q, idx) => {
       const qId = `s${stageNum}_q${idx}`;
 
       const optionsArr = Object.entries(q.options).sort(() => Math.random() - 0.5);
       const choices    = optionsArr.map(([, text], i) => ({ key: letters[i], text }));
 
-      const correctText  = q.options[q.answer];
-      const correctKey   = choices.find(c => c.text === correctText)?.key || letters[0];
+      const correctText = q.options[q.answer];
+      const correctKey  = choices.find(c => c.text === correctText)?.key || letters[0];
 
       p._stageAnswers[qId] = { id: qId, text: q.question, choices, correctKey, answered: false };
       return { id: qId, text: q.question, choices };
@@ -507,16 +483,14 @@ function startStage(roomId, stageNum) {
   }, 1000);
 }
 
-// ─── GIẢI LAO / KẾT THÚC VÒNG ───────────────────────────────────────────────
+// ─── GIẢI LAO / KẾT THÚC VÒNG ────────────────────────────────────────────────
 function startIntermission(roomId) {
   const room = rooms[roomId];
   if (!room || room.status === 'intermission') return;
   room.status = 'intermission';
   room.players.forEach(p => (p.submittedCurrentStage = true));
 
-  const { scoreA, scoreB, scoreC } = getScores(room);
-  // FIX 2: Tính điểm trung bình để hiển thị đúng ở client
-  const { avgA, avgB } = getTeamAverages(room);
+  const { scoreA, scoreB } = getScores(room); // Đã là điểm trung bình
 
   if (room.currentStage >= room.totalStages) {
     endGameFinal(roomId);
@@ -524,11 +498,10 @@ function startIntermission(roomId) {
   }
 
   io.to('room_' + roomId).emit('intermissionStart', {
-    scoreA, scoreB, scoreC,
-    avgA, avgB,              // FIX 2: gửi kèm điểm trung bình
+    scoreA, scoreB,          // Điểm trung bình mỗi đội
     leaderboard: getLeaderboard(room),
     currentStage: room.currentStage,
-    totalStages: room.totalStages
+    totalStages:  room.totalStages
   });
 
   let timeLeft = INTERMISSION_TIME;
@@ -543,12 +516,12 @@ function startIntermission(roomId) {
   }, 1000);
 }
 
-// ─── KẾT THÚC TRẬN ─────────────────────────────────────────────────────────
+// ─── KẾT THÚC TRẬN ───────────────────────────────────────────────────────────
 function endGameFinal(roomId) {
   const room = rooms[roomId];
   if (!room) return;
-  const { scoreA, scoreB } = getScores(room);
 
+  const { scoreA, scoreB } = getScores(room);
   room.status = 'finished';
 
   room.players.forEach(p => {
@@ -562,9 +535,9 @@ function endGameFinal(roomId) {
   });
 }
 
-// ─── KHỞI ĐỘNG SERVER ──────────────────────────────────────────────────────
+// ─── KHỞI ĐỘNG SERVER ─────────────────────────────────────────────────────────
 const PORT = process.env.PORT || 3000;
 server.listen(PORT, () => {
-  console.log(`✅ Server đang chạy tại port ${PORT}`);
-  console.log(`📚 Kho câu hỏi: ${countAllQuestions()} câu (${CHAPTER_KEYS.length} chương) | Mỗi trận dùng ${TOTAL_STAGES * QUESTIONS_PER_STAGE} câu`);
+  console.log(`✅  Server đang chạy tại port ${PORT}`);
+  console.log(`📚 Kho câu hỏi: ${countAllQuestions()} câu (${CHAPTER_KEYS.length} chương)`);
 });
