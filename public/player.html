@@ -1793,7 +1793,7 @@ socket.on('singleAnswerResult', (data) => {
     }
 
     const oldScore = myScore;
-    myScore = data.currentScore !== undefined ? data.currentScore : Math.max(0, myScore + delta);
+    myScore = data.currentScore !== undefined ? data.currentScore : myScore + delta;
     const newTotal = myScore;
 
     const sign = delta >= 0 ? '+' : '';
