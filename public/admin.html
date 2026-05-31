@@ -43,6 +43,197 @@
         button:hover { opacity: .88; transform: scale(1.02); }
 
         /* ─── LOBBY ─── */
+
+        /* ─── RULES ─── */
+        .rules-wrapper {
+            margin-top: 22px;
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            overflow: hidden;
+            text-align: left;
+        }
+        .rules-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 11px 16px;
+            background: rgba(0,255,136,.06);
+            cursor: pointer;
+            user-select: none;
+            font-family: 'Orbitron', sans-serif;
+            font-size: .7rem;
+            font-weight: 700;
+            letter-spacing: 1.5px;
+            color: var(--accent);
+            border-bottom: 1px solid var(--border);
+            transition: background .15s;
+        }
+        .rules-header:hover { background: rgba(0,255,136,.10); }
+        .rules-header-left { display: flex; align-items: center; gap: 8px; }
+        .rules-icon { font-size: 1rem; }
+        .rules-chevron {
+            font-size: 1rem;
+            transition: transform .25s;
+            display: inline-block;
+        }
+        .rules-chevron.open { transform: rotate(180deg); }
+
+        .rules-body {
+            padding: 16px;
+            display: none;
+            background: rgba(255,255,255,.015);
+        }
+        .rules-body.open { display: block; }
+
+        .rules-section { margin-bottom: 4px; }
+        .rules-section-title {
+            font-size: .65rem;
+            font-family: 'Orbitron', sans-serif;
+            font-weight: 700;
+            letter-spacing: 1.5px;
+            color: rgba(148,163,184,.6);
+            margin-bottom: 10px;
+        }
+        .rules-divider {
+            height: 1px;
+            background: var(--border);
+            margin: 14px 0;
+        }
+
+        .rules-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+        }
+        .rules-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 8px;
+            background: rgba(255,255,255,.03);
+            border: 1px solid var(--border);
+            border-radius: 7px;
+            padding: 8px 10px;
+        }
+        .rules-item-icon { font-size: 1.1rem; margin-top: 1px; flex-shrink: 0; }
+        .rules-item-label {
+            font-size: .62rem;
+            color: rgba(148,163,184,.55);
+            margin-bottom: 2px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: .5px;
+        }
+        .rules-item-val {
+            font-size: .78rem;
+            color: #e2e8f0;
+            font-weight: 600;
+        }
+
+        .rules-score-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr 1fr;
+            gap: 6px;
+            margin-bottom: 10px;
+        }
+        .rules-score-block {
+            border-radius: 7px;
+            padding: 8px 6px;
+            text-align: center;
+            border: 1px solid transparent;
+        }
+        .rules-score-block.correct {
+            background: rgba(0,255,136,.08);
+            border-color: rgba(0,255,136,.25);
+        }
+        .rules-score-block.wrong {
+            background: rgba(255,74,106,.08);
+            border-color: rgba(255,74,106,.25);
+        }
+        .rules-score-block.final.correct {
+            background: rgba(255,215,0,.08);
+            border-color: rgba(255,215,0,.3);
+        }
+        .rules-score-block.final.wrong {
+            background: rgba(255,100,60,.08);
+            border-color: rgba(255,100,60,.25);
+        }
+        .rules-score-num {
+            font-family: 'Orbitron', sans-serif;
+            font-size: .95rem;
+            font-weight: 900;
+            margin-bottom: 3px;
+        }
+        .rules-score-block.correct .rules-score-num  { color: #00ff88; }
+        .rules-score-block.wrong .rules-score-num    { color: #ff4a4a; }
+        .rules-score-block.final.correct .rules-score-num { color: #ffd700; }
+        .rules-score-block.final.wrong .rules-score-num   { color: #ff6432; }
+        .rules-score-desc {
+            font-size: .58rem;
+            color: rgba(148,163,184,.6);
+            line-height: 1.3;
+        }
+
+        .rules-teams {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 10px;
+        }
+        .rules-team {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 12px;
+            border-radius: 7px;
+            font-size: .8rem;
+            font-weight: 600;
+            color: #94a3b8;
+        }
+        .rules-team.a { background: rgba(255,74,106,.07); border: 1px solid rgba(255,74,106,.2); }
+        .rules-team.b { background: rgba(0,210,255,.07); border: 1px solid rgba(0,210,255,.2); }
+        .rules-team-badge {
+            font-family: 'Orbitron', sans-serif;
+            font-size: .62rem;
+            font-weight: 900;
+            padding: 3px 8px;
+            border-radius: 4px;
+            letter-spacing: 1px;
+        }
+        .rules-team-badge.a { background: rgba(255,74,106,.2); color: var(--team-a); }
+        .rules-team-badge.b { background: rgba(0,210,255,.2); color: var(--team-b); }
+
+        .rules-note {
+            font-size: .73rem;
+            color: rgba(148,163,184,.65);
+            line-height: 1.55;
+            background: rgba(255,255,255,.025);
+            border-left: 2px solid var(--accent);
+            padding: 7px 10px;
+            border-radius: 0 5px 5px 0;
+        }
+        .rules-note strong { color: #e2e8f0; }
+
+        .rules-list {
+            padding-left: 4px;
+            list-style: none;
+        }
+        .rules-list li {
+            font-size: .75rem;
+            color: rgba(148,163,184,.7);
+            line-height: 1.6;
+            padding-left: 14px;
+            margin-bottom: 4px;
+            position: relative;
+        }
+        .rules-list li::before {
+            content: '›';
+            position: absolute;
+            left: 0;
+            color: var(--accent);
+            font-weight: 700;
+        }
+        .rules-list li strong { color: #e2e8f0; }
+
         #lobby-view {
             width: 90%;
             max-width: 500px;
@@ -449,6 +640,112 @@
         <p class="web-subtitle">made by HYen</p>
     </div>
     <button id="btn-create" onclick="createRoom()">TẠO PHÒNG MỚI</button>
+
+    <!-- HƯỚNG DẪN QUY TẮC -->
+    <div class="rules-wrapper">
+        <div class="rules-header" onclick="toggleRules(this)">
+            <span class="rules-header-left">
+                <span class="rules-icon">📋</span>
+                <span>QUY TẮC TRẬN ĐẤU</span>
+            </span>
+            <span class="rules-chevron">▾</span>
+        </div>
+        <div class="rules-body">
+
+            <div class="rules-section">
+                <div class="rules-section-title">⚙️ CẤU TRÚC TRẬN</div>
+                <div class="rules-grid">
+                    <div class="rules-item">
+                        <div class="rules-item-icon">🔢</div>
+                        <div>
+                            <div class="rules-item-label">Số vòng</div>
+                            <div class="rules-item-val">Tuỳ chọn (1 – 50 vòng)</div>
+                        </div>
+                    </div>
+                    <div class="rules-item">
+                        <div class="rules-item-icon">❓</div>
+                        <div>
+                            <div class="rules-item-label">Câu hỏi / vòng</div>
+                            <div class="rules-item-val">5 câu trắc nghiệm (A/B/C/D)</div>
+                        </div>
+                    </div>
+                    <div class="rules-item">
+                        <div class="rules-item-icon">⏱</div>
+                        <div>
+                            <div class="rules-item-label">Thời gian / vòng</div>
+                            <div class="rules-item-val">60 giây &nbsp;·&nbsp; Vòng cuối: 50 giây</div>
+                        </div>
+                    </div>
+                    <div class="rules-item">
+                        <div class="rules-item-icon">☕</div>
+                        <div>
+                            <div class="rules-item-label">Giải lao giữa vòng</div>
+                            <div class="rules-item-val">15 giây (tự động chuyển)</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="rules-divider"></div>
+
+            <div class="rules-section">
+                <div class="rules-section-title">🏆 ĐIỂM SỐ</div>
+                <div class="rules-score-row">
+                    <div class="rules-score-block correct">
+                        <div class="rules-score-num">+10đ</div>
+                        <div class="rules-score-desc">Đúng (vòng thường)</div>
+                    </div>
+                    <div class="rules-score-block wrong">
+                        <div class="rules-score-num">−3đ</div>
+                        <div class="rules-score-desc">Sai (vòng thường)</div>
+                    </div>
+                    <div class="rules-score-block correct final">
+                        <div class="rules-score-num">+20đ</div>
+                        <div class="rules-score-desc">Đúng (vòng cuối ×2)</div>
+                    </div>
+                    <div class="rules-score-block wrong final">
+                        <div class="rules-score-num">−5đ</div>
+                        <div class="rules-score-desc">Sai (vòng cuối ×2)</div>
+                    </div>
+                </div>
+                <div class="rules-note">
+                    💡 Điểm không thể xuống dưới 0. Thứ hạng cá nhân xét theo điểm cao → thời gian trả lời thấp.
+                </div>
+            </div>
+
+            <div class="rules-divider"></div>
+
+            <div class="rules-section">
+                <div class="rules-section-title">👥 ĐỘI</div>
+                <div class="rules-teams">
+                    <div class="rules-team a">
+                        <span class="rules-team-badge a">ĐỘI A</span>
+                        Màu đỏ
+                    </div>
+                    <div class="rules-team b">
+                        <span class="rules-team-badge b">ĐỘI B</span>
+                        Màu xanh
+                    </div>
+                </div>
+                <div class="rules-note">
+                    🤖 Server tự chia đội cân bằng. Chiến thắng xét theo <strong>điểm trung bình / người</strong> của mỗi đội (làm tròn 1 chữ số thập phân).
+                </div>
+            </div>
+
+            <div class="rules-divider"></div>
+
+            <div class="rules-section">
+                <div class="rules-section-title">📌 LƯU Ý VẬN HÀNH</div>
+                <ul class="rules-list">
+                    <li>Chia sẻ <strong>mã phòng</strong> hoặc <strong>QR Code</strong> cho học sinh trước khi bắt đầu.</li>
+                    <li>Không thể vào phòng sau khi trận đã bắt đầu.</li>
+                    <li>Nhấn <strong>Reset</strong> để tạo phòng mới với mã mới — tất cả player hiện tại sẽ bị kick.</li>
+                    <li>Reload trang admin cũng sẽ tự động dọn phòng cũ và kick player.</li>
+                </ul>
+            </div>
+
+        </div>
+    </div>
 </div>
 
 <!-- ── QR FULLSCREEN ──────────────────────────────────────────────────────── -->
@@ -613,6 +910,14 @@
 const socket = io();
 let myRoomId  = '';
 let playerMap = {};
+
+// ── QUY TẮC: toggle mở/đóng ──────────────────────────────────────────────────
+function toggleRules(headerEl) {
+    const body    = headerEl.nextElementSibling;
+    const chevron = headerEl.querySelector('.rules-chevron');
+    const isOpen  = body.classList.toggle('open');
+    chevron.classList.toggle('open', isOpen);
+}
 
 // ── TẠO PHÒNG ─────────────────────────────────────────────────────────────────
 function createRoom() {
