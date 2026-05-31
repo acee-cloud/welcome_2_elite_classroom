@@ -813,8 +813,8 @@ function showWinnerOverlay(d) {
     const name    = document.getElementById('winner-name');
     const trophy  = document.getElementById('winner-trophy');
 
-    document.getElementById('final-score-a').innerText = Math.round(d.scoreA || 0);
-    document.getElementById('final-score-b').innerText = Math.round(d.scoreB || 0);
+    document.getElementById('final-score-a').innerText = typeof d.scoreA === 'number' ? d.scoreA.toFixed(1) : '0.0';
+    document.getElementById('final-score-b').innerText = typeof d.scoreB === 'number' ? d.scoreB.toFixed(1) : '0.0';
 
     if (d.winningTeam === 'Hòa') {
         card.className  = 'winner-card draw';
@@ -839,8 +839,9 @@ function closeWinner() {
 function animateScoreBump(elId, newVal, team) {
     const el = document.getElementById(elId);
     if (!el) return;
-    if (parseInt(el.innerText) === newVal) return;
-    el.innerText = newVal;
+    const displayVal = typeof newVal === 'number' ? newVal.toFixed(1) : newVal;
+    if (el.innerText === displayVal) return;
+    el.innerText = displayVal;
     el.classList.remove('score-bump');
     void el.offsetWidth;
     el.classList.add('score-bump');
