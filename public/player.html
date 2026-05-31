@@ -743,7 +743,6 @@
             transition: background 0.3s;
         }
 
-        /* FIX 5: Connection error toast – thêm element đúng chỗ */
         #conn-toast {
             position: fixed; bottom: 60px; left: 50%; transform: translateX(-50%);
             background: rgba(255,74,106,0.92); color: #fff;
@@ -770,7 +769,6 @@
     <div id="top-progress-bar"></div>
 </div>
 
-<!-- FIX 5: Thêm element conn-toast vào HTML (trước không có) -->
 <div id="conn-toast"></div>
 
 <div id="lobby-screen" class="screen active">
@@ -858,7 +856,7 @@
             position:absolute; bottom:8px; left:50%; transform:translateX(-50%);
             font-size:0.68rem; color:rgba(0,210,255,0.35); pointer-events:none;
             letter-spacing:1px; white-space:nowrap; user-select:none;">
-            👆 Chạm / Click để di chuyển (hoặc dùng phím mũi tên)
+            👆 Chạm / Click để di chuyển · WASD / ← → ↑ ↓ để điều khiển (nhấn giữ để tăng tốc)
         </div>
     </div>
 
@@ -905,7 +903,6 @@
         <div class="score-card team-a">
             <div class="score-card-label">⚔ Đội A</div>
             <div class="score-card-val" id="score-a">0</div>
-            <!-- FIX 7: Đổi nhãn thành "điểm trung bình" và dùng avgA từ server -->
             <div class="score-card-sub">điểm trung bình/người</div>
         </div>
         <div class="score-card team-b">
@@ -978,10 +975,7 @@ let revealTimeout = null;
 let myScore = 0;
 let teamScores = { A: 0, B: 0 };
 
-// FIX 1: Biến riêng lưu trạng thái vòng hiện tại
 let currentStageDouble = false;
-
-// FIX 2: Biến riêng lưu thời gian vòng hiện tại
 let currentTimeLimit = 60;
 
 let myTokenPos = { x: 0, y: 0 };
@@ -1201,14 +1195,11 @@ socket.on('lobbyUpdate', (data) => {
     renderLobby();
 });
 
-// FIX 6: Xử lý updatePlayerList để đồng bộ danh sách khi người rời giữa chừng
 socket.on('updatePlayerList', (players) => {
     const incomingIds = new Set(players.map(p => p.id));
-    // Xóa người đã rời
     Object.keys(allPlayers).forEach(id => {
         if (!incomingIds.has(id)) delete allPlayers[id];
     });
-    // Cập nhật thông tin mới nhất (trừ score – giữ score hiện tại)
     players.forEach(p => {
         if (allPlayers[p.id]) {
             allPlayers[p.id].name   = p.name;
@@ -1234,11 +1225,9 @@ socket.on('scoreUpdate', (data) => {
                 animateScoreChange('live-score-b', Math.round(oldB), Math.round(teamScores.B), Math.round(teamScores.B - oldB));
         }
     }
-    // Đồng bộ điểm cá nhân từ server (chỉ cập nhật nếu khác biệt đáng kể)
     if (data.playerId === socket.id && data.personalScore !== undefined) {
         const serverScore = data.personalScore;
         const oldScore = myScore;
-        // Chỉ ghi đè nếu server cho biết delta (tránh double-animate với singleAnswerResult)
         if (serverScore !== myScore) {
             myScore = serverScore;
             const inGame = document.getElementById('game-screen').classList.contains('active');
@@ -1424,7 +1413,7 @@ function renderArenaTokens(teamA, teamB) {
     const hint = document.createElement('div');
     hint.id = 'click-move-hint';
     hint.style.cssText = 'position:absolute; bottom:8px; left:50%; transform:translateX(-50%); font-size:0.68rem; color:rgba(0,210,255,0.35); pointer-events:none; letter-spacing:1px; white-space:nowrap; user-select:none;';
-    hint.textContent = '👆 Chạm / Click để di chuyển (hoặc dùng phím mũi tên)';
+    hint.textContent = '👆 Chạm / Click để di chuyển · WASD / ← → ↑ ↓ để điều khiển (nhấn giữ để tăng tốc)';
     floor.appendChild(hint);
 }
 
@@ -1471,52 +1460,119 @@ function setupClickToMove() {
     }, { passive: false });
 }
 
+// ═══════════════════════════════════════
+//  KEYBOARD – HOLD TO MOVE + ACCELERATION
+//  Tap to move: tốc độ giữ nguyên như click
+//  Hold to move: tốc độ tăng dần (acceleration)
+// ═══════════════════════════════════════
 function setupKeyboard() {
-    const STEP = 0.055;
+    // Tốc độ base khi vừa nhấn (1 step đầu tiên)
+    const STEP_BASE   = 0.025;
+    // Tốc độ tối đa khi giữ lâu
+    const STEP_MAX    = 0.095;
+    // Tốc độ tăng mỗi frame khi giữ phím
+    const ACCEL       = 0.004;
+
+    // Throttle gửi socket (không gửi mỗi frame, tránh flood)
+    const EMIT_INTERVAL = 50; // ms
+    let lastEmitTime = 0;
+
     const keyMap = {
-        'ArrowUp':    { dx: 0, dy: -STEP }, 'ArrowDown':  { dx: 0, dy:  STEP },
-        'ArrowLeft':  { dx: -STEP, dy: 0 }, 'ArrowRight': { dx:  STEP, dy: 0 },
-        'w': { dx: 0, dy: -STEP }, 's': { dx: 0, dy:  STEP },
-        'a': { dx: -STEP, dy: 0 }, 'd': { dx:  STEP, dy: 0 },
-        'W': { dx: 0, dy: -STEP }, 'S': { dx: 0, dy:  STEP },
-        'A': { dx: -STEP, dy: 0 }, 'D': { dx:  STEP, dy: 0 }
+        'ArrowUp':    { dx: 0,     dy: -1 }, 'ArrowDown':  { dx: 0,    dy: 1 },
+        'ArrowLeft':  { dx: -1,    dy: 0  }, 'ArrowRight': { dx: 1,    dy: 0 },
+        'w': { dx: 0, dy: -1 }, 's': { dx: 0, dy: 1 },
+        'a': { dx: -1, dy: 0 }, 'd': { dx: 1, dy: 0 },
+        'W': { dx: 0, dy: -1 }, 'S': { dx: 0, dy: 1 },
+        'A': { dx: -1, dy: 0 }, 'D': { dx: 1, dy: 0 }
     };
+
+    // held[key] = { startTime, lastStep }
     const held = {};
+    let rafId = null;
+
+    const updateToken = () => {
+        if (!document.getElementById('waiting-screen').classList.contains('active')) {
+            rafId = null;
+            return;
+        }
+
+        const now = performance.now();
+        let moved = false;
+
+        for (const key in held) {
+            const dir = keyMap[key];
+            if (!dir) continue;
+            const heldMs = now - held[key].startTime;
+
+            // Tính tốc độ hiện tại dựa theo thời gian đã giữ
+            // 0ms → STEP_BASE, tăng dần lên STEP_MAX sau ~1.8s
+            const speed = Math.min(STEP_MAX, STEP_BASE + (heldMs / 1000) * ACCEL * 60);
+
+            myTokenPos.x = Math.max(0.02, Math.min(0.93, myTokenPos.x + dir.dx * speed));
+            myTokenPos.y = Math.max(0.04, Math.min(0.87, myTokenPos.y + dir.dy * speed));
+            moved = true;
+        }
+
+        if (moved) {
+            const floor = document.getElementById('arena-floor');
+            const myToken = floor ? floor.querySelector('.player-token.is-me') : null;
+            if (myToken) {
+                const floorW = floor.offsetWidth || 400;
+                const floorH = floor.offsetHeight || 300;
+                myToken.style.left = (myTokenPos.x * floorW) + 'px';
+                myToken.style.top  = (myTokenPos.y * floorH) + 'px';
+            }
+
+            // Throttle socket emit
+            if (currentRoomId && now - lastEmitTime > EMIT_INTERVAL) {
+                socket.emit('playerMove', { roomId: currentRoomId, x: myTokenPos.x, y: myTokenPos.y });
+                lastEmitTime = now;
+            }
+
+            const hint = document.getElementById('click-move-hint');
+            if (hint) hint.style.opacity = '0';
+        }
+
+        if (Object.keys(held).length > 0) {
+            rafId = requestAnimationFrame(updateToken);
+        } else {
+            rafId = null;
+            // Emit vị trí cuối cùng khi thả phím
+            if (moved && currentRoomId) {
+                socket.emit('playerMove', { roomId: currentRoomId, x: myTokenPos.x, y: myTokenPos.y });
+            }
+        }
+    };
+
     document.addEventListener('keydown', (e) => {
         if (document.activeElement) {
             const tag = document.activeElement.tagName.toUpperCase();
             if (tag === 'INPUT' || tag === 'TEXTAREA') return;
         }
         const key = e.key;
-        if (held[key]) return;
+        if (!keyMap[key]) return;
         if (!document.getElementById('waiting-screen').classList.contains('active')) return;
-        if (keyMap[key]) {
-            held[key] = true;
-            e.preventDefault();
-            moveMyToken(keyMap[key].dx, keyMap[key].dy);
+
+        e.preventDefault();
+
+        if (!held[key]) {
+            held[key] = { startTime: performance.now() };
+            // Khởi động loop nếu chưa chạy
+            if (!rafId) {
+                rafId = requestAnimationFrame(updateToken);
+            }
         }
     });
-    document.addEventListener('keyup', (e) => { held[e.key] = false; });
-}
 
-function moveMyToken(dx, dy) {
-    if (!document.getElementById('waiting-screen').classList.contains('active')) return;
+    document.addEventListener('keyup', (e) => {
+        delete held[e.key];
+        // Nếu không còn phím nào được giữ, loop sẽ tự dừng
+    });
 
-    myTokenPos.x = Math.max(0.02, Math.min(0.93, myTokenPos.x + dx));
-    myTokenPos.y = Math.max(0.04, Math.min(0.87, myTokenPos.y + dy));
-
-    const floor = document.getElementById('arena-floor');
-    const myToken = floor.querySelector('.player-token.is-me');
-    if (myToken) {
-        const floorW = floor.offsetWidth || 400;
-        const floorH = floor.offsetHeight || 300;
-        myToken.style.left = (myTokenPos.x * floorW) + 'px';
-        myToken.style.top  = (myTokenPos.y * floorH) + 'px';
-    }
-
-    if (currentRoomId) {
-        socket.emit('playerMove', { roomId: currentRoomId, x: myTokenPos.x, y: myTokenPos.y });
-    }
+    // Dừng tất cả khi window mất focus để tránh token trôi vô tận
+    window.addEventListener('blur', () => {
+        for (const key in held) delete held[key];
+    });
 }
 
 socket.on('playerMoved', (data) => {
@@ -1552,8 +1608,7 @@ function appendLobbyChatMsg(data, isSystem = false) {
     container.scrollTop = container.scrollHeight;
 }
 
-// FIX 4: Dùng Map thay vì Set để tránh lỗi khi tin nhắn chứa dấu ':'
-const _sentMsgCache = new Map(); // Map<msg, timestamp>
+const _sentMsgCache = new Map();
 
 function sendLobbyChat() {
     const input = document.getElementById('lobby-chat-input');
@@ -1569,7 +1624,6 @@ function sendLobbyChat() {
         return;
     }
 
-    // Optimistic UI: hiển thị ngay, ghi nhớ để bỏ qua echo
     _sentMsgCache.set(msg, Date.now());
     appendLobbyChatMsg({ name: myName, msg, team: myTeam });
 
@@ -1579,12 +1633,11 @@ function sendLobbyChat() {
 }
 
 socket.on('receiveLobbyMessage', (data) => {
-    // FIX 4: Kiểm tra bằng Map, tránh lỗi với tin nhắn có dấu ':'
     if (data.name === myName && data.msg) {
         const ts = _sentMsgCache.get(data.msg);
         if (ts && Date.now() - ts < 5000) {
             _sentMsgCache.delete(data.msg);
-            return; // Bỏ qua echo tin của chính mình
+            return;
         }
     }
     appendLobbyChatMsg(data);
@@ -1603,7 +1656,6 @@ socket.on('gameStarted', () => {
         '<div style="padding:40px 10px;"><h3 style="color:var(--accent)">⚡ Game đang bắt đầu...</h3></div>';
     document.getElementById('top-progress-container').style.display = 'none';
 });
-// FIX 6: Xóa handler trùng 'gameStart' (dead code – server chỉ emit 'gameStarted')
 
 // ═══════════════════════════════════════
 //  STAGE / VÒNG
@@ -1611,22 +1663,15 @@ socket.on('gameStarted', () => {
 socket.on('startStage', (data) => {
     isAnsweringState = true;
     currentQuestions = data.questions;
-
-    // FIX 1: Lưu trạng thái nhân đôi vào biến riêng (không gán vào array)
     currentStageDouble = data.isDouble || false;
-
-    // FIX 2: Lưu thời gian giới hạn thực tế của vòng này
     currentTimeLimit = data.timeLimit || 60;
-
     questionIndex = 0;
 
-    // FIX 3: Nhãn vòng dùng totalStages thực tế từ server, không cứng bằng 5
     const stageLabel = `VÒNG ${data.stageNum} / ${data.totalStages}` +
                        (currentStageDouble ? ' ★ NHÂN ĐÔI' : '');
     document.getElementById('stage-title').textContent = stageLabel;
     document.getElementById('top-progress-container').style.display = 'block';
 
-    // Reset thanh tiến trình về 100%
     const bar = document.getElementById('top-progress-bar');
     bar.style.width = '100%';
     bar.style.backgroundColor = 'var(--success)';
@@ -1649,7 +1694,6 @@ function renderSingleQuestion() {
     }
 
     const q = currentQuestions[questionIndex];
-    // FIX 1: Dùng biến currentStageDouble thay vì currentQuestions.isDouble
     const isBonus = currentStageDouble;
 
     let html = `
@@ -1678,7 +1722,6 @@ function renderSingleQuestion() {
 }
 
 function selectAnswer(questionId, choiceKey) {
-    // Vô hiệu hoá tất cả nút ngay lập tức để tránh click nhiều lần
     document.querySelectorAll('.choice-btn').forEach(b => b.disabled = true);
     socket.emit('submitSingleAnswer', {
         roomId: currentRoomId,
@@ -1723,7 +1766,6 @@ socket.on('singleAnswerResult', (data) => {
             <span style="font-size:0.82rem; color:var(--gold); font-family:'Orbitron'; margin-left:8px;">▶ Tổng: ${newTotal}đ</span>`;
     }
 
-    // Cập nhật điểm hiển thị ngay lập tức
     document.getElementById('live-score-me').textContent = newTotal;
 
     showScorePopupOverlay(delta, data.isCorrect);
@@ -1763,7 +1805,6 @@ socket.on('timerUpdate', (timeLeft) => {
         const timerEl = document.getElementById('timer-text');
         timerEl.textContent = timeLeft + 's';
 
-        // FIX 2: Dùng currentTimeLimit thực tế thay vì cứng 60
         const bar = document.getElementById('top-progress-bar');
         bar.style.width = Math.max(0, (timeLeft / currentTimeLimit) * 100) + '%';
 
@@ -1790,7 +1831,6 @@ socket.on('intermissionStart', (data) => {
     isAnsweringState = false;
     document.getElementById('top-progress-container').style.display = 'none';
 
-    // FIX 7: Ưu tiên dùng avgA/avgB (điểm trung bình) từ server
     document.getElementById('score-a').textContent = data.avgA !== undefined ? data.avgA : Math.round(data.scoreA || 0);
     document.getElementById('score-b').textContent = data.avgB !== undefined ? data.avgB : Math.round(data.scoreB || 0);
 
@@ -1898,9 +1938,28 @@ socket.on('gameOver', (d) => {
     switchScreen('summary-screen');
 });
 
-socket.on('roomResetByAdmin', () => {
-    alert('Giáo viên đã reset phòng chơi. Đang tải lại...');
-    window.location.reload();
+// ═══════════════════════════════════════
+//  RESET – FIX: nhận object {newRoomId} thay vì không có data
+//  Player quét QR: tải lại trang → URL cũ không còn hợp lệ → hiện form nhập mã
+//  (verifyRoom sẽ báo lỗi "phòng không tồn tại" nếu nhập mã cũ)
+// ═══════════════════════════════════════
+socket.on('roomResetByAdmin', (data) => {
+    // Xóa trạng thái phòng cũ
+    currentRoomId = '';
+    myTeam = '';
+    myScore = 0;
+    allPlayers = {};
+    teamScores = { A: 0, B: 0 };
+    hasNavigatedToWaiting = false;
+
+    // Nếu player đang ở waiting-screen hoặc màn hình khác → reload trang
+    // Trang reload sẽ đọc URL param ?room= (nếu có) nhưng mã cũ sẽ fail verifyRoom
+    // Nếu không có URL param, hiện form nhập mã bình thường
+    alert('Giáo viên đã reset phòng chơi. Trang sẽ tải lại để vào phòng mới.');
+    // Xóa query param room= khỏi URL để player không bị redirect về phòng cũ
+    const url = new URL(window.location.href);
+    url.searchParams.delete('room');
+    window.location.href = url.toString();
 });
 
 socket.on('errorMsg', m => showError(m));
