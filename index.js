@@ -106,7 +106,7 @@ function createRoomState(roomId, adminSocketId) {
     teamB: [],
     timer: null,
     stageStartTime: 0,
-    stageTimeLeft: 0,      // theo dõi thời gian còn lại của vòng hiện tại
+    stageTimeLeft: 0,
     roundQuestions: []
   };
 }
@@ -299,12 +299,10 @@ io.on('connection', (socket) => {
     if (player._answeredCount >= totalQs) {
       player.submittedCurrentStage = true;
 
-      // Player hoàn thành sớm → chuyển ngay sang phòng nghỉ hội ý chat
-      // Cộng dồn thời gian dư vào thời gian giải lao
       const timeBonus = Math.max(0, room.stageTimeLeft);
-      const { scoreA, scoreB } = getScores(room);
+      const { scoreA: sA, scoreB: sB } = getScores(room);
       socket.emit('earlyIntermission', {
-        scoreA, scoreB,
+        scoreA: sA, scoreB: sB,
         leaderboard: getLeaderboard(room),
         currentStage: room.currentStage,
         totalStages: room.totalStages,
@@ -338,12 +336,18 @@ io.on('connection', (socket) => {
   });
 
   // ── CHAT GIẢI LAO ─────────────────────────────────────────────────────────────
-  // FIX: chỉ cho chat khi status là 'intermission' (không phải lobby)
+  // FIX: Cho phép chat khi đang giải lao HOẶC khi player đã hoàn thành vòng sớm
   socket.on('sendGlobalMessage', ({ roomId, msg }) => {
     const room = rooms[roomId];
-    if (!room || room.status !== 'intermission' || !msg?.trim()) return;
+    if (!room || !msg?.trim()) return;
     const player = room.players.find(p => p.id === socket.id);
     if (!player) return;
+
+    // Cho phép chat: đang giải lao chính thức HOẶC player đã nộp bài xong sớm
+    const canChat = room.status === 'intermission' ||
+                    (room.status === 'playing' && player.submittedCurrentStage);
+    if (!canChat) return;
+
     io.to('room_' + roomId).emit('receiveGlobalMessage', {
       name: player.name,
       msg: msg.trim().substring(0, 150),
@@ -384,9 +388,7 @@ io.on('connection', (socket) => {
         id: p.id, name: p.name, avatar: p.avatar, team: p.team
       })));
     } else if (room.status === 'playing' && player) {
-      // FIX: Gửi lại trạng thái game cho player rejoin
       socket.emit('gameStarted', { totalStages: room.totalStages });
-      const letters = ['A', 'B', 'C', 'D'];
       const questionsForPlayer = Object.values(player._stageAnswers).map(q => ({
         id: q.id, text: q.text, choices: q.choices
       }));
@@ -410,36 +412,27 @@ io.on('connection', (socket) => {
   });
 
   // ── ADMIN: Reset phòng ────────────────────────────────────────────────────────
-  // FIX: Tạo roomId MỚI, kick tất cả player khỏi phòng cũ, xóa phòng cũ
   socket.on('adminResetGame', (oldRoomId) => {
     const room = rooms[oldRoomId];
     if (!room) return;
 
-    // Dừng timer
     clearInterval(room.timer);
 
-    // Tạo roomId mới
     const newRoomId = generateRoomId();
 
-    // Thông báo tất cả player (bao gồm cả admin nếu ở trong room_) phải thoát
-    // Gửi newRoomId để client biết (admin dùng để tạo QR mới)
     io.to('room_' + oldRoomId).emit('roomResetByAdmin', { newRoomId });
     io.to('admin_' + oldRoomId).emit('roomResetByAdmin', { newRoomId });
 
-    // Kick tất cả socket khỏi các socket rooms cũ
     io.in('room_' + oldRoomId).socketsLeave('room_' + oldRoomId);
     io.in('admin_' + oldRoomId).socketsLeave('admin_' + oldRoomId);
 
-    // Xóa phòng cũ
     delete rooms[oldRoomId];
 
-    // Tạo phòng mới với roomId mới và cho admin vào
     rooms[newRoomId] = createRoomState(newRoomId, socket.id);
     socket.join('room_' + newRoomId);
     socket.join('admin_' + newRoomId);
     socket.data.adminRoomId = newRoomId;
 
-    // Gửi thông tin phòng mới cho admin
     socket.emit('roomCreated', newRoomId);
   });
 
@@ -459,22 +452,17 @@ io.on('connection', (socket) => {
 
   // ── Ngắt kết nối ─────────────────────────────────────────────────────────────
   socket.on('disconnect', () => {
-    // ── Xử lý khi ADMIN ngắt kết nối (reload trang / đóng tab) ─────────────
     const adminRoomId = socket.data.adminRoomId;
     if (adminRoomId && rooms[adminRoomId] && rooms[adminRoomId].adminSocketId === socket.id) {
       const adminRoom = rooms[adminRoomId];
       clearInterval(adminRoom.timer);
-      // Thông báo tất cả player bị kick vì admin rời phòng
       io.to('room_' + adminRoomId).emit('roomResetByAdmin', { newRoomId: null });
-      // Kick tất cả socket khỏi room
       io.in('room_' + adminRoomId).socketsLeave('room_' + adminRoomId);
       io.in('admin_' + adminRoomId).socketsLeave('admin_' + adminRoomId);
-      // Xóa phòng khỏi bộ nhớ
       delete rooms[adminRoomId];
-      return; // Không cần xử lý player bên dưới vì phòng đã bị xóa
+      return;
     }
 
-    // ── Xử lý khi PLAYER ngắt kết nối ───────────────────────────────────────
     const roomId = socket.data.roomId;
     if (!roomId || !rooms[roomId]) return;
 
@@ -580,19 +568,47 @@ function startStage(roomId, stageNum) {
 // ─── GIẢI LAO / KẾT THÚC VÒNG ────────────────────────────────────────────────
 function startIntermission(roomId) {
   const room = rooms[roomId];
-  // FIX: Guard chống double-call (cả 'intermission' lẫn 'finished')
   if (!room || room.status === 'intermission' || room.status === 'finished') return;
   room.status = 'intermission';
-  room.players.forEach(p => (p.submittedCurrentStage = true));
+
+  // ── FIX: Xử lý câu chưa trả lời → tính như câu bỏ qua (trừ điểm như sai) ──
+  const isFinalRound = (room.currentStage === room.finalStage);
+  room.players.forEach(p => {
+    if (!p.submittedCurrentStage) {
+      Object.values(p._stageAnswers).forEach(q => {
+        if (!q.answered) {
+          q.answered = true;
+          const pts   = isFinalRound ? -5 : -3;
+          p.score     = Math.max(0, p.score + pts);
+          p.lastDelta = pts;
+          p._answeredCount++;
+          p.history.push({
+            questionText:  q.text,
+            choices:       q.choices,
+            chosenAnswer:  '(bỏ qua)',
+            correctAnswer: q.correctKey,
+            isCorrect:     false,
+            pointsDelta:   pts,
+            skipped:       true
+          });
+        }
+      });
+    }
+    p.submittedCurrentStage = true;
+  });
 
   const { scoreA, scoreB } = getScores(room);
+
+  // Cập nhật bảng điểm admin sau khi tính điểm câu bỏ qua
+  io.to('admin_' + roomId).emit('realtimeScoreUpdate', {
+    scoreA, scoreB, players: getLeaderboard(room)
+  });
 
   if (room.currentStage >= room.totalStages) {
     endGameFinal(roomId);
     return;
   }
 
-  // Cộng dồn thời gian dư của vòng chơi vào thời gian giải lao
   const bonusTime = Math.max(0, room.stageTimeLeft || 0);
   room.stageTimeLeft = 0;
   const totalIntermission = INTERMISSION_TIME + bonusTime;
@@ -623,7 +639,6 @@ function endGameFinal(roomId) {
   const room = rooms[roomId];
   if (!room) return;
 
-  // FIX: Đặt status 'finished' trước để tránh gọi lại
   room.status = 'finished';
 
   const { scoreA, scoreB } = getScores(room);
