@@ -633,7 +633,6 @@
 </head>
 <body>
 
-<!-- ── LOBBY ─────────────────────────────────────────────────────────────── -->
 <div id="lobby-view">
     <div class="web-title-wrapper">
         <div class="web-title-glow"></div>
@@ -642,7 +641,6 @@
     </div>
     <button id="btn-create" onclick="createRoom()">TẠO PHÒNG MỚI</button>
 
-    <!-- HƯỚNG DẪN QUY TẮC -->
     <div class="rules-wrapper">
         <div class="rules-header" onclick="toggleRules(this)">
             <span class="rules-header-left">
@@ -674,7 +672,7 @@
                         <div class="rules-item-icon">⏱</div>
                         <div>
                             <div class="rules-item-label">Thời gian / vòng</div>
-                            <div class="rules-item-val">60 giây &nbsp;·&nbsp; Vòng cuối: 50 giây</div>
+                            <div class="rules-item-val">50 giây &nbsp;·&nbsp; Vòng cuối: 40 giây</div>
                         </div>
                     </div>
                     <div class="rules-item">
@@ -710,7 +708,7 @@
                     </div>
                 </div>
                 <div class="rules-note">
-                    💡 Điểm không thể xuống dưới 0. Thứ hạng cá nhân xét theo điểm cao → thời gian trả lời thấp.
+                    💡 Điểm không thể xuống dưới 0. Thứ hạng cá nhân xét theo điểm cao → thời gian trả lời thấp. Cố ý bỏ qua câu hỏi sẽ bị trừ điểm như trả lời sai.
                 </div>
             </div>
 
@@ -749,7 +747,6 @@
     </div>
 </div>
 
-<!-- ── QR FULLSCREEN ──────────────────────────────────────────────────────── -->
 <div id="qr-fullscreen-overlay" onclick="closeFullscreenQR()">
     <div class="qr-fs-content" onclick="event.stopPropagation()">
         <div id="qrcode-fs"></div>
@@ -757,7 +754,6 @@
     </div>
 </div>
 
-<!-- ── ROOM VIEW ──────────────────────────────────────────────────────────── -->
 <div id="room-view">
     <div id="room-topbar">
         <div class="code-block">
@@ -818,11 +814,10 @@
     </div>
 </div>
 
-<!-- ── DASHBOARD ──────────────────────────────────────────────────────────── -->
 <div id="dashboard-view">
     <div style="display:flex; justify-content:space-between; align-items:center; background:var(--panel); padding:14px 20px; border-radius:12px; border:1px solid var(--border); margin-bottom:14px; flex-wrap:wrap; gap:10px;">
         <h2 id="current-stage-txt" style="font-family:'Orbitron'; margin:0; color:var(--accent);">STAGE 1</h2>
-        <h2 id="global-timer"      style="font-family:'Orbitron'; margin:0; color:#ffaa00;">60s</h2>
+        <h2 id="global-timer"      style="font-family:'Orbitron'; margin:0; color:#ffaa00;">50s</h2>
     </div>
 
     <div class="grid-layout">
@@ -869,7 +864,6 @@
     </div>
 </div>
 
-<!-- ── WINNER OVERLAY ─────────────────────────────────────────────────────── -->
 <div id="winner-overlay">
     <div class="winner-card" id="winner-card">
         <div class="winner-trophy" id="winner-trophy">🏆</div>
@@ -893,7 +887,6 @@
     </div>
 </div>
 
-<!-- ── MODAL CHỌN SỐ VÒNG ─────────────────────────────────────────────────── -->
 <div id="round-overlay">
     <div class="round-modal">
         <h3>⚙ CÀI ĐẶT TRẬN ĐẤU</h3>
@@ -1231,35 +1224,25 @@ socket.on('realtimeScoreUpdate', (data) => {
 });
 
 // ── RESET ─────────────────────────────────────────────────────────────────────
-// FIX: Admin nhận {newRoomId} từ server, sau đó server tự emit 'roomCreated'
-// với newRoomId. Handler roomCreated sẽ setup UI phòng mới + QR mới.
 function resetGame() {
     if (confirm('Bạn có chắc muốn reset phòng và bắt đầu lượt chơi mới?\nMã phòng mới sẽ được tạo.')) {
         socket.emit('adminResetGame', myRoomId);
     }
 }
 
-// FIX: roomResetByAdmin cho admin chỉ là xác nhận — phòng mới sẽ đến qua 'roomCreated'
 socket.on('roomResetByAdmin', (data) => {
-    // Đóng winner overlay nếu đang mở
     document.getElementById('winner-overlay').classList.remove('show');
-    // roomCreated sẽ được emit ngay sau từ server với newRoomId
-    // UI sẽ tự cập nhật trong handler roomCreated bên trên
 });
 
 
 // ─── XUẤT FILE EXCEL ─────────────────────────────────────────────────────────
-// Chuyển KaTeX / LaTeX sang text thuần (loại $, \\(...\\), ký hiệu đặc biệt)
 function katexToPlain(str) {
     if (!str) return '';
     return str
-        // Loại bỏ delimiters display: $$...$$ hoặc \[...\]
         .replace(/\$\$([^$]*)\$\$/g, '$1')
         .replace(/\\\[([^\]]*)\\\]/g, '$1')
-        // Loại bỏ delimiters inline: $...$ hoặc \(...\)
         .replace(/\$([^$]+)\$/g, '$1')
         .replace(/\\\(([^)]*)\\\)/g, '$1')
-        // LaTeX commands → ký hiệu Unicode / text
         .replace(/\\frac\{([^}]*)\}\{([^}]*)\}/g, '($1/$2)')
         .replace(/\\sqrt\{([^}]*)\}/g, '√($1)')
         .replace(/\\sqrt/g, '√')
@@ -1323,105 +1306,136 @@ socket.on('fullReportData', (players) => {
 
     const wb = XLSX.utils.book_new();
 
-    // ── SHEET 1: Bảng xếp hạng tổng kết ───────────────────────────────────
-    const sorted = [...players].sort((a, b) => {
+    // Sắp xếp player theo điểm từ cao xuống thấp
+    const sortedPlayers = [...players].sort((a, b) => {
         if (b.score !== a.score) return b.score - a.score;
         return a.totalTimeTaken - b.totalTimeTaken;
     });
+    const playerNames = sortedPlayers.map(p => p.name);
 
-    const summaryData = [
-        ['Hạng', 'Tên', 'Đội', 'Điểm', 'Tổng thời gian (s)']
-    ];
-    sorted.forEach((p, i) => {
+    // ── SHEET 1: XẾP HẠNG ────────────────────────────────────────────────
+    const summaryData = [['Hạng', 'Tên', 'Đội', 'Điểm', 'Tổng thời gian (s)']];
+    sortedPlayers.forEach((p, i) => {
         summaryData.push([i + 1, p.name, 'Đội ' + p.team, p.score, parseFloat(p.totalTimeTaken.toFixed(2))]);
     });
-
     const wsSummary = XLSX.utils.aoa_to_sheet(summaryData);
-    // Định dạng header
     ['A1','B1','C1','D1','E1'].forEach(cell => {
-        if (!wsSummary[cell]) return;
-        wsSummary[cell].s = { font: { bold: true }, fill: { fgColor: { rgb: 'FF1B263B' } } };
+        if (wsSummary[cell]) wsSummary[cell].s = { font: { bold: true, color: { rgb: "FFFFFFFF" } }, fill: { fgColor: { rgb: 'FF1B263B' } }, alignment: { horizontal: 'center' } };
     });
     wsSummary['!cols'] = [{wch:6},{wch:24},{wch:10},{wch:8},{wch:22}];
     XLSX.utils.book_append_sheet(wb, wsSummary, 'Xếp Hạng');
 
-    // ── SHEET 2: Chi tiết từng câu hỏi ────────────────────────────────────
-    const detailHeader = [
-        'Tên', 'Đội', 'Số câu', 'Câu hỏi',
-        'Đáp án A', 'Đáp án B', 'Đáp án C', 'Đáp án D',
-        'Đáp án đúng', 'Học sinh chọn', 'Kết quả', 'Điểm'
-    ];
-    const detailRows = [detailHeader];
-
-    players.forEach(p => {
-        (p.history || []).forEach((h, qIdx) => {
-            const choicesMap = {};
-            (h.choices || []).forEach(c => { choicesMap[c.key] = c.text; });
-
-            // Tìm text của đáp án đúng
-            const correctText = choicesMap[h.correctAnswer] || h.correctAnswer || '';
-            const chosenText  = choicesMap[h.chosenAnswer]  || h.chosenAnswer  || '(bỏ qua)';
-
-            detailRows.push([
-                p.name,
-                'Đội ' + p.team,
-                qIdx + 1,
-                katexToPlain(h.questionText),
-                katexToPlain(choicesMap['A'] || ''),
-                katexToPlain(choicesMap['B'] || ''),
-                katexToPlain(choicesMap['C'] || ''),
-                katexToPlain(choicesMap['D'] || ''),
-                katexToPlain(correctText),
-                katexToPlain(chosenText),
-                h.isCorrect ? 'ĐÚNG' : 'SAI',
-                h.pointsDelta !== undefined ? h.pointsDelta : (h.isCorrect ? 10 : -3)
-            ]);
+    // ── SHEET 2: CHI TIẾT TỔNG HỢP ───────────────────────────────────────
+    const qMap = new Map();
+    sortedPlayers.forEach(p => {
+        (p.history || []).forEach(h => {
+            const qPlain = katexToPlain(h.questionText);
+            if (!qMap.has(qPlain)) {
+                const choicesMap = {};
+                (h.choices || []).forEach(c => { choicesMap[c.key] = katexToPlain(c.text); });
+                qMap.set(qPlain, {
+                    text: qPlain,
+                    A: choicesMap['A'] || '',
+                    B: choicesMap['B'] || '',
+                    C: choicesMap['C'] || '',
+                    D: choicesMap['D'] || '',
+                    correct: katexToPlain(choicesMap[h.correctAnswer] || h.correctAnswer || ''),
+                    playerAnswers: {}
+                });
+            }
+            
+            const isSkipped = h.skipped || h.chosenAnswer === '(bỏ qua)';
+            let status = isSkipped ? 'BỎ QUA' : (h.isCorrect ? 'ĐÚNG' : 'SAI');
+            
+            qMap.get(qPlain).playerAnswers[p.name] = { status: status };
         });
+    });
+
+    const detailHeader = ['STT', 'Câu hỏi', 'Đáp án A', 'Đáp án B', 'Đáp án C', 'Đáp án D', 'Đáp án đúng'];
+    playerNames.forEach(name => detailHeader.push(name));
+    detailHeader.push('Số HS Đúng', 'Tỉ lệ Đúng (%)');
+
+    const detailRows = [detailHeader];
+    let rowIndex = 1;
+
+    qMap.forEach((qData) => {
+        const row = [rowIndex, qData.text, qData.A, qData.B, qData.C, qData.D, qData.correct];
+        let correctCount = 0;
+        let totalAnswered = playerNames.length;
+
+        playerNames.forEach(pName => {
+            const pAns = qData.playerAnswers[pName];
+            if (!pAns) {
+                row.push('-');
+            } else {
+                row.push(pAns.status); 
+                if (pAns.status === 'ĐÚNG') correctCount++;
+            }
+        });
+
+        row.push(correctCount);
+        row.push(((correctCount / totalAnswered) * 100).toFixed(1) + '%');
+        detailRows.push(row);
+        rowIndex++;
     });
 
     const wsDetail = XLSX.utils.aoa_to_sheet(detailRows);
 
-    // Header bold
-    ['A1','B1','C1','D1','E1','F1','G1','H1','I1','J1','K1','L1'].forEach(cell => {
-        if (!wsDetail[cell]) return;
-        wsDetail[cell].s = { font: { bold: true } };
-    });
+    const range = XLSX.utils.decode_range(wsDetail['!ref']);
+    const colWidths = [{wch:5}, {wch:50}, {wch:20}, {wch:20}, {wch:20}, {wch:20}, {wch:30}];
+    playerNames.forEach(() => colWidths.push({wch: 15}));
+    colWidths.push({wch: 12}, {wch: 15});
+    wsDetail['!cols'] = colWidths;
 
-    // Căn lề TRÁI cho cột Đáp án đúng (cột I) và Học sinh chọn (cột J)
-    const range = XLSX.utils.decode_range(wsDetail['!ref'] || 'A1');
-    for (let r = 1; r <= range.e.r; r++) {
-        // Cột I = index 8 (đáp án đúng), J = index 9 (học sinh chọn)
-        [8, 9].forEach(colIdx => {
-            const addr = XLSX.utils.encode_cell({ r, c: colIdx });
-            if (!wsDetail[addr]) return;
+    for (let r = 0; r <= range.e.r; r++) {
+        for (let c = 0; c <= range.e.c; c++) {
+            const addr = XLSX.utils.encode_cell({ r, c });
+            if (!wsDetail[addr]) continue;
+
             wsDetail[addr].s = wsDetail[addr].s || {};
-            wsDetail[addr].s.alignment = { horizontal: 'left', wrapText: true };
-        });
-        // Màu cho cột Kết quả (K = index 10)
-        const resAddr = XLSX.utils.encode_cell({ r, c: 10 });
-        if (wsDetail[resAddr]) {
-            const val = wsDetail[resAddr].v;
-            wsDetail[resAddr].s = {
-                font: { bold: true, color: { rgb: val === 'ĐÚNG' ? 'FF00B050' : 'FFFF0000' } },
-                alignment: { horizontal: 'center' }
-            };
+
+            // Header Style
+            if (r === 0) {
+                wsDetail[addr].s = {
+                    font: { bold: true, color: { rgb: "FFFFFFFF" } },
+                    fill: { fgColor: { rgb: 'FF1B263B' } },
+                    alignment: { horizontal: 'center', vertical: 'center', wrapText: true }
+                };
+                continue;
+            }
+
+            // Alignments
+            if (c === 1 || c === 6 || (c >= 2 && c <= 5)) {
+                wsDetail[addr].s.alignment = { horizontal: 'left', vertical: 'center', wrapText: true };
+            } else {
+                wsDetail[addr].s.alignment = { horizontal: 'center', vertical: 'center' };
+            }
+
+            // Coloring for answers
+            if (c >= 7 && c < 7 + playerNames.length) {
+                const val = wsDetail[addr].v;
+                if (val === 'ĐÚNG') {
+                    wsDetail[addr].s.font = { bold: true, color: { rgb: 'FF00B050' } };
+                } else if (val === 'SAI') {
+                    wsDetail[addr].s.font = { bold: true, color: { rgb: 'FFFF0000' } };
+                } else if (val === 'BỎ QUA') {
+                    wsDetail[addr].s.fill = { fgColor: { rgb: 'FFFFFF00' } };
+                    wsDetail[addr].s.font = { bold: true, color: { rgb: 'FF000000' } };
+                }
+            }
+
+            // Bold for aggregations
+            if (c >= 7 + playerNames.length) {
+                wsDetail[addr].s.font = { bold: true, color: { rgb: 'FF1B263B' } };
+            }
         }
     }
 
-    wsDetail['!cols'] = [
-        {wch:20},{wch:8},{wch:6},{wch:50},
-        {wch:28},{wch:28},{wch:28},{wch:28},
-        {wch:32},{wch:28},{wch:8},{wch:8}
-    ];
-    XLSX.utils.book_append_sheet(wb, wsDetail, 'Chi Tiết');
+    XLSX.utils.book_append_sheet(wb, wsDetail, 'Chi Tiết Tổng Hợp');
 
     // Xuất file
     const now = new Date();
-    const ts  = now.getFullYear() + '-' +
-        String(now.getMonth()+1).padStart(2,'0') + '-' +
-        String(now.getDate()).padStart(2,'0') + '_' +
-        String(now.getHours()).padStart(2,'0') +
-        String(now.getMinutes()).padStart(2,'0');
+    const ts  = now.getFullYear() + '-' + String(now.getMonth()+1).padStart(2,'0') + '-' + String(now.getDate()).padStart(2,'0') + '_' + String(now.getHours()).padStart(2,'0') + String(now.getMinutes()).padStart(2,'0');
     XLSX.writeFile(wb, 'PhysicsGame_KetQua_' + ts + '.xlsx');
 });
 
