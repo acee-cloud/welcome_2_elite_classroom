@@ -888,7 +888,7 @@
 
     <div class="game-header">
         <span class="stage-label" id="stage-title">VÒNG 1</span>
-        <span id="timer-text">60s</span>
+        <span id="timer-text">50s</span>
     </div>
 
     <div id="question-box"></div>
@@ -976,7 +976,7 @@ let myScore = 0;
 let teamScores = { A: 0, B: 0 };
 
 let currentStageDouble = false;
-let currentTimeLimit = 60;
+let currentTimeLimit = 50;
 
 let myTokenPos = { x: 0, y: 0 };
 let hasNavigatedToWaiting = false;
@@ -1691,7 +1691,7 @@ socket.on('startStage', (data) => {
     isAnsweringState = true;
     currentQuestions = data.questions;
     currentStageDouble = data.isDouble || false;
-    currentTimeLimit = data.timeLimit || 60;
+    currentTimeLimit = data.timeLimit || 50;
     questionIndex = 0;
 
     const stageLabel = `VÒNG ${data.stageNum} / ${data.totalStages}` +
