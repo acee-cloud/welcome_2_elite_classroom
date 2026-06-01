@@ -15,8 +15,8 @@ app.use(express.static(path.join(__dirname, 'public')));
 
 // ─── CÀI ĐẶT TRẬN ĐẤU ────────────────────────────────────────────────────────
 const QUESTIONS_PER_STAGE = 5;
-const TIMER_NORMAL        = 50; // Cập nhật từ 60 -> 50
-const TIMER_FINAL         = 40; // Cập nhật từ 50 -> 40
+const TIMER_NORMAL        = 50; 
+const TIMER_FINAL         = 40; 
 const INTERMISSION_TIME   = 15;
 
 const questionsData = require('./data/questions.js');
