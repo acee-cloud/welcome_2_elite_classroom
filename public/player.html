@@ -797,16 +797,7 @@
                 </div>
 
                 <div class="field-group">
-                    <div class="field-label"><span class="fl-icon">📧</span> EMAIL HỌC SINH</div>
-                    <input type="text" id="input-email" placeholder="Nhập email của bạn..." maxlength="80"
-                        style="text-transform:lowercase;"
-                        oninput="this.value=this.value.toLowerCase()"
-                        onkeypress="if(event.key==='Enter') document.getElementById('input-name').focus()">
-                    <div class="room-hint">Email dùng để nhận dạng học sinh trong báo cáo kết quả</div>
-                </div>
-
-                <div class="field-group">
-                    <div class="field-label"><span class="fl-icon">🏷</span> TÊN HIỂN THỊ</div>
+                    <div class="field-label"><span class="fl-icon"></span>YOUR NAME</div>
                     <input type="text" id="input-name" placeholder="Nhập tên hiển thị..." maxlength="20"
                         onkeypress="if(event.key==='Enter') joinRoom()">
                 </div>
@@ -973,7 +964,6 @@ const socket = io();
 let currentRoomId = '';
 let myTeam = '';
 let myName = '';
-let myEmail = '';
 let myAvatar = null;
 let currentQuestions = [];
 let questionIndex = 0;
@@ -1093,12 +1083,8 @@ function resetJoinBtn() {
 }
 
 function joinRoom() {
-    const email = document.getElementById('input-email').value.trim().toLowerCase();
     const name = document.getElementById('input-name').value.trim();
-    if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-        return showError('Vui lòng nhập email hợp lệ (VD: hocsinh@gmail.com)!', 'join-btn');
-    }
-    if (!name) return showError('Vui lòng nhập tên hiển thị!', 'join-btn');
+    if (!name) return showError('Vui lòng nhập tên của bạn!', 'join-btn');
     if (!myAvatar) return showError('Vui lòng chọn 1 biểu tượng đại diện!', 'join-btn');
 
     if (!socket.connected) {
@@ -1107,7 +1093,6 @@ function joinRoom() {
         return;
     }
 
-    myEmail = email;
     myName = name;
     hasNavigatedToWaiting = false;
     const btn = document.getElementById('join-btn');
@@ -1117,8 +1102,7 @@ function joinRoom() {
     socket.emit('playerJoinRoom', {
         roomId: currentRoomId,
         name: myName,
-        avatar: myAvatar,
-        email: myEmail
+        avatar: myAvatar
     });
 
     const joinTimeout = setTimeout(() => {
@@ -1728,10 +1712,12 @@ function renderSingleQuestion() {
     const box = document.getElementById('question-box');
 
     if (questionIndex >= currentQuestions.length) {
+        // Tự chuyển sang phòng nghỉ hội ý ngay (không hiện màn chờ)
+        // earlyIntermission sẽ được server gửi
         box.innerHTML = `
             <div class="question-card" style="text-align:center; padding:40px;">
                 <h3 style="color:var(--success)">✓ Hoàn thành vòng này!</h3>
-                <p style="color:var(--text-dim); margin-top:8px;">Đang chờ những người chơi khác hoàn tất...</p>
+                <p style="color:var(--text-dim); margin-top:8px;">Đang chuyển vào phòng nghỉ hội ý...</p>
             </div>`;
         return;
     }
@@ -1793,7 +1779,7 @@ socket.on('singleAnswerResult', (data) => {
     }
 
     const oldScore = myScore;
-    myScore = data.currentScore !== undefined ? data.currentScore : myScore + delta;
+    myScore = data.currentScore !== undefined ? data.currentScore : Math.max(0, myScore + delta);
     const newTotal = myScore;
 
     const sign = delta >= 0 ? '+' : '';
@@ -1870,12 +1856,18 @@ socket.on('timerUpdate', (timeLeft) => {
 // ═══════════════════════════════════════
 //  GIẢI LAO
 // ═══════════════════════════════════════
-socket.on('intermissionStart', (data) => {
+// Hàm dùng chung để vào màn giải lao
+function enterIntermissionScreen(data, isBonusTime) {
+    // Hiện thời gian giải lao ban đầu (để không bị trống trước khi timerUpdate đến)
+    if (data.totalTime !== undefined) {
+        const el = document.getElementById('break-timer');
+        if (el) el.textContent = data.totalTime;
+    } else if (data.bonusTime !== undefined) {
+        // earlyIntermission: server biết thời gian nghỉ còn lại
+        // timerUpdate sẽ cập nhật liên tục
+    }
     isAnsweringState = false;
     document.getElementById('top-progress-container').style.display = 'none';
-    // Restore timer opacity if player was in early-done state
-    const timerEl = document.getElementById('timer-text');
-    if (timerEl) timerEl.style.opacity = '';
 
     document.getElementById('score-a').textContent = data.avgA !== undefined ? data.avgA : Math.round(data.scoreA || 0);
     document.getElementById('score-b').textContent = data.avgB !== undefined ? data.avgB : Math.round(data.scoreB || 0);
@@ -1885,9 +1877,22 @@ socket.on('intermissionStart', (data) => {
     updateTeamScorePills();
     updateLiveScoreStrip();
 
-    document.getElementById('chat-logs').innerHTML =
-        '<p style="color:#4b6280; font-style:italic; margin:0; font-size:0.85rem;">Phòng hội ý chiến thuật mở ra trong thời gian nghỉ...</p>';
+    // Hiện thời gian nghỉ: nếu có bonusTime thì chú thích
+    let introMsg = '<p style="color:#4b6280; font-style:italic; margin:0; font-size:0.85rem;">Phòng hội ý chiến thuật mở ra trong thời gian nghỉ...</p>';
+    if (isBonusTime && data.bonusTime > 0) {
+        introMsg = `<p style="color:var(--success); font-style:italic; margin:0; font-size:0.85rem;">✓ Bạn hoàn thành sớm! Thêm <strong>+${data.bonusTime}s</strong> vào thời gian nghỉ.</p>`;
+    }
+    document.getElementById('chat-logs').innerHTML = introMsg;
     switchScreen('intermission-screen');
+}
+
+socket.on('intermissionStart', (data) => {
+    enterIntermissionScreen(data, false);
+});
+
+// Player hoàn thành sớm → chuyển ngay vào phòng nghỉ hội ý
+socket.on('earlyIntermission', (data) => {
+    enterIntermissionScreen(data, true);
 });
 
 function sendChat() {
@@ -1916,30 +1921,6 @@ socket.on('receiveGlobalMessage', (data) => {
 // ═══════════════════════════════════════
 //  KẾT THÚC GAME
 // ═══════════════════════════════════════
-// ═══════════════════════════════════════
-//  HOÀN THÀNH SỚM - Chuyển về màn hình chờ giải lao ngay
-// ═══════════════════════════════════════
-socket.on('playerDoneEarly', (data) => {
-    isAnsweringState = false;
-    document.getElementById('top-progress-container').style.display = 'none';
-
-    // Hiển thị màn hình chờ giải lao với thông báo đã hoàn thành sớm
-    const box = document.getElementById('question-box');
-    box.innerHTML = `
-        <div class="question-card" style="text-align:center; padding:48px 24px;">
-            <div style="font-size:3rem; margin-bottom:16px;">✅</div>
-            <h3 style="color:var(--success); font-family:'Orbitron'; letter-spacing:2px; margin-bottom:10px;">HOÀN THÀNH!</h3>
-            <p style="color:var(--text-dim); font-size:0.92rem; margin-bottom:20px;">Bạn đã trả lời tất cả câu hỏi.</p>
-            <div style="background:rgba(0,210,255,0.08); border:1px solid rgba(0,210,255,0.25); border-radius:8px; padding:14px;">
-                <p style="color:var(--accent); font-size:0.85rem;">⏳ Đang chờ vòng kết thúc...<br>
-                <span style="font-size:0.78rem; color:var(--text-dim); margin-top:6px; display:block;">Thời gian nghỉ 15 giây sẽ bắt đầu khi tất cả hoàn thành hoặc hết giờ.</span></p>
-            </div>
-        </div>`;
-    // Không switch screen - giữ game-screen nhưng ẩn timer
-    const timerEl = document.getElementById('timer-text');
-    if (timerEl) timerEl.style.opacity = '0.3';
-});
-
 socket.on('gameSummaryReport', (historyLog) => {
     const container = document.getElementById('review-list-zone');
     container.innerHTML = '';
@@ -1947,52 +1928,24 @@ socket.on('gameSummaryReport', (historyLog) => {
         container.innerHTML = '<p style="color:var(--text-dim);">Không có lịch sử làm bài được ghi nhận.</p>';
         return;
     }
-    // Restore timer opacity if we were in early-done state
-    const timerEl = document.getElementById('timer-text');
-    if (timerEl) timerEl.style.opacity = '';
-
     historyLog.forEach((h, idx) => {
-        const isSkipped = h.skipped || (h.chosenAnswer === null || h.chosenAnswer === undefined);
         const pointsDelta = h.pointsDelta !== undefined ? h.pointsDelta : (h.isCorrect ? 10 : -3);
-
-        let statusText;
-        if (isSkipped) {
-            statusText = `<span style="color:#ffaa00; background:rgba(255,170,0,0.12); padding:2px 8px; border-radius:4px; font-size:0.82rem;">⏭ BỎ QUA (${pointsDelta}đ)</span>`;
-        } else if (h.isCorrect) {
-            statusText = `<span style="color:var(--success)">[ĐÚNG] (+${pointsDelta}đ)</span>`;
-        } else {
-            statusText = `<span style="color:var(--danger)">[SAI] (${pointsDelta}đ)</span>`;
-        }
-
+        let statusText = h.isCorrect
+            ? `<span style="color:var(--success)">[ĐÚNG] (+${pointsDelta}đ)</span>`
+            : `<span style="color:var(--danger)">[SAI] (${pointsDelta}đ)</span>`;
         let choicesHtml = '<ul style="list-style:none; padding-left:10px; margin:8px 0;">';
         (h.choices || []).forEach(c => {
             let style = '';
             if (c.key === h.correctAnswer) style = 'color:var(--success); font-weight:bold;';
-            else if (!isSkipped && c.key === h.chosenAnswer && !h.isCorrect) style = 'color:var(--danger); text-decoration:line-through;';
+            else if (c.key === h.chosenAnswer && !h.isCorrect) style = 'color:var(--danger); text-decoration:line-through;';
             choicesHtml += `<li style="${style}">${c.key}. ${escapeHtml(c.text)} ${c.key === h.correctAnswer ? '✓' : ''}</li>`;
         });
         choicesHtml += '</ul>';
-
-        let cardBorderStyle = '';
-        if (isSkipped)       cardBorderStyle = 'border-color: rgba(255,170,0,0.4); background: rgba(255,170,0,0.04);';
-        else if (h.isCorrect) cardBorderStyle = 'border-color: rgba(0,232,136,0.3);';
-        else                  cardBorderStyle = 'border-color: rgba(255,74,106,0.3);';
-
-        const chosenLabel = isSkipped
-            ? '<em style="color:#ffaa00;">Bỏ qua (hết giờ)</em>'
-            : `<strong>${escapeHtml(h.chosenAnswer || '(không chọn)')}</strong>`;
-
         container.innerHTML += `
-            <div class="review-card" style="${cardBorderStyle}">
-                <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:8px; margin-bottom:6px;">
-                    <strong style="flex:1;">Câu ${idx + 1}: ${h.questionText}</strong>
-                    ${statusText}
-                </div>
+            <div class="review-card">
+                <strong>Câu ${idx + 1}: ${h.questionText}</strong> ${statusText}
                 ${choicesHtml}
-                <div style="font-size:0.85rem; margin-top:6px; padding-top:6px; border-top:1px solid rgba(255,255,255,0.06); color:var(--text-dim);">
-                    Bạn chọn: ${chosenLabel}
-                    ${isSkipped ? '<span style="margin-left:8px; font-size:0.78rem; color:#ffaa00;">⚠ Câu này tính như câu sai</span>' : ''}
-                </div>
+                <div style="font-size:0.88rem; margin-top:5px; color:var(--text-dim);">Bạn chọn: <strong>${escapeHtml(h.chosenAnswer || '(bỏ qua)')}</strong></div>
             </div>`;
     });
     renderMath('review-list-zone');
@@ -2126,7 +2079,7 @@ socket.on('connect_error', (err) => {
 socket.on('reconnect', () => {
     console.log('[Socket] Reconnected');
     if (currentRoomId && myName && myAvatar) {
-        socket.emit('playerRejoin', { roomId: currentRoomId, name: myName, avatar: myAvatar, team: myTeam, email: myEmail });
+        socket.emit('playerRejoin', { roomId: currentRoomId, name: myName, avatar: myAvatar, team: myTeam });
         if (document.getElementById('waiting-screen').classList.contains('active')) {
             appendLobbyChatMsg({ msg: '✓ Đã kết nối lại.' }, true);
         }
