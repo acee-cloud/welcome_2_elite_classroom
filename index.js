@@ -15,8 +15,8 @@ app.use(express.static(path.join(__dirname, 'public')));
 
 // ─── CÀI ĐẶT TRẬN ĐẤU ────────────────────────────────────────────────────────
 const QUESTIONS_PER_STAGE = 5;
-const TIMER_NORMAL        = 60;
-const TIMER_FINAL         = 50;
+const TIMER_NORMAL        = 50; // Cập nhật từ 60 -> 50
+const TIMER_FINAL         = 40; // Cập nhật từ 50 -> 40
 const INTERMISSION_TIME   = 15;
 
 const questionsData = require('./data/questions.js');
@@ -336,14 +336,12 @@ io.on('connection', (socket) => {
   });
 
   // ── CHAT GIẢI LAO ─────────────────────────────────────────────────────────────
-  // FIX: Cho phép chat khi đang giải lao HOẶC khi player đã hoàn thành vòng sớm
   socket.on('sendGlobalMessage', ({ roomId, msg }) => {
     const room = rooms[roomId];
     if (!room || !msg?.trim()) return;
     const player = room.players.find(p => p.id === socket.id);
     if (!player) return;
 
-    // Cho phép chat: đang giải lao chính thức HOẶC player đã nộp bài xong sớm
     const canChat = room.status === 'intermission' ||
                     (room.status === 'playing' && player.submittedCurrentStage);
     if (!canChat) return;
@@ -599,7 +597,6 @@ function startIntermission(roomId) {
 
   const { scoreA, scoreB } = getScores(room);
 
-  // Cập nhật bảng điểm admin sau khi tính điểm câu bỏ qua
   io.to('admin_' + roomId).emit('realtimeScoreUpdate', {
     scoreA, scoreB, players: getLeaderboard(room)
   });
