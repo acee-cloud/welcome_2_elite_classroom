@@ -39,7 +39,6 @@
             overflow-x: hidden;
         }
 
-        /* ── PROGRESS BAR ── */
         #top-progress-container {
             position: fixed; top: 0; left: 0; width: 100%; height: 5px;
             background: #1e293b; z-index: 9999; display: none;
@@ -50,13 +49,9 @@
             transition: width 1s linear, background-color 0.5s ease;
         }
 
-        /* ── SCREENS ── */
         .screen { display: none; }
         .screen.active { display: block; }
 
-        /* ══════════════════
-           SCREEN 1 – ĐĂNG NHẬP
-        ══════════════════ */
         #lobby-screen {
             max-width: 500px;
             margin: 0 auto;
@@ -158,7 +153,6 @@
         .btn-primary:active { transform: translateY(0); }
         .btn-primary:disabled { background: #2d3748; color: #64748b; cursor: not-allowed; transform: none; box-shadow: none; }
 
-        /* Avatar grid */
         .av-section-label {
             display: flex; align-items: center; justify-content: space-between;
             margin-bottom: 10px;
@@ -253,9 +247,6 @@
         }
         .qr-badge.show { display: flex; }
 
-        /* ══════════════════
-           SCREEN 2 – SẢNH CHỜ
-        ══════════════════ */
         #waiting-screen {
             width: 100%; min-height: 100vh;
             position: relative; overflow: hidden;
@@ -290,7 +281,6 @@
         }
         #waiting-count { font-size: 0.78rem; color: var(--text-dim); }
 
-        /* Team panels */
         .team-panel {
             position: fixed; top: 52px; bottom: 148px;
             width: 150px;
@@ -332,7 +322,6 @@
         }
         .member-count { font-size: 0.65rem; color: #4b6280; margin-top: 6px; text-align: center; }
 
-        /* Team score pills */
         .team-score-pill {
             display: block; text-align: center;
             font-family: 'Orbitron', sans-serif;
@@ -342,7 +331,6 @@
         .team-panel.left .team-score-pill { color: var(--team-a); background: rgba(255,74,106,0.12); }
         .team-panel.right .team-score-pill { color: var(--team-b); background: rgba(0,210,255,0.12); }
 
-        /* Arena floor */
         #arena-floor {
             position: fixed; top: 52px; left: 150px; right: 150px; bottom: 148px;
             overflow: hidden;
@@ -367,7 +355,6 @@
             color: rgba(255,255,255,0.15); letter-spacing: 2px;
         }
 
-        /* Player token */
         .player-token {
             position: absolute;
             display: flex; flex-direction: column; align-items: center; gap: 2px;
@@ -405,7 +392,6 @@
             50% { opacity: 0.6; transform: translateX(-50%) scale(1.15); }
         }
 
-        /* Score pop animation */
         .score-pop {
             position: absolute; top: -22px; left: 50%; transform: translateX(-50%);
             font-family: 'Orbitron', sans-serif; font-size: 0.9rem; font-weight: 900;
@@ -423,7 +409,6 @@
 
         #arena-floor { cursor: crosshair; }
 
-        /* Score Popup Overlay */
         .score-popup-overlay {
             position: fixed;
             left: 50%; top: 48%;
@@ -453,7 +438,6 @@
             100% { opacity: 0; transform: translate(-50%, -80%) scale(0.75); }
         }
 
-        /* ── LOBBY CHAT ── */
         #lobby-chat {
             position: fixed; bottom: 0; left: 0; right: 0;
             height: 144px;
@@ -488,7 +472,6 @@
             font-weight: 700; cursor: pointer; font-size: 0.78rem;
         }
 
-        /* Team Reveal Banner */
         .team-reveal-banner {
             position: fixed; inset: 0;
             background: rgba(0,0,0,0.88);
@@ -518,9 +501,6 @@
         .reveal-name { font-size: 1.1rem; margin-top: 10px; color: #94a3b8; }
         .reveal-dismiss { margin-top: 20px; font-size: 0.78rem; color: #475569; }
 
-        /* ══════════════════
-           SCREEN 3 – GAME
-        ══════════════════ */
         #game-screen {
             max-width: 580px; margin: 0 auto;
             padding: 24px 20px 32px;
@@ -614,7 +594,6 @@
             to { transform: scale(1); opacity:1; }
         }
 
-        /* Live scoreboard strip */
         #live-score-strip {
             display: flex; justify-content: center; gap: 20px;
             padding: 10px 18px; margin-bottom: 16px;
@@ -636,7 +615,6 @@
             padding: 0 12px;
         }
 
-        /* Floating delta on score strip */
         .strip-delta {
             position: absolute; top: -18px; left: 50%;
             transform: translateX(-50%);
@@ -662,9 +640,6 @@
             100% { transform: scale(1); }
         }
 
-        /* ══════════════════
-           SCREEN 4 – GIẢI LAO
-        ══════════════════ */
         #intermission-screen {
             max-width: 560px; margin: 0 auto;
             padding: 28px 20px;
@@ -681,6 +656,14 @@
             font-family: 'Orbitron', sans-serif;
             font-size: 2.5rem; font-weight: 900;
             color: var(--accent); margin-top: 6px;
+            transition: font-size 0.3s;
+        }
+        .intermission-subtitle {
+            font-size: 0.82rem;
+            color: var(--text-dim);
+            margin-top: 6px;
+            letter-spacing: 1px;
+            min-height: 1.2em;
         }
 
         .score-board {
@@ -709,9 +692,6 @@
         }
         .msg-line { margin: 4px 0; border-bottom: 1px dashed rgba(30,58,95,0.5); padding-bottom: 2px; }
 
-        /* ══════════════════
-           KẾT THÚC
-        ══════════════════ */
         #summary-screen {
             max-width: 660px; margin: 0 auto; padding: 28px 20px;
         }
@@ -727,12 +707,10 @@
             border-radius: 10px; line-height: 1.6;
         }
 
-        /* Scrollbar */
         ::-webkit-scrollbar { width: 5px; }
         ::-webkit-scrollbar-track { background: var(--bg); }
         ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
 
-        /* Feedback badge */
         #feedback-badge {
             margin-top: 14px; font-size: 1.05rem; font-weight: 700;
             min-height: 36px;
@@ -752,7 +730,6 @@
         }
         #conn-toast.show { display: block; animation: fadeIn 0.3s; }
 
-        /* Responsive */
         @media (max-width: 600px) {
             .team-panel { width: 110px; }
             #arena-floor { left: 110px; right: 110px; }
@@ -897,7 +874,8 @@
 <div id="intermission-screen" class="screen">
     <div class="intermission-header">
         <div class="intermission-title">⏸ GIẢI LAO GIỮA CHẶNG</div>
-        <div class="break-countdown" id="break-timer">15</div>
+        <div class="break-countdown" id="break-timer">---</div>
+        <div class="intermission-subtitle" id="intermission-subtitle"></div>
     </div>
     <div class="score-board">
         <div class="score-card team-a">
@@ -926,9 +904,6 @@
 </div>
 
 <script>
-// ═══════════════════════════════════════
-//  50 AVATAR ĐỘNG VẬT
-// ═══════════════════════════════════════
 const animals = [
     { emoji: '🦁', name: 'Sư Tử' },    { emoji: '🐯', name: 'Hổ' },
     { emoji: '🦊', name: 'Cáo' },      { emoji: '🐺', name: 'Sói' },
@@ -981,6 +956,11 @@ let currentTimeLimit = 50;
 let myTokenPos = { x: 0, y: 0 };
 let hasNavigatedToWaiting = false;
 
+// ── Trạng thái giải lao ──────────────────────────────────────────────────────
+let chatLogBuffer = [];                // Buffer chat cho phiên giải lao hiện tại
+let intermissionCountdownActive = false; // Đếm ngược 15s đã bắt đầu chưa?
+let isOnIntermissionScreen = false;    // Đang ở màn giải lao chưa?
+
 // ═══════════════════════════════════════
 //  KHỞI TẠO
 // ═══════════════════════════════════════
@@ -997,8 +977,6 @@ window.addEventListener('DOMContentLoaded', () => {
         urlRoomId = roomParam.toUpperCase().trim();
         currentRoomId = urlRoomId;
 
-        // Verify phòng tồn tại TRƯỚC khi hiện form đặt tên
-        // (xử lý trường hợp admin reset → QR cũ không còn hợp lệ)
         const doVerify = () => {
             if (!socket.connected) {
                 setTimeout(doVerify, 300);
@@ -1013,10 +991,8 @@ window.addEventListener('DOMContentLoaded', () => {
                     document.getElementById('qr-room-display').textContent = currentRoomId;
                     document.getElementById('input-name').focus();
                 } else {
-                    // Phòng không tồn tại (admin đã reset) → hiện form nhập mã
                     isQRMode = false;
                     currentRoomId = '';
-                    // Xóa ?room= khỏi URL để tránh loop
                     const cleanUrl = new URL(window.location.href);
                     cleanUrl.searchParams.delete('room');
                     window.history.replaceState({}, '', cleanUrl.toString());
@@ -1436,7 +1412,6 @@ function renderArenaTokens(teamA, teamB) {
     placeTokens(teamA, 0.18, 'team-a');
     placeTokens(teamB, 0.72, 'team-b');
 
-    // Thêm lại hint sau khi reset innerHTML
     const hint = document.createElement('div');
     hint.id = 'click-move-hint';
     hint.style.cssText = 'position:absolute; bottom:8px; left:50%; transform:translateX(-50%); font-size:0.68rem; color:rgba(0,210,255,0.35); pointer-events:none; letter-spacing:1px; white-space:nowrap; user-select:none;';
@@ -1488,32 +1463,24 @@ function setupClickToMove() {
 }
 
 // ═══════════════════════════════════════
-//  KEYBOARD – HOLD TO MOVE + ACCELERATION
-//  Tap to move: tốc độ giữ nguyên như click
-//  Hold to move: tốc độ tăng dần (acceleration)
+//  KEYBOARD MOVEMENT
 // ═══════════════════════════════════════
 function setupKeyboard() {
-    // Tốc độ base khi vừa nhấn (1 step đầu tiên)
     const STEP_BASE   = 0.025;
-    // Tốc độ tối đa khi giữ lâu
     const STEP_MAX    = 0.095;
-    // Tốc độ tăng mỗi frame khi giữ phím
     const ACCEL       = 0.004;
-
-    // Throttle gửi socket (không gửi mỗi frame, tránh flood)
-    const EMIT_INTERVAL = 50; // ms
+    const EMIT_INTERVAL = 50;
     let lastEmitTime = 0;
 
     const keyMap = {
-        'ArrowUp':    { dx: 0,     dy: -1 }, 'ArrowDown':  { dx: 0,    dy: 1 },
-        'ArrowLeft':  { dx: -1,    dy: 0  }, 'ArrowRight': { dx: 1,    dy: 0 },
+        'ArrowUp':    { dx: 0,  dy: -1 }, 'ArrowDown':  { dx: 0, dy: 1 },
+        'ArrowLeft':  { dx: -1, dy: 0  }, 'ArrowRight': { dx: 1, dy: 0 },
         'w': { dx: 0, dy: -1 }, 's': { dx: 0, dy: 1 },
         'a': { dx: -1, dy: 0 }, 'd': { dx: 1, dy: 0 },
         'W': { dx: 0, dy: -1 }, 'S': { dx: 0, dy: 1 },
         'A': { dx: -1, dy: 0 }, 'D': { dx: 1, dy: 0 }
     };
 
-    // held[key] = { startTime, lastStep }
     const held = {};
     let rafId = null;
 
@@ -1530,9 +1497,6 @@ function setupKeyboard() {
             const dir = keyMap[key];
             if (!dir) continue;
             const heldMs = now - held[key].startTime;
-
-            // Tính tốc độ hiện tại dựa theo thời gian đã giữ
-            // 0ms → STEP_BASE, tăng dần lên STEP_MAX sau ~1.8s
             const speed = Math.min(STEP_MAX, STEP_BASE + (heldMs / 1000) * ACCEL * 60);
 
             myTokenPos.x = Math.max(0.02, Math.min(0.93, myTokenPos.x + dir.dx * speed));
@@ -1550,7 +1514,6 @@ function setupKeyboard() {
                 myToken.style.top  = (myTokenPos.y * floorH) + 'px';
             }
 
-            // Throttle socket emit
             if (currentRoomId && now - lastEmitTime > EMIT_INTERVAL) {
                 socket.emit('playerMove', { roomId: currentRoomId, x: myTokenPos.x, y: myTokenPos.y });
                 lastEmitTime = now;
@@ -1564,7 +1527,6 @@ function setupKeyboard() {
             rafId = requestAnimationFrame(updateToken);
         } else {
             rafId = null;
-            // Emit vị trí cuối cùng khi thả phím
             if (moved && currentRoomId) {
                 socket.emit('playerMove', { roomId: currentRoomId, x: myTokenPos.x, y: myTokenPos.y });
             }
@@ -1584,7 +1546,6 @@ function setupKeyboard() {
 
         if (!held[key]) {
             held[key] = { startTime: performance.now() };
-            // Khởi động loop nếu chưa chạy
             if (!rafId) {
                 rafId = requestAnimationFrame(updateToken);
             }
@@ -1593,10 +1554,8 @@ function setupKeyboard() {
 
     document.addEventListener('keyup', (e) => {
         delete held[e.key];
-        // Nếu không còn phím nào được giữ, loop sẽ tự dừng
     });
 
-    // Dừng tất cả khi window mất focus để tránh token trôi vô tận
     window.addEventListener('blur', () => {
         for (const key in held) delete held[key];
     });
@@ -1678,6 +1637,9 @@ socket.on('lobbyChatSystem', (text) => {
 //  GAME BẮT ĐẦU
 // ═══════════════════════════════════════
 socket.on('gameStarted', () => {
+    chatLogBuffer = [];
+    intermissionCountdownActive = false;
+    isOnIntermissionScreen = false;
     switchScreen('game-screen');
     document.getElementById('question-box').innerHTML =
         '<div style="padding:40px 10px;"><h3 style="color:var(--accent)">⚡ Game đang bắt đầu...</h3></div>';
@@ -1688,6 +1650,11 @@ socket.on('gameStarted', () => {
 //  STAGE / VÒNG
 // ═══════════════════════════════════════
 socket.on('startStage', (data) => {
+    // Reset trạng thái giải lao khi vòng mới bắt đầu
+    chatLogBuffer = [];
+    intermissionCountdownActive = false;
+    isOnIntermissionScreen = false;
+
     isAnsweringState = true;
     currentQuestions = data.questions;
     currentStageDouble = data.isDouble || false;
@@ -1712,12 +1679,10 @@ function renderSingleQuestion() {
     const box = document.getElementById('question-box');
 
     if (questionIndex >= currentQuestions.length) {
-        // Tự chuyển sang phòng nghỉ hội ý ngay (không hiện màn chờ)
-        // earlyIntermission sẽ được server gửi
         box.innerHTML = `
             <div class="question-card" style="text-align:center; padding:40px;">
                 <h3 style="color:var(--success)">✓ Hoàn thành vòng này!</h3>
-                <p style="color:var(--text-dim); margin-top:8px;">Đang chuyển vào phòng nghỉ hội ý...</p>
+                <p style="color:var(--text-dim); margin-top:8px;">Đang chuyển vào phòng hội ý...</p>
             </div>`;
         return;
     }
@@ -1847,52 +1812,119 @@ socket.on('timerUpdate', (timeLeft) => {
         } else {
             bar.style.backgroundColor = 'var(--success)';
         }
-    } else {
+    } else if (intermissionCountdownActive) {
+        // Chỉ cập nhật bộ đếm ngược giải lao sau khi tất cả hoàn thành
         const el = document.getElementById('break-timer');
         if (el) el.textContent = timeLeft;
     }
+    // Bỏ qua timerUpdate nếu đang ở trạng thái chờ (earlyIntermission) – chưa bắt đầu đếm
 });
 
 // ═══════════════════════════════════════
-//  GIẢI LAO
+//  GIẢI LAO – HELPER FUNCTIONS
 // ═══════════════════════════════════════
-// Hàm dùng chung để vào màn giải lao
-function enterIntermissionScreen(data, isBonusTime) {
-    // Hiện thời gian giải lao ban đầu (để không bị trống trước khi timerUpdate đến)
-    if (data.totalTime !== undefined) {
-        const el = document.getElementById('break-timer');
-        if (el) el.textContent = data.totalTime;
-    } else if (data.bonusTime !== undefined) {
-        // earlyIntermission: server biết thời gian nghỉ còn lại
-        // timerUpdate sẽ cập nhật liên tục
+
+// Render một dòng chat vào container
+function renderChatItem(item, container) {
+    if (!container) return;
+    let html = '';
+    if (item.isSystem) {
+        html = `<div class="msg-line" style="color:${item.color || '#4b6280'}; font-style:italic;">${item.text}</div>`;
+    } else {
+        const teamColor = item.team === 'A' ? 'var(--team-a)' : item.team === 'B' ? 'var(--team-b)' : '#fff';
+        html = `<div class="msg-line"><strong style="color:${teamColor}">${escapeHtml(item.name || '')}:</strong> ${escapeHtml(item.msg || '')}</div>`;
     }
-    isAnsweringState = false;
-    document.getElementById('top-progress-container').style.display = 'none';
-
-    document.getElementById('score-a').textContent = data.avgA !== undefined ? data.avgA : Math.round(data.scoreA || 0);
-    document.getElementById('score-b').textContent = data.avgB !== undefined ? data.avgB : Math.round(data.scoreB || 0);
-
-    teamScores.A = data.scoreA || 0;
-    teamScores.B = data.scoreB || 0;
-    updateTeamScorePills();
-    updateLiveScoreStrip();
-
-    // Hiện thời gian nghỉ: nếu có bonusTime thì chú thích
-    let introMsg = '<p style="color:#4b6280; font-style:italic; margin:0; font-size:0.85rem;">Phòng hội ý chiến thuật mở ra trong thời gian nghỉ...</p>';
-    if (isBonusTime && data.bonusTime > 0) {
-        introMsg = `<p style="color:var(--success); font-style:italic; margin:0; font-size:0.85rem;">✓ Bạn hoàn thành sớm! Thêm <strong>+${data.bonusTime}s</strong> vào thời gian nghỉ.</p>`;
-    }
-    document.getElementById('chat-logs').innerHTML = introMsg;
-    switchScreen('intermission-screen');
+    container.innerHTML += html;
+    container.scrollTop = container.scrollHeight;
 }
 
-socket.on('intermissionStart', (data) => {
-    enterIntermissionScreen(data, false);
+// Khôi phục toàn bộ lịch sử chat từ buffer vào chat-logs
+function restoreIntermissionChat() {
+    const logs = document.getElementById('chat-logs');
+    if (!logs) return;
+    logs.innerHTML = '';
+    chatLogBuffer.forEach(item => renderChatItem(item, logs));
+}
+
+// Thêm vào buffer và hiển thị ngay nếu đang ở màn giải lao
+function addIntermissionMessage(item) {
+    chatLogBuffer.push(item);
+    if (isOnIntermissionScreen) {
+        renderChatItem(item, document.getElementById('chat-logs'));
+    }
+    // Nếu đang ở màn chơi: chỉ lưu buffer, sẽ hiển thị khi chuyển sang màn giải lao
+}
+
+// Cập nhật điểm số trên màn giải lao + sync trạng thái chung
+function updateIntermissionScores(scoreA, scoreB) {
+    document.getElementById('score-a').textContent = parseFloat(scoreA || 0).toFixed(1);
+    document.getElementById('score-b').textContent = parseFloat(scoreB || 0).toFixed(1);
+    teamScores.A = scoreA || 0;
+    teamScores.B = scoreB || 0;
+    updateTeamScorePills();
+    updateLiveScoreStrip();
+}
+
+// ═══════════════════════════════════════
+//  GIẢI LAO – SỰ KIỆN
+// ═══════════════════════════════════════
+
+// Player hoàn thành sớm → vào phòng hội ý NGAY, chưa có đếm ngược
+socket.on('earlyIntermission', (data) => {
+    isAnsweringState = false;
+    intermissionCountdownActive = false;  // Chưa đếm ngược – đợi tất cả hoàn thành
+    isOnIntermissionScreen = true;
+    document.getElementById('top-progress-container').style.display = 'none';
+
+    updateIntermissionScores(data.scoreA, data.scoreB);
+
+    // Hiện trạng thái "đang chờ"
+    const timerEl = document.getElementById('break-timer');
+    if (timerEl) { timerEl.textContent = '⏳'; timerEl.style.fontSize = '2.2rem'; }
+    const subtitle = document.getElementById('intermission-subtitle');
+    if (subtitle) subtitle.textContent = 'Đang chờ các bạn hoàn thành...';
+
+    // Thêm thông báo vào buffer rồi hiển thị (player này đã ở màn giải lao)
+    addIntermissionMessage({
+        isSystem: true,
+        text: '⚡ Bạn đã hoàn thành! Chat thoải mái trong khi chờ nhé.',
+        color: 'var(--success)'
+    });
+
+    restoreIntermissionChat();
+    switchScreen('intermission-screen');
 });
 
-// Player hoàn thành sớm → chuyển ngay vào phòng nghỉ hội ý
-socket.on('earlyIntermission', (data) => {
-    enterIntermissionScreen(data, true);
+// Tất cả hoàn thành / hết giờ → đếm ngược 15s chính thức bắt đầu
+socket.on('intermissionStart', (data) => {
+    isAnsweringState = false;
+    intermissionCountdownActive = true;  // Bắt đầu đếm ngược
+    document.getElementById('top-progress-container').style.display = 'none';
+
+    updateIntermissionScores(data.scoreA, data.scoreB);
+
+    // Cập nhật bộ đếm ngược
+    const timerEl = document.getElementById('break-timer');
+    if (timerEl) { timerEl.textContent = data.totalTime || 15; timerEl.style.fontSize = ''; }
+    const subtitle = document.getElementById('intermission-subtitle');
+    if (subtitle) subtitle.textContent = 'Vòng tiếp theo bắt đầu sau...';
+
+    // Thông báo hệ thống cho tất cả
+    addIntermissionMessage({
+        isSystem: true,
+        text: `⏱ Mọi người đã hoàn thành! Nghỉ ${data.totalTime || 15}s rồi bắt đầu vòng tiếp...`,
+        color: 'var(--accent)'
+    });
+
+    if (isOnIntermissionScreen) {
+        // Player đã ở màn giải lao (hoàn thành sớm) → tin nhắn đã được addIntermissionMessage hiển thị rồi
+        // Không cần làm gì thêm ngoài việc cập nhật timer và subtitle ở trên
+    } else {
+        // Player vừa hết giờ hoặc hoàn thành cuối → chuyển sang màn giải lao + khôi phục chat
+        isOnIntermissionScreen = true;
+        restoreIntermissionChat();
+        switchScreen('intermission-screen');
+    }
 });
 
 function sendChat() {
@@ -1900,8 +1932,7 @@ function sendChat() {
     const msg = input.value.trim();
     if (!msg) return;
     if (!socket.connected) {
-        const logs = document.getElementById('chat-logs');
-        if (logs) logs.innerHTML += `<div class="msg-line" style="color:var(--danger)">⚠ Mất kết nối server!</div>`;
+        addIntermissionMessage({ isSystem: true, text: '⚠ Mất kết nối server!', color: 'var(--danger)' });
         return;
     }
     socket.emit('sendGlobalMessage', { roomId: currentRoomId, msg });
@@ -1909,13 +1940,10 @@ function sendChat() {
     input.focus();
 }
 
+// Chat giải lao: buffer + hiển thị nếu đang ở màn giải lao
+// Nếu đang ở màn chơi (player chưa hoàn thành), chỉ lưu vào buffer
 socket.on('receiveGlobalMessage', (data) => {
-    const logs = document.getElementById('chat-logs');
-    let teamColor = '#fff';
-    if (data.team === 'A') teamColor = 'var(--danger)';
-    if (data.team === 'B') teamColor = 'var(--accent)';
-    logs.innerHTML += `<div class="msg-line"><strong style="color:${teamColor}">${escapeHtml(data.name)}:</strong> ${escapeHtml(data.msg)}</div>`;
-    logs.scrollTop = logs.scrollHeight;
+    addIntermissionMessage(data);
 });
 
 // ═══════════════════════════════════════
@@ -1929,23 +1957,45 @@ socket.on('gameSummaryReport', (historyLog) => {
         return;
     }
     historyLog.forEach((h, idx) => {
+        const isSkipped = h.skipped === true || h.chosenAnswer === '(bỏ qua)';
         const pointsDelta = h.pointsDelta !== undefined ? h.pointsDelta : (h.isCorrect ? 10 : -3);
-        let statusText = h.isCorrect
-            ? `<span style="color:var(--success)">[ĐÚNG] (+${pointsDelta}đ)</span>`
-            : `<span style="color:var(--danger)">[SAI] (${pointsDelta}đ)</span>`;
+
+        // Phân loại: ĐÚNG / SAI / BỎ QUA – mỗi loại màu riêng
+        let statusText;
+        if (isSkipped) {
+            statusText = `<span style="color:var(--gold); font-weight:700;">[BỎ QUA] (${pointsDelta}đ)</span>`;
+        } else if (h.isCorrect) {
+            statusText = `<span style="color:var(--success)">[ĐÚNG] (+${pointsDelta}đ)</span>`;
+        } else {
+            statusText = `<span style="color:var(--danger)">[SAI] (${pointsDelta}đ)</span>`;
+        }
+
         let choicesHtml = '<ul style="list-style:none; padding-left:10px; margin:8px 0;">';
         (h.choices || []).forEach(c => {
             let style = '';
-            if (c.key === h.correctAnswer) style = 'color:var(--success); font-weight:bold;';
-            else if (c.key === h.chosenAnswer && !h.isCorrect) style = 'color:var(--danger); text-decoration:line-through;';
+            if (c.key === h.correctAnswer) {
+                style = 'color:var(--success); font-weight:bold;';
+            } else if (!isSkipped && c.key === h.chosenAnswer && !h.isCorrect) {
+                // Chỉ gạch đáp án sai nếu không phải câu bỏ qua
+                style = 'color:var(--danger); text-decoration:line-through;';
+            }
             choicesHtml += `<li style="${style}">${c.key}. ${escapeHtml(c.text)} ${c.key === h.correctAnswer ? '✓' : ''}</li>`;
         });
         choicesHtml += '</ul>';
+
+        // Hiển thị đáp án đã chọn: BỎ QUA màu vàng, còn lại in đậm
+        let chosenDisplay;
+        if (isSkipped) {
+            chosenDisplay = '<span style="color:var(--gold); font-weight:700;">[BỎ QUA]</span>';
+        } else {
+            chosenDisplay = `<strong>${escapeHtml(h.chosenAnswer || '')}</strong>`;
+        }
+
         container.innerHTML += `
             <div class="review-card">
                 <strong>Câu ${idx + 1}: ${h.questionText}</strong> ${statusText}
                 ${choicesHtml}
-                <div style="font-size:0.88rem; margin-top:5px; color:var(--text-dim);">Bạn chọn: <strong>${escapeHtml(h.chosenAnswer || '(bỏ qua)')}</strong></div>
+                <div style="font-size:0.88rem; margin-top:5px; color:var(--text-dim);">Bạn chọn: ${chosenDisplay}</div>
             </div>`;
     });
     renderMath('review-list-zone');
@@ -1990,24 +2040,20 @@ socket.on('gameOver', (d) => {
 });
 
 // ═══════════════════════════════════════
-//  RESET – FIX: nhận object {newRoomId} thay vì không có data
-//  Player quét QR: tải lại trang → URL cũ không còn hợp lệ → hiện form nhập mã
-//  (verifyRoom sẽ báo lỗi "phòng không tồn tại" nếu nhập mã cũ)
+//  RESET
 // ═══════════════════════════════════════
 socket.on('roomResetByAdmin', (data) => {
-    // Xóa trạng thái phòng cũ
     currentRoomId = '';
     myTeam = '';
     myScore = 0;
     allPlayers = {};
     teamScores = { A: 0, B: 0 };
     hasNavigatedToWaiting = false;
+    chatLogBuffer = [];
+    intermissionCountdownActive = false;
+    isOnIntermissionScreen = false;
 
-    // Nếu player đang ở waiting-screen hoặc màn hình khác → reload trang
-    // Trang reload sẽ đọc URL param ?room= (nếu có) nhưng mã cũ sẽ fail verifyRoom
-    // Nếu không có URL param, hiện form nhập mã bình thường
     alert('Giáo viên đã reset phòng chơi. Trang sẽ tải lại để vào phòng mới.');
-    // Xóa query param room= khỏi URL để player không bị redirect về phòng cũ
     const url = new URL(window.location.href);
     url.searchParams.delete('room');
     window.location.href = url.toString();
