@@ -1751,12 +1751,12 @@ socket.on('singleAnswerResult', (data) => {
         badge.innerHTML = `
             <span class="fb-correct">✓ CHUẨN</span>
             <span class="score-delta" style="color:var(--success); margin-left:6px;">${sign}${delta}</span>
-            <span style="font-size:0.82rem; color:var(--gold); font-family:'Orbitron'; margin-left:8px;">▶ Tổng: ${newTotal}đ</span>`;
+            <span style="font-size:0.82rem; color:var(--gold); font-family:'Orbitron'; margin-left:8px;">▶ ${newTotal}</span>`;
     } else {
         badge.innerHTML = `
             <span class="fb-wrong">✗ SAI</span>
             <span class="score-delta" style="color:var(--danger); margin-left:6px;">${sign}${delta}</span>
-            <span style="font-size:0.82rem; color:var(--gold); font-family:'Orbitron'; margin-left:8px;">▶ Tổng: ${newTotal}đ</span>`;
+            <span style="font-size:0.82rem; color:var(--gold); font-family:'Orbitron'; margin-left:8px;">▶ ${newTotal}</span>`;
     }
 
     document.getElementById('live-score-me').textContent = newTotal;
