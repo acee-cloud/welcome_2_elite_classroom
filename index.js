@@ -15,8 +15,8 @@ app.use(express.static(path.join(__dirname, 'public')));
 
 // ─── CÀI ĐẶT TRẬN ĐẤU ────────────────────────────────────────────────────────
 const QUESTIONS_PER_STAGE = 5;
-const TIMER_NORMAL        = 50; // Cập nhật từ 60 -> 50
-const TIMER_FINAL         = 40; // Cập nhật từ 50 -> 40
+const TIMER_NORMAL        = 50;
+const TIMER_FINAL         = 40;
 const INTERMISSION_TIME   = 15;
 
 const questionsData = require('./data/questions.js');
@@ -299,17 +299,18 @@ io.on('connection', (socket) => {
     if (player._answeredCount >= totalQs) {
       player.submittedCurrentStage = true;
 
-      const timeBonus = Math.max(0, room.stageTimeLeft);
+      // Gửi earlyIntermission cho player này: chỉ báo ra sảnh chờ, chưa có đếm ngược
+      // Thời gian nghỉ 15s chỉ bắt đầu khi TẤT CẢ player hoàn thành
       const { scoreA: sA, scoreB: sB } = getScores(room);
       socket.emit('earlyIntermission', {
         scoreA: sA, scoreB: sB,
         leaderboard: getLeaderboard(room),
         currentStage: room.currentStage,
-        totalStages: room.totalStages,
-        bonusTime: timeBonus
+        totalStages: room.totalStages
       });
     }
 
+    // Nếu TẤT CẢ player đã xong → bắt đầu giải lao ngay
     if (room.players.length > 0 && room.players.every(p => p.submittedCurrentStage)) {
       clearInterval(room.timer);
       startIntermission(roomId);
@@ -336,6 +337,7 @@ io.on('connection', (socket) => {
   });
 
   // ── CHAT GIẢI LAO ─────────────────────────────────────────────────────────────
+  // Player hoàn thành sớm (submittedCurrentStage=true) hoặc đang trong giải lao đều được chat
   socket.on('sendGlobalMessage', ({ roomId, msg }) => {
     const room = rooms[roomId];
     if (!room || !msg?.trim()) return;
@@ -404,7 +406,8 @@ io.on('connection', (socket) => {
         scoreA, scoreB,
         leaderboard: getLeaderboard(room),
         currentStage: room.currentStage,
-        totalStages: room.totalStages
+        totalStages: room.totalStages,
+        totalTime: INTERMISSION_TIME
       });
     }
   });
@@ -569,7 +572,7 @@ function startIntermission(roomId) {
   if (!room || room.status === 'intermission' || room.status === 'finished') return;
   room.status = 'intermission';
 
-  // ── FIX: Xử lý câu chưa trả lời → tính như câu bỏ qua (trừ điểm như sai) ──
+  // Xử lý câu chưa trả lời → tính như bỏ qua (trừ điểm)
   const isFinalRound = (room.currentStage === room.finalStage);
   room.players.forEach(p => {
     if (!p.submittedCurrentStage) {
@@ -606,20 +609,19 @@ function startIntermission(roomId) {
     return;
   }
 
-  const bonusTime = Math.max(0, room.stageTimeLeft || 0);
   room.stageTimeLeft = 0;
-  const totalIntermission = INTERMISSION_TIME + bonusTime;
 
+  // Thời gian nghỉ luôn cố định là INTERMISSION_TIME (không có bonus)
+  // Đồng hồ đếm ngược chỉ bắt đầu khi TẤT CẢ player đã hoàn thành (hoặc hết giờ)
   io.to('room_' + roomId).emit('intermissionStart', {
     scoreA, scoreB,
     leaderboard: getLeaderboard(room),
     currentStage: room.currentStage,
     totalStages:  room.totalStages,
-    bonusTime:    bonusTime,
-    totalTime:    totalIntermission
+    totalTime:    INTERMISSION_TIME
   });
 
-  let timeLeft = totalIntermission;
+  let timeLeft = INTERMISSION_TIME;
   clearInterval(room.timer);
   room.timer = setInterval(() => {
     io.to('room_' + roomId).emit('timerUpdate', timeLeft);
