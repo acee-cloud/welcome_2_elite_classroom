@@ -15,8 +15,8 @@ app.use(express.static(path.join(__dirname, 'public')));
 
 // ─── CÀI ĐẶT TRẬN ĐẤU ────────────────────────────────────────────────────────
 const QUESTIONS_PER_STAGE = 5;
-const TIMER_NORMAL        = 50; 
-const TIMER_FINAL         = 40; 
+const TIMER_NORMAL        = 50; // Cập nhật từ 60 -> 50
+const TIMER_FINAL         = 40; // Cập nhật từ 50 -> 40
 const INTERMISSION_TIME   = 15;
 
 const questionsData = require('./data/questions.js');
@@ -259,7 +259,7 @@ io.on('connection', (socket) => {
       ? (isFinalStage ? 20 : 10)
       : (isFinalStage ? -5 : -3);
 
-    player.score = Math.max(0, player.score + points);
+    player.score = player.score + points;
     player.lastDelta = points;
 
     player.history.push({
@@ -577,7 +577,7 @@ function startIntermission(roomId) {
         if (!q.answered) {
           q.answered = true;
           const pts   = isFinalRound ? -5 : -3;
-          p.score     = Math.max(0, p.score + pts);
+          p.score     = p.score + pts;
           p.lastDelta = pts;
           p._answeredCount++;
           p.history.push({
