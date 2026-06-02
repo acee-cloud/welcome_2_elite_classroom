@@ -145,7 +145,7 @@ io.on('connection', (socket) => {
     const room = rooms[rId];
     if (typeof callback !== 'function') return;
     if (!room) {
-      return callback({ success: false, message: 'Phòng không tồn tại! Kiểm tra lại mã phòng.' });
+      return callback({ success: false, message: 'Phòng không tồn tại! Kiểm tra lại Room ID.' });
     }
     if (room.status !== 'lobby') {
       return callback({ success: false, message: 'Trận đấu đã bắt đầu, không thể vào phòng!' });
@@ -168,7 +168,7 @@ io.on('connection', (socket) => {
     const rId = roomId.toUpperCase();
     const room = rooms[rId];
     if (!room) {
-      return socket.emit('joinError', 'Phòng không tồn tại! Kiểm tra lại mã phòng.');
+      return socket.emit('joinError', 'Phòng không tồn tại! Kiểm tra lại Room ID.');
     }
     if (room.status !== 'lobby') {
       return socket.emit('joinError', 'Trận đấu đã bắt đầu, không thể vào phòng!');
@@ -310,8 +310,9 @@ io.on('connection', (socket) => {
       });
     }
 
-    // Nếu TẤT CẢ player đã xong → bắt đầu giải lao ngay
-    if (room.players.length > 0 && room.players.every(p => p.submittedCurrentStage)) {
+    // Nếu TẤT CẢ player ĐANG ONLINE đã xong → bắt đầu giải lao ngay
+    const onlinePlayers = room.players.filter(p => !p.isOffline);
+    if (onlinePlayers.length > 0 && onlinePlayers.every(p => p.submittedCurrentStage)) {
       clearInterval(room.timer);
       startIntermission(roomId);
     }
@@ -368,6 +369,7 @@ io.on('connection', (socket) => {
     if (player) {
       const oldId = player.id;
       player.id = socket.id;
+      player.isOffline = false;
       const teamArr = team === 'A' ? room.teamA : room.teamB;
       const tp = teamArr.find(p => p.id === oldId);
       if (tp) tp.id = socket.id;
@@ -452,6 +454,7 @@ io.on('connection', (socket) => {
   });
 
   // ── Ngắt kết nối ─────────────────────────────────────────────────────────────
+  // ── Ngắt kết nối ─────────────────────────────────────────────────────────────
   socket.on('disconnect', () => {
     const adminRoomId = socket.data.adminRoomId;
     if (adminRoomId && rooms[adminRoomId] && rooms[adminRoomId].adminSocketId === socket.id) {
@@ -468,15 +471,17 @@ io.on('connection', (socket) => {
     if (!roomId || !rooms[roomId]) return;
 
     const room = rooms[roomId];
-    room.players = room.players.filter(p => p.id !== socket.id);
-    room.teamA   = room.teamA.filter(p => p.id !== socket.id);
-    room.teamB   = room.teamB.filter(p => p.id !== socket.id);
-
-    io.to('room_' + roomId).emit('updatePlayerList', room.players.map(p => ({
-      id: p.id, name: p.name, avatar: p.avatar, team: p.team
-    })));
 
     if (room.status === 'lobby') {
+      // Đang ở sảnh chờ -> Xóa hẳn để chia lại đội cho chuẩn
+      room.players = room.players.filter(p => p.id !== socket.id);
+      room.teamA   = room.teamA.filter(p => p.id !== socket.id);
+      room.teamB   = room.teamB.filter(p => p.id !== socket.id);
+
+      io.to('room_' + roomId).emit('updatePlayerList', room.players.map(p => ({
+        id: p.id, name: p.name, avatar: p.avatar, team: p.team
+      })));
+
       io.to('room_' + roomId).emit('lobbyUpdate', {
         players: room.players.map(p => ({
           id: p.id, name: p.name,
@@ -485,15 +490,24 @@ io.on('connection', (socket) => {
         })),
         totalCount: room.players.length
       });
-    }
+    } else {
+      // Game đã bắt đầu -> Giữ lại dữ liệu, chỉ đánh dấu offline
+      const player = room.players.find(p => p.id === socket.id);
+      if (player) {
+        player.isOffline = true;
+      }
 
-    if (room.status === 'playing' && room.players.length > 0 &&
-        room.players.every(p => p.submittedCurrentStage)) {
-      clearInterval(room.timer);
-      startIntermission(roomId);
+      // Kiểm tra nếu tất cả những người CÒN ONLINE đã nộp bài -> Chuyển qua giải lao sớm
+      const onlinePlayers = room.players.filter(p => !p.isOffline);
+      if (room.status === 'playing' && onlinePlayers.length > 0 &&
+          onlinePlayers.every(p => p.submittedCurrentStage)) {
+        clearInterval(room.timer);
+        startIntermission(roomId);
+      }
     }
   });
-});
+
+}); // end io.on('connection')
 
 // ─── BẮT ĐẦU VÒNG ─────────────────────────────────────────────────────────────
 function startStage(roomId, stageNum) {
@@ -501,7 +515,7 @@ function startStage(roomId, stageNum) {
   if (!room) return;
 
   if (!room.roundQuestions[stageNum - 1]) {
-    console.error(`[ERROR] Vòng ${stageNum} không có câu hỏi! Kết thúc game sớm.`);
+    console.error(`[ERROR] Stage ${stageNum} không có câu hỏi! Kết thúc game sớm.`);
     endGameFinal(roomId);
     return;
   }
@@ -647,7 +661,7 @@ function endGameFinal(roomId) {
   });
 
   io.to('room_' + roomId).emit('gameOver', {
-    winningTeam: scoreA === scoreB ? 'Hòa' : (scoreA > scoreB ? 'A' : 'B'),
+    winningTeam: scoreA === scoreB ? 'Tie' : (scoreA > scoreB ? 'A' : 'B'),
     scoreA, scoreB,
     topPlayers: getLeaderboard(room).slice(0, 5)
   });
@@ -656,6 +670,6 @@ function endGameFinal(roomId) {
 // ─── KHỞI ĐỘNG SERVER ─────────────────────────────────────────────────────────
 const PORT = process.env.PORT || 3000;
 server.listen(PORT, () => {
-  console.log(`✅  Server đang chạy tại port ${PORT}`);
-  console.log(`📚 Kho câu hỏi: ${countAllQuestions()} câu (${CHAPTER_KEYS.length} chương)`);
+  console.log(`Server đang chạy tại port ${PORT}`);
+  console.log(`Kho câu hỏi: ${countAllQuestions()} câu (${CHAPTER_KEYS.length} chương)`);
 });
