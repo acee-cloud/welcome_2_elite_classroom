@@ -633,6 +633,7 @@
 </head>
 <body>
 
+<!-- ── LOBBY ─────────────────────────────────────────────────────────────── -->
 <div id="lobby-view">
     <div class="web-title-wrapper">
         <div class="web-title-glow"></div>
@@ -641,6 +642,7 @@
     </div>
     <button id="btn-create" onclick="createRoom()">TẠO PHÒNG MỚI</button>
 
+    <!-- HƯỚNG DẪN QUY TẮC -->
     <div class="rules-wrapper">
         <div class="rules-header" onclick="toggleRules(this)">
             <span class="rules-header-left">
@@ -672,7 +674,7 @@
                         <div class="rules-item-icon">⏱</div>
                         <div>
                             <div class="rules-item-label">Thời gian / vòng</div>
-                            <div class="rules-item-val">50 giây &nbsp;·&nbsp; Vòng cuối: 40 giây</div>
+                            <div class="rules-item-val">60 giây &nbsp;·&nbsp; Vòng cuối: 50 giây</div>
                         </div>
                     </div>
                     <div class="rules-item">
@@ -708,7 +710,7 @@
                     </div>
                 </div>
                 <div class="rules-note">
-                    💡 Điểm không thể xuống dưới 0. Thứ hạng cá nhân xét theo điểm cao → thời gian trả lời thấp. Cố ý bỏ qua câu hỏi sẽ bị trừ điểm như trả lời sai.
+                    💡 Điểm không thể xuống dưới 0. Thứ hạng cá nhân xét theo điểm cao → thời gian trả lời thấp.
                 </div>
             </div>
 
@@ -747,6 +749,7 @@
     </div>
 </div>
 
+<!-- ── QR FULLSCREEN ──────────────────────────────────────────────────────── -->
 <div id="qr-fullscreen-overlay" onclick="closeFullscreenQR()">
     <div class="qr-fs-content" onclick="event.stopPropagation()">
         <div id="qrcode-fs"></div>
@@ -754,6 +757,7 @@
     </div>
 </div>
 
+<!-- ── ROOM VIEW ──────────────────────────────────────────────────────────── -->
 <div id="room-view">
     <div id="room-topbar">
         <div class="code-block">
@@ -814,10 +818,11 @@
     </div>
 </div>
 
+<!-- ── DASHBOARD ──────────────────────────────────────────────────────────── -->
 <div id="dashboard-view">
     <div style="display:flex; justify-content:space-between; align-items:center; background:var(--panel); padding:14px 20px; border-radius:12px; border:1px solid var(--border); margin-bottom:14px; flex-wrap:wrap; gap:10px;">
         <h2 id="current-stage-txt" style="font-family:'Orbitron'; margin:0; color:var(--accent);">STAGE 1</h2>
-        <h2 id="global-timer"      style="font-family:'Orbitron'; margin:0; color:#ffaa00;">50s</h2>
+        <h2 id="global-timer"      style="font-family:'Orbitron'; margin:0; color:#ffaa00;">60s</h2>
     </div>
 
     <div class="grid-layout">
@@ -864,6 +869,7 @@
     </div>
 </div>
 
+<!-- ── WINNER OVERLAY ─────────────────────────────────────────────────────── -->
 <div id="winner-overlay">
     <div class="winner-card" id="winner-card">
         <div class="winner-trophy" id="winner-trophy">🏆</div>
@@ -887,6 +893,7 @@
     </div>
 </div>
 
+<!-- ── MODAL CHỌN SỐ VÒNG ─────────────────────────────────────────────────── -->
 <div id="round-overlay">
     <div class="round-modal">
         <h3>⚙ CÀI ĐẶT TRẬN ĐẤU</h3>
@@ -1224,74 +1231,131 @@ socket.on('realtimeScoreUpdate', (data) => {
 });
 
 // ── RESET ─────────────────────────────────────────────────────────────────────
+// FIX: Admin nhận {newRoomId} từ server, sau đó server tự emit 'roomCreated'
+// với newRoomId. Handler roomCreated sẽ setup UI phòng mới + QR mới.
 function resetGame() {
     if (confirm('Bạn có chắc muốn reset phòng và bắt đầu lượt chơi mới?\nMã phòng mới sẽ được tạo.')) {
         socket.emit('adminResetGame', myRoomId);
     }
 }
 
+// FIX: roomResetByAdmin cho admin chỉ là xác nhận — phòng mới sẽ đến qua 'roomCreated'
 socket.on('roomResetByAdmin', (data) => {
+    // Đóng winner overlay nếu đang mở
     document.getElementById('winner-overlay').classList.remove('show');
+    // roomCreated sẽ được emit ngay sau từ server với newRoomId
+    // UI sẽ tự cập nhật trong handler roomCreated bên trên
 });
 
 
 // ─── XUẤT FILE EXCEL ─────────────────────────────────────────────────────────
+
+// Chuẩn hóa KaTeX / LaTeX → text Unicode đẹp, bình phương/lập phương dùng ký tự trên
 function katexToPlain(str) {
     if (!str) return '';
+
+    // Map chữ số mũ → ký tự superscript Unicode
+    const supMap = { '0':'⁰','1':'¹','2':'²','3':'³','4':'⁴','5':'⁵','6':'⁶','7':'⁷','8':'⁸','9':'⁹','+':'⁺','-':'⁻','n':'ⁿ','i':'ⁱ' };
+    // Map chữ số chỉ dưới → ký tự subscript Unicode
+    const subMap = { '0':'₀','1':'₁','2':'₂','3':'₃','4':'₄','5':'₅','6':'₆','7':'₇','8':'₈','9':'₉','+':'₊','-':'₋','a':'ₐ','e':'ₑ','i':'ᵢ','n':'ₙ','o':'ₒ','r':'ᵣ','u':'ᵤ','v':'ᵥ','x':'ₓ' };
+
+    function toSup(s) { return String(s).split('').map(c => supMap[c] || c).join(''); }
+    function toSub(s) { return String(s).split('').map(c => subMap[c] || c).join(''); }
+
     return str
+        // Xoá delimiters display: $$...$$ và \[...\]
         .replace(/\$\$([^$]*)\$\$/g, '$1')
         .replace(/\\\[([^\]]*)\\\]/g, '$1')
+        // Xoá delimiters inline: $...$ và \(...\)
         .replace(/\$([^$]+)\$/g, '$1')
         .replace(/\\\(([^)]*)\\\)/g, '$1')
+        // Phân số
         .replace(/\\frac\{([^}]*)\}\{([^}]*)\}/g, '($1/$2)')
+        // Căn
         .replace(/\\sqrt\{([^}]*)\}/g, '√($1)')
         .replace(/\\sqrt/g, '√')
-        .replace(/\\cdot/g, '·')
-        .replace(/\\times/g, '×')
-        .replace(/\\div/g, '÷')
-        .replace(/\\pm/g, '±')
-        .replace(/\\mp/g, '∓')
-        .replace(/\\leq/g, '≤')
-        .replace(/\\geq/g, '≥')
-        .replace(/\\neq/g, '≠')
-        .replace(/\\approx/g, '≈')
-        .replace(/\\infty/g, '∞')
-        .replace(/\\alpha/g, 'α')
-        .replace(/\\beta/g, 'β')
-        .replace(/\\gamma/g, 'γ')
-        .replace(/\\delta/g, 'δ')
-        .replace(/\\Delta/g, 'Δ')
-        .replace(/\\epsilon/g, 'ε')
-        .replace(/\\theta/g, 'θ')
-        .replace(/\\lambda/g, 'λ')
-        .replace(/\\mu/g, 'μ')
-        .replace(/\\pi/g, 'π')
-        .replace(/\\rho/g, 'ρ')
-        .replace(/\\sigma/g, 'σ')
-        .replace(/\\omega/g, 'ω')
-        .replace(/\\Omega/g, 'Ω')
-        .replace(/\\phi/g, 'φ')
-        .replace(/\\Phi/g, 'Φ')
-        .replace(/\\psi/g, 'ψ')
-        .replace(/\\chi/g, 'χ')
-        .replace(/\\eta/g, 'η')
-        .replace(/\\vec\{([^}]*)\}/g, '$1⃗')
-        .replace(/\\overrightarrow\{([^}]*)\}/g, '$1⃗')
-        .replace(/\\hat\{([^}]*)\}/g, '$1̂')
-        .replace(/\\bar\{([^}]*)\}/g, '$1̄')
-        .replace(/\\dot\{([^}]*)\}/g, '$1̇')
-        .replace(/\\ddot\{([^}]*)\}/g, '$1̈')
-        .replace(/\\text\{([^}]*)\}/g, '$1')
-        .replace(/\\mathrm\{([^}]*)\}/g, '$1')
-        .replace(/\\mathbf\{([^}]*)\}/g, '$1')
-        .replace(/\\mathit\{([^}]*)\}/g, '$1')
-        .replace(/\\left[\(\[|]/g, '')
-        .replace(/\\right[\)\]|]/g, '')
+        // Mũ trong ngoặc nhọn: ^{...} → superscript Unicode
+        .replace(/\^\{([^}]*)\}/g, (_, exp) => toSup(exp))
+        // Mũ đơn: ^x → superscript
+        .replace(/\^([0-9a-zA-Z+\-])/g, (_, c) => toSup(c))
+        // Chỉ số trong ngoặc nhọn: _{...} → subscript Unicode
+        .replace(/\_\{([^}]*)\}/g, (_, sub) => toSub(sub))
+        // Chỉ số đơn: _x → subscript
+        .replace(/\_([0-9a-zA-Z+\-])/g, (_, c) => toSub(c))
+        // Toán tử và ký hiệu vật lý
+        .replace(/\\cdot/g,    '·')
+        .replace(/\\times/g,   '×')
+        .replace(/\\div/g,     '÷')
+        .replace(/\\pm/g,      '±')
+        .replace(/\\mp/g,      '∓')
+        .replace(/\\leq/g,     '≤')
+        .replace(/\\geq/g,     '≥')
+        .replace(/\\neq/g,     '≠')
+        .replace(/\\approx/g,  '≈')
+        .replace(/\\infty/g,   '∞')
+        .replace(/\\rightarrow/g, '→')
+        .replace(/\\leftarrow/g,  '←')
+        .replace(/\\Rightarrow/g, '⇒')
+        .replace(/\\Leftrightarrow/g, '⟺')
+        .replace(/\\in/g,      '∈')
+        .replace(/\\notin/g,   '∉')
+        .replace(/\\subset/g,  '⊂')
+        .replace(/\\cup/g,     '∪')
+        .replace(/\\cap/g,     '∩')
+        .replace(/\\perp/g,    '⊥')
+        .replace(/\\parallel/g,'∥')
+        .replace(/\\angle/g,   '∠')
+        .replace(/\\degree/g,  '°')
+        .replace(/\\circ/g,    '°')
+        // Chữ Hi Lạp
+        .replace(/\\alpha/g,   'α').replace(/\\Alpha/g,   'Α')
+        .replace(/\\beta/g,    'β').replace(/\\Beta/g,    'Β')
+        .replace(/\\gamma/g,   'γ').replace(/\\Gamma/g,   'Γ')
+        .replace(/\\delta/g,   'δ').replace(/\\Delta/g,   'Δ')
+        .replace(/\\epsilon/g, 'ε').replace(/\\varepsilon/g, 'ε')
+        .replace(/\\zeta/g,    'ζ')
+        .replace(/\\eta/g,     'η')
+        .replace(/\\theta/g,   'θ').replace(/\\Theta/g,   'Θ').replace(/\\vartheta/g, 'ϑ')
+        .replace(/\\iota/g,    'ι')
+        .replace(/\\kappa/g,   'κ')
+        .replace(/\\lambda/g,  'λ').replace(/\\Lambda/g,  'Λ')
+        .replace(/\\mu/g,      'μ')
+        .replace(/\\nu/g,      'ν')
+        .replace(/\\xi/g,      'ξ').replace(/\\Xi/g,      'Ξ')
+        .replace(/\\pi/g,      'π').replace(/\\Pi/g,      'Π').replace(/\\varpi/g, 'ϖ')
+        .replace(/\\rho/g,     'ρ').replace(/\\varrho/g,  'ϱ')
+        .replace(/\\sigma/g,   'σ').replace(/\\Sigma/g,   'Σ').replace(/\\varsigma/g, 'ς')
+        .replace(/\\tau/g,     'τ')
+        .replace(/\\upsilon/g, 'υ').replace(/\\Upsilon/g, 'Υ')
+        .replace(/\\phi/g,     'φ').replace(/\\Phi/g,     'Φ').replace(/\\varphi/g, 'ϕ')
+        .replace(/\\chi/g,     'χ')
+        .replace(/\\psi/g,     'ψ').replace(/\\Psi/g,     'Ψ')
+        .replace(/\\omega/g,   'ω').replace(/\\Omega/g,   'Ω')
+        // Vector / dấu mũ trên
+        .replace(/\\vec\{([^}]*)\}/g,              '$1⃗')
+        .replace(/\\overrightarrow\{([^}]*)\}/g,   '$1⃗')
+        .replace(/\\hat\{([^}]*)\}/g,              '$1̂')
+        .replace(/\\bar\{([^}]*)\}/g,              '$1̄')
+        .replace(/\\dot\{([^}]*)\}/g,              '$1̇')
+        .replace(/\\ddot\{([^}]*)\}/g,             '$1̈')
+        .replace(/\\tilde\{([^}]*)\}/g,            '$1̃')
+        // Text wrappers
+        .replace(/\\text\{([^}]*)\}/g,    '$1')
+        .replace(/\\mathrm\{([^}]*)\}/g,  '$1')
+        .replace(/\\mathbf\{([^}]*)\}/g,  '$1')
+        .replace(/\\mathit\{([^}]*)\}/g,  '$1')
+        .replace(/\\textbf\{([^}]*)\}/g,  '$1')
+        .replace(/\\textrm\{([^}]*)\}/g,  '$1')
+        // Dấu ngoặc \left \right
+        .replace(/\\left[\(\[|{]/g,  '')
+        .replace(/\\right[\)\]|}]/g, '')
+        // Khoảng trắng LaTeX
+        .replace(/\\,|\\;|\\:|\\!/g, ' ')
+        // Xoá ngoặc nhọn còn lại và backslash thừa
         .replace(/\{|\}/g, '')
-        .replace(/\\,|\\;|\\!/g, ' ')
-        .replace(/\\/g, '')
-        .replace(/\^(\S+)/g, '^$1')
-        .replace(/_(\S+)/g, '_$1')
+        .replace(/\\/g, ' ')
+        // Chuẩn hóa khoảng trắng
+        .replace(/\s+/g, ' ')
         .trim();
 }
 
@@ -1306,136 +1370,261 @@ socket.on('fullReportData', (players) => {
 
     const wb = XLSX.utils.book_new();
 
-    // Sắp xếp player theo điểm từ cao xuống thấp
-    const sortedPlayers = [...players].sort((a, b) => {
+    // ── Màu sắc chủ đạo ───────────────────────────────────────────────────
+    const COLOR = {
+        HEADER_BG:   '1B3A6B',   // xanh đậm
+        HEADER_FG:   'FFFFFF',   // trắng
+        ROW_EVEN:    'EDF2FB',   // xanh nhạt
+        ROW_ODD:     'FFFFFF',   // trắng
+        CORRECT_BG:  'C6EFCE',   // xanh lá nhạt
+        CORRECT_FG:  '276221',   // xanh lá đậm
+        WRONG_BG:    'FFDCE0',   // đỏ nhạt
+        WRONG_FG:    '9C0006',   // đỏ đậm
+        SKIP_BG:     'FFF2CC',   // vàng nhạt
+        SKIP_FG:     '7D5F00',   // vàng đậm
+        BORDER:      '9DB2CE',   // viền xanh xám
+        RANK1_BG:    'FFD700',   // vàng hạng 1
+        RANK2_BG:    'C0C0C0',   // bạc hạng 2
+        RANK3_BG:    'CD7F32',   // đồng hạng 3
+        TEAM_A:      'D6E4FF',   // xanh đội A
+        TEAM_B:      'FFE4E1',   // hồng đội B
+    };
+
+    // Helper tạo style ô tiêu đề
+    function hdrStyle(bgColor, extra) {
+        return Object.assign({
+            font:      { bold: true, color: { rgb: COLOR.HEADER_FG }, sz: 11 },
+            fill:      { patternType: 'solid', fgColor: { rgb: bgColor || COLOR.HEADER_BG } },
+            alignment: { horizontal: 'center', vertical: 'center', wrapText: true },
+            border: {
+                top:    { style: 'thin', color: { rgb: COLOR.BORDER } },
+                bottom: { style: 'thin', color: { rgb: COLOR.BORDER } },
+                left:   { style: 'thin', color: { rgb: COLOR.BORDER } },
+                right:  { style: 'thin', color: { rgb: COLOR.BORDER } }
+            }
+        }, extra || {});
+    }
+
+    // Helper tạo style ô dữ liệu
+    function cellStyle(bgColor, fontColor, align, extra) {
+        return Object.assign({
+            font:      { sz: 10, color: { rgb: fontColor || '222222' } },
+            fill:      bgColor ? { patternType: 'solid', fgColor: { rgb: bgColor } } : undefined,
+            alignment: { horizontal: align || 'left', vertical: 'center', wrapText: true },
+            border: {
+                top:    { style: 'hair', color: { rgb: COLOR.BORDER } },
+                bottom: { style: 'hair', color: { rgb: COLOR.BORDER } },
+                left:   { style: 'thin', color: { rgb: COLOR.BORDER } },
+                right:  { style: 'thin', color: { rgb: COLOR.BORDER } }
+            }
+        }, extra || {});
+    }
+
+    // ════════════════════════════════════════════════════════════════════════
+    // SHEET 1 — Bảng Xếp Hạng
+    // ════════════════════════════════════════════════════════════════════════
+    const sorted = [...players].sort((a, b) => {
         if (b.score !== a.score) return b.score - a.score;
         return a.totalTimeTaken - b.totalTimeTaken;
     });
-    const playerNames = sortedPlayers.map(p => p.name);
 
-    // ── SHEET 1: XẾP HẠNG ────────────────────────────────────────────────
-    const summaryData = [['Hạng', 'Tên', 'Đội', 'Điểm', 'Tổng thời gian (s)']];
-    sortedPlayers.forEach((p, i) => {
-        summaryData.push([i + 1, p.name, 'Đội ' + p.team, p.score, parseFloat(p.totalTimeTaken.toFixed(2))]);
+    const summaryData = [
+        ['BẢNG XẾP HẠNG KẾT THÚC TRẬN'],
+        [''],
+        ['#', 'Tên học sinh', 'Đội', 'Điểm', 'Thời gian (s)', 'Xếp loại']
+    ];
+
+    sorted.forEach((p, i) => {
+        const rank = i + 1;
+        const xepLoai = p.score >= 70 ? 'Xuất sắc' : p.score >= 50 ? 'Giỏi' : p.score >= 30 ? 'Khá' : 'Trung bình';
+        summaryData.push([rank, p.name, 'Đội ' + p.team, p.score, parseFloat(p.totalTimeTaken.toFixed(2)), xepLoai]);
     });
+
     const wsSummary = XLSX.utils.aoa_to_sheet(summaryData);
-    ['A1','B1','C1','D1','E1'].forEach(cell => {
-        if (wsSummary[cell]) wsSummary[cell].s = { font: { bold: true, color: { rgb: "FFFFFFFF" } }, fill: { fgColor: { rgb: 'FF1B263B' } }, alignment: { horizontal: 'center' } };
+
+    // Tiêu đề lớn hàng 1
+    const titleCellS = wsSummary['A1'];
+    if (titleCellS) titleCellS.s = {
+        font: { bold: true, sz: 16, color: { rgb: COLOR.HEADER_FG } },
+        fill: { patternType: 'solid', fgColor: { rgb: COLOR.HEADER_BG } },
+        alignment: { horizontal: 'center', vertical: 'center' }
+    };
+    wsSummary['!merges'] = [{ s: { r: 0, c: 0 }, e: { r: 0, c: 5 } }];
+    wsSummary['!rows'] = [{ hpt: 30 }, { hpt: 6 }];
+
+    // Header hàng 3 (index 2)
+    ['A3','B3','C3','D3','E3','F3'].forEach(cell => {
+        if (wsSummary[cell]) wsSummary[cell].s = hdrStyle();
     });
-    wsSummary['!cols'] = [{wch:6},{wch:24},{wch:10},{wch:8},{wch:22}];
+
+    // Ô dữ liệu từ hàng 4 trở đi
+    sorted.forEach((p, i) => {
+        const r = i + 4;
+        const isEven = i % 2 === 0;
+        const rankBg = i === 0 ? COLOR.RANK1_BG : i === 1 ? COLOR.RANK2_BG : i === 2 ? COLOR.RANK3_BG : (isEven ? COLOR.ROW_EVEN : COLOR.ROW_ODD);
+        const teamBg = p.team === 'A' ? COLOR.TEAM_A : COLOR.TEAM_B;
+        const bg     = isEven ? COLOR.ROW_EVEN : COLOR.ROW_ODD;
+
+        const cells = [
+            [`A${r}`, rankBg,  null,   'center'],
+            [`B${r}`, bg,      null,   'left'],
+            [`C${r}`, teamBg,  null,   'center'],
+            [`D${r}`, bg,      null,   'center'],
+            [`E${r}`, bg,      null,   'center'],
+            [`F${r}`, bg,      null,   'center'],
+        ];
+        cells.forEach(([addr, bgC, fgC, align]) => {
+            if (wsSummary[addr]) wsSummary[addr].s = cellStyle(bgC, fgC, align);
+        });
+    });
+
+    wsSummary['!cols'] = [{ wch: 5 }, { wch: 26 }, { wch: 8 }, { wch: 8 }, { wch: 16 }, { wch: 14 }];
     XLSX.utils.book_append_sheet(wb, wsSummary, 'Xếp Hạng');
 
-    // ── SHEET 2: CHI TIẾT TỔNG HỢP ───────────────────────────────────────
-    const qMap = new Map();
-    sortedPlayers.forEach(p => {
-        (p.history || []).forEach(h => {
-            const qPlain = katexToPlain(h.questionText);
-            if (!qMap.has(qPlain)) {
-                const choicesMap = {};
-                (h.choices || []).forEach(c => { choicesMap[c.key] = katexToPlain(c.text); });
-                qMap.set(qPlain, {
-                    text: qPlain,
-                    A: choicesMap['A'] || '',
-                    B: choicesMap['B'] || '',
-                    C: choicesMap['C'] || '',
-                    D: choicesMap['D'] || '',
-                    correct: katexToPlain(choicesMap[h.correctAnswer] || h.correctAnswer || ''),
-                    playerAnswers: {}
-                });
-            }
-            
+    // ════════════════════════════════════════════════════════════════════════
+    // SHEET 2 — Chi Tiết Từng Câu
+    // ════════════════════════════════════════════════════════════════════════
+    // Cột: Tên | Đội | # | Câu hỏi | A | B | C | D | Đáp án đúng | HS chọn | Kết quả | Điểm
+    //         0    1   2      3      4   5   6   7       8           9         10       11
+    const detailHeader = [
+        'BẢNG CHI TIẾT TỪNG CÂU HỎI'
+    ];
+    const colHeader = [
+        'Tên học sinh', 'Đội', '#', 'Câu hỏi',
+        'Phương án A', 'Phương án B', 'Phương án C', 'Phương án D',
+        'Đáp án đúng', 'Học sinh chọn', 'Kết quả', 'Điểm'
+    ];
+
+    const detailRows = [[...detailHeader], [''], [...colHeader]];
+
+    players.forEach(p => {
+        (p.history || []).forEach((h, qIdx) => {
+            const choicesMap = {};
+            (h.choices || []).forEach(c => { choicesMap[c.key] = c.text; });
+
             const isSkipped = h.skipped || h.chosenAnswer === '(bỏ qua)';
-            let status = isSkipped ? 'BỎ QUA' : (h.isCorrect ? 'ĐÚNG' : 'SAI');
-            
-            qMap.get(qPlain).playerAnswers[p.name] = { status: status };
-        });
-    });
+            const correctKey = h.correctAnswer || '';
+            const correctText = katexToPlain(choicesMap[correctKey] || correctKey);
 
-    const detailHeader = ['STT', 'Câu hỏi', 'Đáp án A', 'Đáp án B', 'Đáp án C', 'Đáp án D', 'Đáp án đúng'];
-    playerNames.forEach(name => detailHeader.push(name));
-    detailHeader.push('Số HS Đúng', 'Tỉ lệ Đúng (%)');
-
-    const detailRows = [detailHeader];
-    let rowIndex = 1;
-
-    qMap.forEach((qData) => {
-        const row = [rowIndex, qData.text, qData.A, qData.B, qData.C, qData.D, qData.correct];
-        let correctCount = 0;
-        let totalAnswered = playerNames.length;
-
-        playerNames.forEach(pName => {
-            const pAns = qData.playerAnswers[pName];
-            if (!pAns) {
-                row.push('-');
+            // Cột "Học sinh chọn": chỉ ghi chữ cái + ĐÚNG/SAI, hoặc [BỎ QUA] + đáp án đúng
+            let studentCell;
+            if (isSkipped) {
+                studentCell = `[BỎ QUA] — Đúng: ${correctKey}`;
             } else {
-                row.push(pAns.status); 
-                if (pAns.status === 'ĐÚNG') correctCount++;
+                const chosen = h.chosenAnswer || '';
+                studentCell = `${chosen} — ${h.isCorrect ? 'ĐÚNG' : 'SAI'}`;
             }
-        });
 
-        row.push(correctCount);
-        row.push(((correctCount / totalAnswered) * 100).toFixed(1) + '%');
-        detailRows.push(row);
-        rowIndex++;
+            // Cột "Đáp án đúng": chỉ ghi key + nội dung ngắn
+            const correctDisplay = correctKey ? `${correctKey}: ${correctText}` : correctText;
+
+            detailRows.push([
+                p.name,
+                'Đội ' + p.team,
+                qIdx + 1,
+                katexToPlain(h.questionText),
+                katexToPlain(choicesMap['A'] || ''),
+                katexToPlain(choicesMap['B'] || ''),
+                katexToPlain(choicesMap['C'] || ''),
+                katexToPlain(choicesMap['D'] || ''),
+                correctDisplay,
+                studentCell,
+                isSkipped ? 'BỎ QUA' : (h.isCorrect ? 'ĐÚNG' : 'SAI'),
+                h.pointsDelta !== undefined ? h.pointsDelta : (h.isCorrect ? 10 : -3)
+            ]);
+        });
     });
 
     const wsDetail = XLSX.utils.aoa_to_sheet(detailRows);
 
-    const range = XLSX.utils.decode_range(wsDetail['!ref']);
-    const colWidths = [{wch:5}, {wch:50}, {wch:20}, {wch:20}, {wch:20}, {wch:20}, {wch:30}];
-    playerNames.forEach(() => colWidths.push({wch: 15}));
-    colWidths.push({wch: 12}, {wch: 15});
-    wsDetail['!cols'] = colWidths;
+    // Tiêu đề lớn hàng 1
+    const titleCellD = wsDetail['A1'];
+    if (titleCellD) titleCellD.s = {
+        font: { bold: true, sz: 16, color: { rgb: COLOR.HEADER_FG } },
+        fill: { patternType: 'solid', fgColor: { rgb: COLOR.HEADER_BG } },
+        alignment: { horizontal: 'center', vertical: 'center' }
+    };
+    wsDetail['!merges'] = [{ s: { r: 0, c: 0 }, e: { r: 0, c: 11 } }];
+    wsDetail['!rows'] = [{ hpt: 30 }, { hpt: 6 }];
 
-    for (let r = 0; r <= range.e.r; r++) {
-        for (let c = 0; c <= range.e.c; c++) {
+    // Header cột hàng 3 (index 2)
+    ['A3','B3','C3','D3','E3','F3','G3','H3','I3','J3','K3','L3'].forEach(cell => {
+        if (wsDetail[cell]) wsDetail[cell].s = hdrStyle();
+    });
+
+    // Ô dữ liệu
+    const rangeD = XLSX.utils.decode_range(wsDetail['!ref'] || 'A1');
+    let dataRowCount = 0;
+    for (let r = 3; r <= rangeD.e.r; r++) {
+        const isEven = dataRowCount % 2 === 0;
+        dataRowCount++;
+        const bg = isEven ? COLOR.ROW_EVEN : COLOR.ROW_ODD;
+
+        // Đọc giá trị cột Kết quả (K, index 10 từ 0, nhưng XLSX dùng r/c 0-based → c=10)
+        const resAddr = XLSX.utils.encode_cell({ r, c: 10 });
+        const resVal  = wsDetail[resAddr] ? wsDetail[resAddr].v : '';
+        const isCorrect = resVal === 'ĐÚNG';
+        const isSkip    = resVal === 'BỎ QUA';
+
+        // Màu nền theo kết quả
+        const rowBg   = isSkip ? null : bg;
+        const resBg   = isCorrect ? COLOR.CORRECT_BG : isSkip ? COLOR.SKIP_BG : COLOR.WRONG_BG;
+        const resFg   = isCorrect ? COLOR.CORRECT_FG : isSkip ? COLOR.SKIP_FG : COLOR.WRONG_FG;
+        const stuBg   = isCorrect ? COLOR.CORRECT_BG : isSkip ? COLOR.SKIP_BG : COLOR.WRONG_BG;
+        const stuFg   = isCorrect ? COLOR.CORRECT_FG : isSkip ? COLOR.SKIP_FG : COLOR.WRONG_FG;
+
+        for (let c = 0; c <= rangeD.e.c; c++) {
             const addr = XLSX.utils.encode_cell({ r, c });
             if (!wsDetail[addr]) continue;
 
-            wsDetail[addr].s = wsDetail[addr].s || {};
-
-            // Header Style
-            if (r === 0) {
-                wsDetail[addr].s = {
-                    font: { bold: true, color: { rgb: "FFFFFFFF" } },
-                    fill: { fgColor: { rgb: 'FF1B263B' } },
-                    alignment: { horizontal: 'center', vertical: 'center', wrapText: true }
-                };
-                continue;
-            }
-
-            // Alignments
-            if (c === 1 || c === 6 || (c >= 2 && c <= 5)) {
-                wsDetail[addr].s.alignment = { horizontal: 'left', vertical: 'center', wrapText: true };
+            let s;
+            if (c === 10) { // Cột Kết quả
+                s = cellStyle(resBg, resFg, 'center', { font: { bold: true, sz: 10, color: { rgb: resFg } } });
+            } else if (c === 9) { // Cột Học sinh chọn
+                s = cellStyle(stuBg, stuFg, 'center', { font: { bold: isSkip, sz: 10, color: { rgb: stuFg } } });
+            } else if (c === 11) { // Cột Điểm
+                const pts = wsDetail[addr].v;
+                const ptsFg = pts > 0 ? COLOR.CORRECT_FG : pts < 0 ? COLOR.WRONG_FG : '555555';
+                s = cellStyle(resBg, ptsFg, 'center', { font: { bold: true, sz: 10, color: { rgb: ptsFg } } });
+            } else if (c === 3) { // Cột Câu hỏi
+                s = cellStyle(rowBg, null, 'left');
+            } else if (c === 8) { // Cột Đáp án đúng
+                s = cellStyle(COLOR.CORRECT_BG, COLOR.CORRECT_FG, 'left', { font: { sz: 10, color: { rgb: COLOR.CORRECT_FG } } });
+            } else if (c === 1) { // Cột Đội
+                const teamBg2 = (wsDetail[addr].v || '').includes('A') ? COLOR.TEAM_A : COLOR.TEAM_B;
+                s = cellStyle(teamBg2, null, 'center');
+            } else if (c === 2) { // Cột số câu
+                s = cellStyle(rowBg, null, 'center');
             } else {
-                wsDetail[addr].s.alignment = { horizontal: 'center', vertical: 'center' };
+                s = cellStyle(rowBg, null, c === 0 ? 'left' : 'left');
             }
-
-            // Coloring for answers
-            if (c >= 7 && c < 7 + playerNames.length) {
-                const val = wsDetail[addr].v;
-                if (val === 'ĐÚNG') {
-                    wsDetail[addr].s.font = { bold: true, color: { rgb: 'FF00B050' } };
-                } else if (val === 'SAI') {
-                    wsDetail[addr].s.font = { bold: true, color: { rgb: 'FFFF0000' } };
-                } else if (val === 'BỎ QUA') {
-                    wsDetail[addr].s.fill = { fgColor: { rgb: 'FFFFFF00' } };
-                    wsDetail[addr].s.font = { bold: true, color: { rgb: 'FF000000' } };
-                }
-            }
-
-            // Bold for aggregations
-            if (c >= 7 + playerNames.length) {
-                wsDetail[addr].s.font = { bold: true, color: { rgb: 'FF1B263B' } };
-            }
+            wsDetail[addr].s = s;
         }
     }
 
-    XLSX.utils.book_append_sheet(wb, wsDetail, 'Chi Tiết Tổng Hợp');
+    wsDetail['!cols'] = [
+        { wch: 22 },  // Tên
+        { wch: 7  },  // Đội
+        { wch: 4  },  // #
+        { wch: 52 },  // Câu hỏi
+        { wch: 26 },  // A
+        { wch: 26 },  // B
+        { wch: 26 },  // C
+        { wch: 26 },  // D
+        { wch: 26 },  // Đáp án đúng
+        { wch: 18 },  // HS chọn
+        { wch: 9  },  // Kết quả
+        { wch: 7  },  // Điểm
+    ];
+    XLSX.utils.book_append_sheet(wb, wsDetail, 'Chi Tiết');
 
     // Xuất file
     const now = new Date();
-    const ts  = now.getFullYear() + '-' + String(now.getMonth()+1).padStart(2,'0') + '-' + String(now.getDate()).padStart(2,'0') + '_' + String(now.getHours()).padStart(2,'0') + String(now.getMinutes()).padStart(2,'0');
+    const ts  = now.getFullYear() + '-' +
+        String(now.getMonth() + 1).padStart(2, '0') + '-' +
+        String(now.getDate()).padStart(2, '0') + '_' +
+        String(now.getHours()).padStart(2, '0') +
+        String(now.getMinutes()).padStart(2, '0');
     XLSX.writeFile(wb, 'PhysicsGame_KetQua_' + ts + '.xlsx');
 });
 
