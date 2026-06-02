@@ -1585,9 +1585,8 @@ function appendLobbyChatMsg(data, isSystem = false) {
     } else {
         div.className = 'chat-msg';
         let teamLabel = '', teamClass = '';
-        if (data.team === 'A')      { teamLabel = '[Đội A]'; teamClass = 'team-a-name'; }
-        else if (data.team === 'B') { teamLabel = '[Đội B]'; teamClass = 'team-b-name'; }
-        else                        { teamLabel = '[Khán giả]'; }
+        if (data.team === 'A')      { teamLabel = '[A]'; teamClass = 'team-a-name'; }
+        else if (data.team === 'B') { teamLabel = '[B]'; teamClass = 'team-b-name'; }
         div.innerHTML = `<span class="msg-author ${teamClass}">${teamLabel} ${escapeHtml(data.name || '')}:</span> <span style="color:#cbd5e1">${escapeHtml(data.msg || '')}</span>`;
     }
     container.appendChild(div);
