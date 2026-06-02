@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Người Chơi – Đấu Trường Vật Lí</title>
+    <title> Players – Physics Gamee </title>
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=IBM+Plex+Sans:wght@400;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
     <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
@@ -750,7 +750,7 @@
 
 <div id="lobby-screen" class="screen active">
     <div class="arena-logo">
-        <div class="arena-title">⚛ ARENA VẬT LÍ</div>
+        <div class="arena-title">PHYSICS GAMEE</div>
         <div class="arena-subtitle">MULTIPLAYER BATTLE ROYALE</div>
     </div>
 
@@ -758,19 +758,19 @@
         <div class="login-card">
             <div id="step-1-room">
                 <div class="field-group" id="room-code-group">
-                    <div class="field-label"><span class="fl-icon">🔑</span> MÃ PHÒNG</div>
-                    <input type="text" id="input-room" placeholder="Nhập mã phòng (VD: ABC3)..."
+                    <div class="field-label"><span class="fl-icon">🔑</span> ROOM ID </div>
+                    <input type="text" id="input-room" placeholder="Nhập Room ID (VD: AB66)..."
                         maxlength="10" style="text-transform:uppercase; letter-spacing:2px;"
                         oninput="this.value=this.value.toUpperCase()" onkeypress="if(event.key==='Enter') verifyRoomStep()">
-                    <div class="room-hint">Nhập mã phòng</div>
+                    <div class="room-hint">để vào phòng...</div>
                 </div>
-                <button class="btn-primary" onclick="verifyRoomStep()" id="verify-btn">TIẾP TỤC ➔</button>
+                <button class="btn-primary" onclick="verifyRoomStep()" id="verify-btn">NEXT ➔</button>
             </div>
 
             <div id="step-2-profile" style="display: none;">
                 <div class="qr-badge" id="qr-mode-badge">
                     <span>📷</span>
-                    <span>Đã quét QR — Phòng <strong id="qr-room-display"></strong></span>
+                    <span>Đã quét QR — PHÒNG <strong id="qr-room-display"></strong></span>
                 </div>
 
                 <div class="field-group">
@@ -781,15 +781,15 @@
 
                 <div class="field-group">
                     <div class="av-section-label">
-                        <div class="field-label" style="margin-bottom:0;"><span class="fl-icon">🐾</span> CHỌN AVATAR</div>
+                        <div class="field-label" style="margin-bottom:0;"><span class="fl-icon">🐾</span> AVATAR</div>
                         <span class="av-count-badge">...</span>
                     </div>
                     <div class="avatar-grid" id="avatar-grid"></div>
                     <div class="selected-preview" id="avatar-preview"></div>
                 </div>
 
-                <button class="btn-primary" onclick="joinRoom()" id="join-btn">⚡ VÀO PHÒNG CHỜ</button>
-                <button onclick="backToStep1()" id="back-btn" style="margin-top:10px; background:transparent; border:1px solid var(--border); color:var(--text-dim); width:100%; padding:10px; border-radius:8px; cursor:pointer; font-weight:bold;">⬅ QUAY LẠI CÀI MÃ PHÒNG</button>
+                <button class="btn-primary" onclick="joinRoom()" id="join-btn"> VÀO SẢNH CHỜ</button>
+                <button onclick="backToStep1()" id="back-btn" style="margin-top:10px; background:transparent; border:1px solid var(--border); color:var(--text-dim); width:100%; padding:10px; border-radius:8px; cursor:pointer; font-weight:bold;">⬅ BACK </button>
             </div>
         </div>
     </div>
@@ -815,15 +815,15 @@
     </div>
 
     <div class="team-panel left">
-        <div class="team-panel-title">⚔ TEAM A</div>
-        <div class="team-score-pill" id="team-a-score-pill">0đ</div>
+        <div class="team-panel-title">TEAM A</div>
+        <div class="team-score-pill" id="team-a-score-pill">0</div>
         <div id="team-a-list"></div>
         <div class="member-count" id="team-a-count">0 thành viên</div>
     </div>
 
     <div class="team-panel right">
-        <div class="team-panel-title">🛡 TEAM B</div>
-        <div class="team-score-pill" id="team-b-score-pill">0đ</div>
+        <div class="team-panel-title">TEAM B</div>
+        <div class="team-score-pill" id="team-b-score-pill">0</div>
         <div id="team-b-list"></div>
         <div class="member-count" id="team-b-count">0 thành viên</div>
     </div>
@@ -833,16 +833,16 @@
             position:absolute; bottom:8px; left:50%; transform:translateX(-50%);
             font-size:0.68rem; color:rgba(0,210,255,0.35); pointer-events:none;
             letter-spacing:1px; white-space:nowrap; user-select:none;">
-            👆 Chạm / Click để di chuyển · WASD / ← → ↑ ↓ để điều khiển (nhấn giữ để tăng tốc)
+            👆 Chạm / Click để di chuyển · WASD / ← → ↑ ↓ để điều khiển
         </div>
     </div>
 
     <div id="lobby-chat">
         <div id="lobby-chat-messages"></div>
         <div class="chat-input-row">
-            <input type="text" id="lobby-chat-input" placeholder="Nhắn tin với mọi người..." maxlength="120"
+            <input type="text" id="lobby-chat-input" placeholder="Chat với mọi người..." maxlength="120"
                 onkeypress="if(event.key==='Enter') sendLobbyChat()">
-            <button onclick="sendLobbyChat()">Gửi</button>
+            <button onclick="sendLobbyChat()">Send</button>
         </div>
     </div>
 </div>
@@ -850,21 +850,21 @@
 <div id="game-screen" class="screen">
     <div id="live-score-strip">
         <div class="live-score-item">
-            <div class="live-score-label">⚔ Đội A</div>
+            <div class="live-score-label">TEAM A</div>
             <div class="live-score-val team-a" id="live-score-a">0</div>
         </div>
         <div class="live-score-item me-item">
-            <div class="live-score-label">⭐ Điểm Bạn</div>
+            <div class="live-score-label">⭐ Điểm của bạn</div>
             <div class="live-score-val my-score" id="live-score-me">0</div>
         </div>
         <div class="live-score-item">
-            <div class="live-score-label">🛡 Đội B</div>
+            <div class="live-score-label">TEAM B</div>
             <div class="live-score-val team-b" id="live-score-b">0</div>
         </div>
     </div>
 
     <div class="game-header">
-        <span class="stage-label" id="stage-title">VÒNG 1</span>
+        <span class="stage-label" id="stage-title">STAGE 1</span>
         <span id="timer-text">50s</span>
     </div>
 
@@ -873,25 +873,25 @@
 
 <div id="intermission-screen" class="screen">
     <div class="intermission-header">
-        <div class="intermission-title">⏸ GIẢI LAO GIỮA CHẶNG</div>
+        <div class="intermission-title">GIẢI LAO</div>
         <div class="break-countdown" id="break-timer">---</div>
         <div class="intermission-subtitle" id="intermission-subtitle"></div>
     </div>
     <div class="score-board">
         <div class="score-card team-a">
-            <div class="score-card-label">⚔ Đội A</div>
+            <div class="score-card-label">TEAM A</div>
             <div class="score-card-val" id="score-a">0</div>
-            <div class="score-card-sub">điểm trung bình/người</div>
+            <div class="score-card-sub">điểm trung bình</div>
         </div>
         <div class="score-card team-b">
-            <div class="score-card-label">🛡 Đội B</div>
+            <div class="score-card-label">TEAM B</div>
             <div class="score-card-val" id="score-b">0</div>
-            <div class="score-card-sub">điểm trung bình/người</div>
+            <div class="score-card-sub">điểm trung bình</div>
         </div>
     </div>
     <div class="chat-area" id="chat-logs"></div>
     <div style="display:flex; gap:6px;">
-        <input type="text" id="chat-input" placeholder="Hội ý chiến thuật..." style="flex:1; margin:0;"
+        <input type="text" id="chat-input" placeholder="Chat với mọi người..." style="flex:1; margin:0;"
             onkeypress="if(event.key==='Enter') sendChat()">
         <button onclick="sendChat()" style="padding:0 20px; background:var(--accent); color:#000; border:none; border-radius:8px; font-weight:700; cursor:pointer;">Gửi</button>
     </div>
@@ -899,7 +899,7 @@
 
 <div id="summary-screen" class="screen">
     <div class="game-over-card" id="game-over-box"></div>
-    <h3 style="color:var(--accent); font-family:'Orbitron'; text-align:left; margin-bottom:14px; font-size:0.9rem; letter-spacing:2px;">📋 XEM LẠI CHI TIẾT ĐÁP ÁN</h3>
+    <h3 style="color:var(--accent); font-family:'Orbitron'; text-align:left; margin-bottom:14px; font-size:0.9rem; letter-spacing:2px;">XEM LẠI CHI TIẾT ĐÁP ÁN</h3>
     <div id="review-list-zone"></div>
 </div>
 
@@ -999,7 +999,7 @@ window.addEventListener('DOMContentLoaded', () => {
                     document.getElementById('step-1-room').style.display = 'block';
                     document.getElementById('step-2-profile').style.display = 'none';
                     document.getElementById('input-room').focus();
-                    showError((response && response.message) || 'Phòng không còn tồn tại! Hãy nhập mã phòng mới.', 'verify-btn');
+                    showError((response && response.message) || 'Phòng không còn tồn tại! Hãy nhập Room ID mới.', 'verify-btn');
                 }
             });
         };
@@ -1014,7 +1014,7 @@ window.addEventListener('DOMContentLoaded', () => {
 
 function verifyRoomStep() {
     const roomId = document.getElementById('input-room').value.trim().toUpperCase();
-    if (!roomId) return showError('Vui lòng nhập mã phòng!', 'verify-btn');
+    if (!roomId) return showError('Vui lòng nhập Room ID!', 'verify-btn');
 
     if (!socket.connected) {
         showError('Chưa kết nối server, đang thử lại...', 'verify-btn');
@@ -1028,21 +1028,21 @@ function verifyRoomStep() {
 
     const verifyTimeout = setTimeout(() => {
         btn.disabled = false;
-        btn.textContent = 'TIẾP TỤC ➔';
+        btn.textContent = 'NEXT ➔';
         showError('Không thể kết nối server. Vui lòng thử lại!', 'verify-btn');
     }, 6000);
 
     socket.emit('verifyRoom', roomId, (response) => {
         clearTimeout(verifyTimeout);
         btn.disabled = false;
-        btn.textContent = 'TIẾP TỤC ➔';
+        btn.textContent = 'NEXT ➔';
         if (response && response.success) {
             currentRoomId = response.roomId || roomId;
             document.getElementById('step-1-room').style.display = 'none';
             document.getElementById('step-2-profile').style.display = 'block';
             document.getElementById('input-name').focus();
         } else {
-            showError((response && response.message) || 'Mã phòng không hợp lệ!', 'verify-btn');
+            showError((response && response.message) || 'Room ID không hợp lệ!', 'verify-btn');
         }
     });
 }
@@ -1055,7 +1055,7 @@ function backToStep1() {
 
 function resetJoinBtn() {
     const btn = document.getElementById('join-btn');
-    if (btn) { btn.disabled = false; btn.textContent = '⚡ VÀO PHÒNG CHỜ'; }
+    if (btn) { btn.disabled = false; btn.textContent = 'VÀO SẢNH CHỜ'; }
 }
 
 function joinRoom() {
@@ -1084,7 +1084,7 @@ function joinRoom() {
     const joinTimeout = setTimeout(() => {
         if (document.getElementById('lobby-screen').classList.contains('active')) {
             resetJoinBtn();
-            showError('Không nhận được phản hồi. Kiểm tra mã phòng rồi thử lại!', 'join-btn');
+            showError('Không nhận được phản hồi. Kiểm tra Room ID rồi thử lại!', 'join-btn');
         }
     }, 8000);
     socket._joinTimeout = joinTimeout;
@@ -1109,7 +1109,7 @@ function showError(msg, btnId = 'join-btn') {
 function buildAvatarGrid() {
     const grid = document.getElementById('avatar-grid');
     const badge = document.querySelector('.av-count-badge');
-    if (badge) badge.textContent = animals.length + ' ảnh đại diện';
+    if (badge) badge.textContent = animals.length + ' avatar';
     animals.forEach((av, i) => {
         const cell = document.createElement('div');
         cell.className = 'avatar-cell';
@@ -1126,7 +1126,7 @@ function selectAvatar(index, cell) {
     myAvatar = animals[index];
     const preview = document.getElementById('avatar-preview');
     preview.style.display = 'block';
-    preview.innerHTML = `<strong>${myAvatar.emoji} ${myAvatar.name}</strong> đã được chọn làm biểu tượng`;
+    preview.innerHTML = `<strong>${myAvatar.emoji} ${myAvatar.name}</strong> đã được chọn làm biểu tượng đại diện cho bạn`;
 }
 
 // ═══════════════════════════════════════
@@ -1172,7 +1172,7 @@ function showTeamReveal(team, avatar, name) {
     const card = document.getElementById('team-reveal-card');
 
     document.getElementById('reveal-avatar-display').textContent = avatar ? avatar.emoji : '🎮';
-    document.getElementById('reveal-team-text').textContent = `ĐỘI ${team}`;
+    document.getElementById('reveal-team-text').textContent = `TEAM ${team}`;
     document.getElementById('reveal-player-name').textContent = name;
 
     card.className = 'team-reveal-card ' + (team === 'A' ? 'team-a' : 'team-b');
@@ -1308,12 +1308,12 @@ function renderLobby() {
 
     const badgeEl = document.getElementById('my-team-badge');
     if (myTeam === 'A') {
-        badgeEl.textContent = '⚔ TEAM A';
+        badgeEl.textContent = 'TEAM A';
         badgeEl.style.color = 'var(--team-a)';
         badgeEl.style.borderColor = 'rgba(255,74,106,0.5)';
         badgeEl.style.background = 'rgba(255,74,106,0.08)';
     } else if (myTeam === 'B') {
-        badgeEl.textContent = '🛡 TEAM B';
+        badgeEl.textContent = 'TEAM B';
         badgeEl.style.color = 'var(--team-b)';
         badgeEl.style.borderColor = 'rgba(0,210,255,0.5)';
         badgeEl.style.background = 'rgba(0,210,255,0.08)';
@@ -1415,7 +1415,7 @@ function renderArenaTokens(teamA, teamB) {
     const hint = document.createElement('div');
     hint.id = 'click-move-hint';
     hint.style.cssText = 'position:absolute; bottom:8px; left:50%; transform:translateX(-50%); font-size:0.68rem; color:rgba(0,210,255,0.35); pointer-events:none; letter-spacing:1px; white-space:nowrap; user-select:none;';
-    hint.textContent = '👆 Chạm / Click để di chuyển · WASD / ← → ↑ ↓ để điều khiển (nhấn giữ để tăng tốc)';
+    hint.textContent = '👆 Chạm / Click để di chuyển · WASD / ← → ↑ ↓ để điều khiển ';
     floor.appendChild(hint);
 }
 
@@ -1606,7 +1606,7 @@ function sendLobbyChat() {
         return;
     }
     if (!currentRoomId) {
-        appendLobbyChatMsg({ msg: '⚠ Chưa vào phòng, không thể nhắn tin.' }, true);
+        appendLobbyChatMsg({ msg: '⚠ Chưa vào phòng, không thể chat.' }, true);
         return;
     }
 
@@ -1642,7 +1642,7 @@ socket.on('gameStarted', () => {
     isOnIntermissionScreen = false;
     switchScreen('game-screen');
     document.getElementById('question-box').innerHTML =
-        '<div style="padding:40px 10px;"><h3 style="color:var(--accent)">⚡ Game đang bắt đầu...</h3></div>';
+        '<div style="padding:40px 10px;"><h3 style="color:var(--accent)"> Game đang bắt đầu...</h3></div>';
     document.getElementById('top-progress-container').style.display = 'none';
 });
 
@@ -1661,7 +1661,7 @@ socket.on('startStage', (data) => {
     currentTimeLimit = data.timeLimit || 50;
     questionIndex = 0;
 
-    const stageLabel = `VÒNG ${data.stageNum} / ${data.totalStages}` +
+    const stageLabel = `STAGE ${data.stageNum} / ${data.totalStages}` +
                        (currentStageDouble ? ' ★ NHÂN ĐÔI' : '');
     document.getElementById('stage-title').textContent = stageLabel;
     document.getElementById('top-progress-container').style.display = 'block';
@@ -1681,8 +1681,8 @@ function renderSingleQuestion() {
     if (questionIndex >= currentQuestions.length) {
         box.innerHTML = `
             <div class="question-card" style="text-align:center; padding:40px;">
-                <h3 style="color:var(--success)">✓ Hoàn thành vòng này!</h3>
-                <p style="color:var(--text-dim); margin-top:8px;">Đang chuyển vào phòng hội ý...</p>
+                <h3 style="color:var(--success)">✓ Hoàn thành!</h3>
+                <p style="color:var(--text-dim); margin-top:8px;">Đang chuyển vào phòng nghỉ...</p>
             </div>`;
         return;
     }
@@ -1750,13 +1750,13 @@ socket.on('singleAnswerResult', (data) => {
     const sign = delta >= 0 ? '+' : '';
     if (data.isCorrect) {
         badge.innerHTML = `
-            <span class="fb-correct">✓ CHÍNH XÁC</span>
-            <span class="score-delta" style="color:var(--success); margin-left:6px;">${sign}${delta}đ</span>
+            <span class="fb-correct">✓ CHUẨN</span>
+            <span class="score-delta" style="color:var(--success); margin-left:6px;">${sign}${delta}</span>
             <span style="font-size:0.82rem; color:var(--gold); font-family:'Orbitron'; margin-left:8px;">▶ Tổng: ${newTotal}đ</span>`;
     } else {
         badge.innerHTML = `
-            <span class="fb-wrong">✗ SAI RỒI</span>
-            <span class="score-delta" style="color:var(--danger); margin-left:6px;">${sign}${delta}đ</span>
+            <span class="fb-wrong">✗ SAI</span>
+            <span class="score-delta" style="color:var(--danger); margin-left:6px;">${sign}${delta}</span>
             <span style="font-size:0.82rem; color:var(--gold); font-family:'Orbitron'; margin-left:8px;">▶ Tổng: ${newTotal}đ</span>`;
     }
 
@@ -1780,7 +1780,7 @@ function showScorePopupOverlay(delta, isCorrect) {
 
     const sign = delta > 0 ? '+' : '';
     const cls  = delta > 0 ? 'positive' : 'negative';
-    const label = isCorrect ? '✓ CHÍNH XÁC' : '✗ SAI RỒI';
+    const label = isCorrect ? '✓ CHUẨN' : '✗ SAI';
 
     const el = document.createElement('div');
     el.id = 'score-popup-overlay';
@@ -1882,7 +1882,7 @@ socket.on('earlyIntermission', (data) => {
     const timerEl = document.getElementById('break-timer');
     if (timerEl) { timerEl.textContent = '⏳'; timerEl.style.fontSize = '2.2rem'; }
     const subtitle = document.getElementById('intermission-subtitle');
-    if (subtitle) subtitle.textContent = 'Đang chờ các bạn hoàn thành...';
+    if (subtitle) subtitle.textContent = 'Đang chờ các người chơi khác hoàn thành...';
 
     // Thêm thông báo vào buffer rồi hiển thị (player này đã ở màn giải lao)
     addIntermissionMessage({
@@ -1907,12 +1907,12 @@ socket.on('intermissionStart', (data) => {
     const timerEl = document.getElementById('break-timer');
     if (timerEl) { timerEl.textContent = data.totalTime || 15; timerEl.style.fontSize = ''; }
     const subtitle = document.getElementById('intermission-subtitle');
-    if (subtitle) subtitle.textContent = 'Vòng tiếp theo bắt đầu sau...';
+    if (subtitle) subtitle.textContent = 'Stage tiếp theo bắt đầu sau...';
 
     // Thông báo hệ thống cho tất cả
     addIntermissionMessage({
         isSystem: true,
-        text: `⏱ Mọi người đã hoàn thành! Nghỉ ${data.totalTime || 15}s rồi bắt đầu vòng tiếp...`,
+        text: ` Mọi người đã hoàn thành! Nghỉ ${data.totalTime || 15}s rồi tiếp tục...`,
         color: 'var(--accent)'
     });
 
@@ -1963,7 +1963,7 @@ socket.on('gameSummaryReport', (historyLog) => {
         // Phân loại: ĐÚNG / SAI / BỎ QUA – mỗi loại màu riêng
         let statusText;
         if (isSkipped) {
-            statusText = `<span style="color:var(--gold); font-weight:700;">[BỎ QUA] (${pointsDelta}đ)</span>`;
+            statusText = `<span style="color:var(--gold)">[BỎ QUA] (${pointsDelta}đ)</span>`;
         } else if (h.isCorrect) {
             statusText = `<span style="color:var(--success)">[ĐÚNG] (+${pointsDelta}đ)</span>`;
         } else {
@@ -1986,7 +1986,7 @@ socket.on('gameSummaryReport', (historyLog) => {
         // Hiển thị đáp án đã chọn: BỎ QUA màu vàng, còn lại in đậm
         let chosenDisplay;
         if (isSkipped) {
-            chosenDisplay = '<span style="color:var(--gold); font-weight:700;">[BỎ QUA]</span>';
+            chosenDisplay = '<span style="color:var(--gold)">[BỎ QUA]</span>';
         } else {
             chosenDisplay = `<strong>${escapeHtml(h.chosenAnswer || '')}</strong>`;
         }
@@ -2009,27 +2009,27 @@ socket.on('gameOver', (d) => {
     const scoreB = d && d.scoreB !== undefined ? parseFloat(d.scoreB).toFixed(1) : '0.0';
 
     let winText, winColor;
-    if (!d || d.winningTeam === 'Hòa') {
-        winText  = '🤝 KẾT QUẢ: HÒA NHAU!';
+    if (!d || d.winningTeam === 'Tie') {
+        winText  = 'TIE!';
         winColor = '#ffaa00';
     } else {
         const isA = d.winningTeam === 'A';
-        winText  = `🏆 ĐỘI ${d.winningTeam} CHIẾN THẮNG!`;
+        winText  = `🏆 TEAM ${d.winningTeam} WIN!`;
         winColor = isA ? 'var(--team-a)' : 'var(--team-b)';
     }
 
     document.getElementById('game-over-box').innerHTML = `
-        <div style="font-size:3rem; margin-bottom:12px;">${!d || d.winningTeam === 'Hòa' ? '🤝' : '🏆'}</div>
+        <div style="font-size:3rem; margin-bottom:12px;">${!d || d.winningTeam === 'Tie' ? '🤝' : '🏆'}</div>
         <h2 style="font-family:'Orbitron'; font-size:1.3rem; color:${winColor}; margin-bottom:16px; letter-spacing:2px;">${winText}</h2>
         <div style="display:flex; justify-content:center; gap:28px; flex-wrap:wrap; margin: 20px 0; padding:20px; background:rgba(255,255,255,0.04); border-radius:12px;">
             <div style="text-align:center;">
-                <div style="font-size:0.7rem; letter-spacing:2px; color:#64748b; margin-bottom:6px;">⚔ TỔNG ĐỘI A</div>
+                <div style="font-size:0.7rem; letter-spacing:2px; color:#64748b; margin-bottom:6px;">TEAM A</div>
                 <div style="font-family:'Orbitron'; font-size:2.4rem; font-weight:900; color:var(--team-a);">${scoreA}</div>
                 <div style="font-size:0.7rem; color:#64748b;">điểm</div>
             </div>
             <div style="display:flex; align-items:center; color:#ffaa00; font-family:'Orbitron'; font-size:1rem;">VS</div>
             <div style="text-align:center;">
-                <div style="font-size:0.7rem; letter-spacing:2px; color:#64748b; margin-bottom:6px;">🛡 TỔNG ĐỘI B</div>
+                <div style="font-size:0.7rem; letter-spacing:2px; color:#64748b; margin-bottom:6px;">TEAM B</div>
                 <div style="font-family:'Orbitron'; font-size:2.4rem; font-weight:900; color:var(--team-b);">${scoreB}</div>
                 <div style="font-size:0.7rem; color:#64748b;">điểm</div>
             </div>
@@ -2053,7 +2053,7 @@ socket.on('roomResetByAdmin', (data) => {
     intermissionCountdownActive = false;
     isOnIntermissionScreen = false;
 
-    alert('Giáo viên đã reset phòng chơi. Trang sẽ tải lại để vào phòng mới.');
+    alert('Admin đã reset phòng. Trang sẽ tải lại để vào phòng mới.');
     const url = new URL(window.location.href);
     url.searchParams.delete('room');
     window.location.href = url.toString();
