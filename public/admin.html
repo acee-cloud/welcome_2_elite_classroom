@@ -710,7 +710,7 @@
                     </div>
                 </div>
                 <div class="rules-note">
-                    💡 Điểm không thể xuống dưới 0. Thứ hạng cá nhân xét theo điểm cao → thời gian trả lời thấp.
+                    💡 Điểm có thể âm nếu trả lời sai nhiều. Thứ hạng cá nhân xét theo điểm cao → thời gian trả lời thấp.
                 </div>
             </div>
 
@@ -1370,253 +1370,274 @@ socket.on('fullReportData', (players) => {
 
     const wb = XLSX.utils.book_new();
 
-    // ── Màu sắc chủ đạo ───────────────────────────────────────────────────
-    const COLOR = {
-        HEADER_BG:   '1B3A6B',   // xanh đậm
-        HEADER_FG:   'FFFFFF',   // trắng
-        ROW_EVEN:    'EDF2FB',   // xanh nhạt
-        ROW_ODD:     'FFFFFF',   // trắng
-        CORRECT_BG:  'C6EFCE',   // xanh lá nhạt
-        CORRECT_FG:  '276221',   // xanh lá đậm
-        WRONG_BG:    'FFDCE0',   // đỏ nhạt
-        WRONG_FG:    '9C0006',   // đỏ đậm
-        SKIP_BG:     'FFF2CC',   // vàng nhạt
-        SKIP_FG:     '7D5F00',   // vàng đậm
-        BORDER:      '9DB2CE',   // viền xanh xám
-        RANK1_BG:    'FFD700',   // vàng hạng 1
-        RANK2_BG:    'C0C0C0',   // bạc hạng 2
-        RANK3_BG:    'CD7F32',   // đồng hạng 3
-        TEAM_A:      'D6E4FF',   // xanh đội A
-        TEAM_B:      'FFE4E1',   // hồng đội B
+    // ═══════════════════════════════════════════════════════════════════════
+    // BẢNG MÀU
+    // ═══════════════════════════════════════════════════════════════════════
+    const C = {
+        HDR_DARK:   '1B3A6B',  // header cột cố định (xanh navy)
+        HDR_A:      '1A4480',  // header player đội A
+        HDR_B:      '7B2020',  // header player đội B
+        FG_WHITE:   'FFFFFF',
+        FG_DARK:    '1A1A2E',
+        // hàng câu hỏi
+        Q_BG_EVEN:  'F0F4FF',  // nền câu chẵn
+        Q_BG_ODD:   'FFFFFF',  // nền câu lẻ
+        Q_TEXT:     '1A1A2E',  // chữ câu hỏi
+        ANS_BG:     'E8F5E9',  // nền đáp án đúng (xanh lá rất nhạt)
+        ANS_FG:     '1B5E20',  // chữ đáp án đúng
+        STAT_BG:    'EDE7F6',  // nền cột thống kê
+        STAT_FG:    '4527A0',  // chữ cột thống kê
+        // kết quả từng ô player
+        CORRECT_BG: 'C8E6C9', CORRECT_FG: '1B5E20',  // đúng
+        WRONG_BG:   'FFCDD2', WRONG_FG:   'B71C1C',  // sai
+        SKIP_BG:    'FFF9C4', SKIP_FG:    '827717',  // bỏ qua
+        // tổng điểm
+        SCORE_HDR:  '263238',  // nền header tổng điểm
+        RANK1:      'FFD600', RANK2: 'BDBDBD', RANK3: 'FF8F00',
+        BORDER:     'B0BEC5',
+        BORDER_DARK:'546E7A',
     };
 
-    // Helper tạo style ô tiêu đề
-    function hdrStyle(bgColor, extra) {
-        return Object.assign({
-            font:      { bold: true, color: { rgb: COLOR.HEADER_FG }, sz: 11 },
-            fill:      { patternType: 'solid', fgColor: { rgb: bgColor || COLOR.HEADER_BG } },
-            alignment: { horizontal: 'center', vertical: 'center', wrapText: true },
-            border: {
-                top:    { style: 'thin', color: { rgb: COLOR.BORDER } },
-                bottom: { style: 'thin', color: { rgb: COLOR.BORDER } },
-                left:   { style: 'thin', color: { rgb: COLOR.BORDER } },
-                right:  { style: 'thin', color: { rgb: COLOR.BORDER } }
-            }
-        }, extra || {});
+    // ─── Border helpers ───────────────────────────────────────────────────
+    function bdr(style, color) { return { style, color: { rgb: color || C.BORDER } }; }
+    const thinBorder  = { top: bdr('thin'), bottom: bdr('thin'), left: bdr('thin'), right: bdr('thin') };
+    const thickBorder = { top: bdr('medium', C.BORDER_DARK), bottom: bdr('medium', C.BORDER_DARK), left: bdr('medium', C.BORDER_DARK), right: bdr('medium', C.BORDER_DARK) };
+
+    function mkStyle(bg, fg, align, bold, sz, extra) {
+        const s = {
+            font:      { bold: !!bold, sz: sz || 10, color: { rgb: fg || C.FG_DARK } },
+            fill:      bg ? { patternType: 'solid', fgColor: { rgb: bg } } : undefined,
+            alignment: { horizontal: align || 'center', vertical: 'center', wrapText: true },
+            border:    thinBorder
+        };
+        return Object.assign(s, extra || {});
+    }
+    function hdrMkStyle(bg, fg, align) {
+        return mkStyle(bg, fg || C.FG_WHITE, align || 'center', true, 11, { border: thickBorder });
     }
 
-    // Helper tạo style ô dữ liệu
-    function cellStyle(bgColor, fontColor, align, extra) {
-        return Object.assign({
-            font:      { sz: 10, color: { rgb: fontColor || '222222' } },
-            fill:      bgColor ? { patternType: 'solid', fgColor: { rgb: bgColor } } : undefined,
-            alignment: { horizontal: align || 'left', vertical: 'center', wrapText: true },
-            border: {
-                top:    { style: 'hair', color: { rgb: COLOR.BORDER } },
-                bottom: { style: 'hair', color: { rgb: COLOR.BORDER } },
-                left:   { style: 'thin', color: { rgb: COLOR.BORDER } },
-                right:  { style: 'thin', color: { rgb: COLOR.BORDER } }
-            }
-        }, extra || {});
+    // ─── Set cell helper ─────────────────────────────────────────────────
+    function setCell(ws, r, c, value, style) {
+        const addr = XLSX.utils.encode_cell({ r, c });
+        ws[addr] = { v: value, t: typeof value === 'number' ? 'n' : 's', s: style };
+        return addr;
     }
 
-    // ════════════════════════════════════════════════════════════════════════
-    // SHEET 1 — Bảng Xếp Hạng
-    // ════════════════════════════════════════════════════════════════════════
-    const sorted = [...players].sort((a, b) => {
+    // ═══════════════════════════════════════════════════════════════════════
+    // Chuẩn bị dữ liệu: gom tất cả câu hỏi theo thứ tự xuất hiện
+    // Mỗi câu hỏi = { text, choices{A/B/C/D}, correctKey }
+    // ═══════════════════════════════════════════════════════════════════════
+    // Dùng player đầu tiên có nhiều history nhất làm chuẩn
+    const refPlayer = [...players].sort((a, b) => (b.history||[]).length - (a.history||[]).length)[0];
+    const allQuestions = (refPlayer.history || []).map((h, i) => {
+        const cm = {};
+        (h.choices || []).forEach(c => { cm[c.key] = c.text; });
+        return {
+            idx:        i,
+            text:       katexToPlain(h.questionText || ''),
+            choices:    { A: katexToPlain(cm['A']||''), B: katexToPlain(cm['B']||''), C: katexToPlain(cm['C']||''), D: katexToPlain(cm['D']||'') },
+            correctKey: h.correctAnswer || ''
+        };
+    });
+    const Q = allQuestions.length;
+
+    // Sắp xếp players: điểm cao → thời gian thấp
+    const sortedPlayers = [...players].sort((a, b) => {
         if (b.score !== a.score) return b.score - a.score;
         return a.totalTimeTaken - b.totalTimeTaken;
     });
+    const N = sortedPlayers.length; // số player
 
-    const summaryData = [
-        ['BẢNG XẾP HẠNG KẾT THÚC TRẬN'],
-        [''],
-        ['#', 'Tên học sinh', 'Đội', 'Điểm', 'Thời gian (s)', 'Xếp loại']
-    ];
+    // ═══════════════════════════════════════════════════════════════════════
+    // SHEET 1 — BẢNG XẾP HẠNG
+    // ═══════════════════════════════════════════════════════════════════════
+    {
+        const ws  = {};
+        const merges = [];
+        let maxC = 5;
 
-    sorted.forEach((p, i) => {
-        const rank = i + 1;
-        const xepLoai = p.score >= 70 ? 'Xuất sắc' : p.score >= 50 ? 'Giỏi' : p.score >= 30 ? 'Khá' : 'Trung bình';
-        summaryData.push([rank, p.name, 'Đội ' + p.team, p.score, parseFloat(p.totalTimeTaken.toFixed(2)), xepLoai]);
-    });
+        // Hàng 0: tiêu đề lớn
+        setCell(ws, 0, 0, 'BẢNG XẾP HẠNG KẾT THÚC TRẬN', mkStyle(C.HDR_DARK, C.FG_WHITE, 'center', true, 16));
+        merges.push({ s: { r: 0, c: 0 }, e: { r: 0, c: maxC } });
 
-    const wsSummary = XLSX.utils.aoa_to_sheet(summaryData);
+        // Hàng 1: trống spacer
+        // Hàng 2: header cột
+        const hdrLabels = ['#', 'Tên học sinh', 'Đội', 'Điểm', 'Thời gian (s)', 'Xếp loại'];
+        hdrLabels.forEach((lbl, c) => setCell(ws, 2, c, lbl, hdrMkStyle(C.HDR_DARK)));
 
-    // Tiêu đề lớn hàng 1
-    const titleCellS = wsSummary['A1'];
-    if (titleCellS) titleCellS.s = {
-        font: { bold: true, sz: 16, color: { rgb: COLOR.HEADER_FG } },
-        fill: { patternType: 'solid', fgColor: { rgb: COLOR.HEADER_BG } },
-        alignment: { horizontal: 'center', vertical: 'center' }
-    };
-    wsSummary['!merges'] = [{ s: { r: 0, c: 0 }, e: { r: 0, c: 5 } }];
-    wsSummary['!rows'] = [{ hpt: 30 }, { hpt: 6 }];
-
-    // Header hàng 3 (index 2)
-    ['A3','B3','C3','D3','E3','F3'].forEach(cell => {
-        if (wsSummary[cell]) wsSummary[cell].s = hdrStyle();
-    });
-
-    // Ô dữ liệu từ hàng 4 trở đi
-    sorted.forEach((p, i) => {
-        const r = i + 4;
-        const isEven = i % 2 === 0;
-        const rankBg = i === 0 ? COLOR.RANK1_BG : i === 1 ? COLOR.RANK2_BG : i === 2 ? COLOR.RANK3_BG : (isEven ? COLOR.ROW_EVEN : COLOR.ROW_ODD);
-        const teamBg = p.team === 'A' ? COLOR.TEAM_A : COLOR.TEAM_B;
-        const bg     = isEven ? COLOR.ROW_EVEN : COLOR.ROW_ODD;
-
-        const cells = [
-            [`A${r}`, rankBg,  null,   'center'],
-            [`B${r}`, bg,      null,   'left'],
-            [`C${r}`, teamBg,  null,   'center'],
-            [`D${r}`, bg,      null,   'center'],
-            [`E${r}`, bg,      null,   'center'],
-            [`F${r}`, bg,      null,   'center'],
-        ];
-        cells.forEach(([addr, bgC, fgC, align]) => {
-            if (wsSummary[addr]) wsSummary[addr].s = cellStyle(bgC, fgC, align);
+        // Hàng 3+: dữ liệu
+        sortedPlayers.forEach((p, i) => {
+            const r       = i + 3;
+            const isEven  = i % 2 === 0;
+            const rowBg   = i === 0 ? C.RANK1 : i === 1 ? C.RANK2 : i === 2 ? C.RANK3 : (isEven ? C.Q_BG_EVEN : C.Q_BG_ODD);
+            const teamBg  = p.team === 'A' ? 'D6E4FF' : 'FFE4E1';
+            const xepLoai = p.score >= 70 ? 'Xuất sắc' : p.score >= 50 ? 'Giỏi' : p.score >= 30 ? 'Khá' : 'Trung bình';
+            setCell(ws, r, 0, i + 1,                              mkStyle(rowBg,  C.FG_DARK, 'center', true,  10));
+            setCell(ws, r, 1, p.name,                             mkStyle(rowBg,  C.FG_DARK, 'left',   false, 10));
+            setCell(ws, r, 2, 'Đội ' + p.team,                   mkStyle(teamBg, C.FG_DARK, 'center', true,  10));
+            setCell(ws, r, 3, p.score,                            mkStyle(rowBg,  C.FG_DARK, 'center', true,  10));
+            setCell(ws, r, 4, parseFloat(p.totalTimeTaken.toFixed(2)), mkStyle(rowBg, C.FG_DARK, 'center', false, 10));
+            setCell(ws, r, 5, xepLoai,                            mkStyle(rowBg,  C.FG_DARK, 'center', false, 10));
         });
-    });
 
-    wsSummary['!cols'] = [{ wch: 5 }, { wch: 26 }, { wch: 8 }, { wch: 8 }, { wch: 16 }, { wch: 14 }];
-    XLSX.utils.book_append_sheet(wb, wsSummary, 'Xếp Hạng');
-
-    // ════════════════════════════════════════════════════════════════════════
-    // SHEET 2 — Chi Tiết Từng Câu
-    // ════════════════════════════════════════════════════════════════════════
-    // Cột: Tên | Đội | # | Câu hỏi | A | B | C | D | Đáp án đúng | HS chọn | Kết quả | Điểm
-    //         0    1   2      3      4   5   6   7       8           9         10       11
-    const detailHeader = [
-        'BẢNG CHI TIẾT TỪNG CÂU HỎI'
-    ];
-    const colHeader = [
-        'Tên học sinh', 'Đội', '#', 'Câu hỏi',
-        'Phương án A', 'Phương án B', 'Phương án C', 'Phương án D',
-        'Đáp án đúng', 'Học sinh chọn', 'Kết quả', 'Điểm'
-    ];
-
-    const detailRows = [[...detailHeader], [''], [...colHeader]];
-
-    players.forEach(p => {
-        (p.history || []).forEach((h, qIdx) => {
-            const choicesMap = {};
-            (h.choices || []).forEach(c => { choicesMap[c.key] = c.text; });
-
-            const isSkipped = h.skipped || h.chosenAnswer === '(bỏ qua)';
-            const correctKey = h.correctAnswer || '';
-            const correctText = katexToPlain(choicesMap[correctKey] || correctKey);
-
-            // Cột "Học sinh chọn": chỉ ghi chữ cái + ĐÚNG/SAI, hoặc [BỎ QUA] + đáp án đúng
-            let studentCell;
-            if (isSkipped) {
-                studentCell = `[BỎ QUA] — Đúng: ${correctKey}`;
-            } else {
-                const chosen = h.chosenAnswer || '';
-                studentCell = `${chosen} — ${h.isCorrect ? 'ĐÚNG' : 'SAI'}`;
-            }
-
-            // Cột "Đáp án đúng": chỉ ghi key + nội dung ngắn
-            const correctDisplay = correctKey ? `${correctKey}: ${correctText}` : correctText;
-
-            detailRows.push([
-                p.name,
-                'Đội ' + p.team,
-                qIdx + 1,
-                katexToPlain(h.questionText),
-                katexToPlain(choicesMap['A'] || ''),
-                katexToPlain(choicesMap['B'] || ''),
-                katexToPlain(choicesMap['C'] || ''),
-                katexToPlain(choicesMap['D'] || ''),
-                correctDisplay,
-                studentCell,
-                isSkipped ? 'BỎ QUA' : (h.isCorrect ? 'ĐÚNG' : 'SAI'),
-                h.pointsDelta !== undefined ? h.pointsDelta : (h.isCorrect ? 10 : -3)
-            ]);
-        });
-    });
-
-    const wsDetail = XLSX.utils.aoa_to_sheet(detailRows);
-
-    // Tiêu đề lớn hàng 1
-    const titleCellD = wsDetail['A1'];
-    if (titleCellD) titleCellD.s = {
-        font: { bold: true, sz: 16, color: { rgb: COLOR.HEADER_FG } },
-        fill: { patternType: 'solid', fgColor: { rgb: COLOR.HEADER_BG } },
-        alignment: { horizontal: 'center', vertical: 'center' }
-    };
-    wsDetail['!merges'] = [{ s: { r: 0, c: 0 }, e: { r: 0, c: 11 } }];
-    wsDetail['!rows'] = [{ hpt: 30 }, { hpt: 6 }];
-
-    // Header cột hàng 3 (index 2)
-    ['A3','B3','C3','D3','E3','F3','G3','H3','I3','J3','K3','L3'].forEach(cell => {
-        if (wsDetail[cell]) wsDetail[cell].s = hdrStyle();
-    });
-
-    // Ô dữ liệu
-    const rangeD = XLSX.utils.decode_range(wsDetail['!ref'] || 'A1');
-    let dataRowCount = 0;
-    for (let r = 3; r <= rangeD.e.r; r++) {
-        const isEven = dataRowCount % 2 === 0;
-        dataRowCount++;
-        const bg = isEven ? COLOR.ROW_EVEN : COLOR.ROW_ODD;
-
-        // Đọc giá trị cột Kết quả (K, index 10 từ 0, nhưng XLSX dùng r/c 0-based → c=10)
-        const resAddr = XLSX.utils.encode_cell({ r, c: 10 });
-        const resVal  = wsDetail[resAddr] ? wsDetail[resAddr].v : '';
-        const isCorrect = resVal === 'ĐÚNG';
-        const isSkip    = resVal === 'BỎ QUA';
-
-        // Màu nền theo kết quả
-        const rowBg   = isSkip ? null : bg;
-        const resBg   = isCorrect ? COLOR.CORRECT_BG : isSkip ? COLOR.SKIP_BG : COLOR.WRONG_BG;
-        const resFg   = isCorrect ? COLOR.CORRECT_FG : isSkip ? COLOR.SKIP_FG : COLOR.WRONG_FG;
-        const stuBg   = isCorrect ? COLOR.CORRECT_BG : isSkip ? COLOR.SKIP_BG : COLOR.WRONG_BG;
-        const stuFg   = isCorrect ? COLOR.CORRECT_FG : isSkip ? COLOR.SKIP_FG : COLOR.WRONG_FG;
-
-        for (let c = 0; c <= rangeD.e.c; c++) {
-            const addr = XLSX.utils.encode_cell({ r, c });
-            if (!wsDetail[addr]) continue;
-
-            let s;
-            if (c === 10) { // Cột Kết quả
-                s = cellStyle(resBg, resFg, 'center', { font: { bold: true, sz: 10, color: { rgb: resFg } } });
-            } else if (c === 9) { // Cột Học sinh chọn
-                s = cellStyle(stuBg, stuFg, 'center', { font: { bold: isSkip, sz: 10, color: { rgb: stuFg } } });
-            } else if (c === 11) { // Cột Điểm
-                const pts = wsDetail[addr].v;
-                const ptsFg = pts > 0 ? COLOR.CORRECT_FG : pts < 0 ? COLOR.WRONG_FG : '555555';
-                s = cellStyle(resBg, ptsFg, 'center', { font: { bold: true, sz: 10, color: { rgb: ptsFg } } });
-            } else if (c === 3) { // Cột Câu hỏi
-                s = cellStyle(rowBg, null, 'left');
-            } else if (c === 8) { // Cột Đáp án đúng
-                s = cellStyle(COLOR.CORRECT_BG, COLOR.CORRECT_FG, 'left', { font: { sz: 10, color: { rgb: COLOR.CORRECT_FG } } });
-            } else if (c === 1) { // Cột Đội
-                const teamBg2 = (wsDetail[addr].v || '').includes('A') ? COLOR.TEAM_A : COLOR.TEAM_B;
-                s = cellStyle(teamBg2, null, 'center');
-            } else if (c === 2) { // Cột số câu
-                s = cellStyle(rowBg, null, 'center');
-            } else {
-                s = cellStyle(rowBg, null, c === 0 ? 'left' : 'left');
-            }
-            wsDetail[addr].s = s;
-        }
+        ws['!ref']   = XLSX.utils.encode_range({ s: { r: 0, c: 0 }, e: { r: sortedPlayers.length + 2, c: maxC } });
+        ws['!merges']= merges;
+        ws['!rows']  = [{ hpt: 28 }, { hpt: 5 }];
+        ws['!cols']  = [{ wch: 5 }, { wch: 26 }, { wch: 9 }, { wch: 9 }, { wch: 16 }, { wch: 14 }];
+        XLSX.utils.book_append_sheet(wb, ws, 'Xếp Hạng');
     }
 
-    wsDetail['!cols'] = [
-        { wch: 22 },  // Tên
-        { wch: 7  },  // Đội
-        { wch: 4  },  // #
-        { wch: 52 },  // Câu hỏi
-        { wch: 26 },  // A
-        { wch: 26 },  // B
-        { wch: 26 },  // C
-        { wch: 26 },  // D
-        { wch: 26 },  // Đáp án đúng
-        { wch: 18 },  // HS chọn
-        { wch: 9  },  // Kết quả
-        { wch: 7  },  // Điểm
-    ];
-    XLSX.utils.book_append_sheet(wb, wsDetail, 'Chi Tiết');
+    // ═══════════════════════════════════════════════════════════════════════
+    // SHEET 2 — BẢNG CHI TIẾT (rows = câu hỏi, cols = player)
+    //
+    // Cấu trúc cột:
+    //  C0: STT câu
+    //  C1: Nội dung câu hỏi
+    //  C2: Phương án A
+    //  C3: Phương án B
+    //  C4: Phương án C
+    //  C5: Phương án D
+    //  C6: Đáp án đúng
+    //  C7…C(7+N-1): mỗi player (tên ở hàng 0, đội ở hàng 1, điểm ở hàng 2)
+    //  C(7+N): Số đúng
+    //  C(7+N+1): Tỉ lệ đúng (%)
+    //
+    // Cấu trúc hàng:
+    //  R0: tiêu đề lớn (merge toàn bộ)
+    //  R1: hàng tên player  (C7+)
+    //  R2: hàng đội player  (C7+)
+    //  R3: hàng điểm player (C7+)  ← header cột cố định ở đây cũng
+    //  R4…R(4+Q-1): từng câu hỏi
+    // ═══════════════════════════════════════════════════════════════════════
+    {
+        const ws = {};
+        const merges = [];
+        const FIXED = 7;       // số cột cố định trước cột player
+        const COL_STAT_COUNT = FIXED + N;      // cột "Số đúng"
+        const COL_STAT_RATIO = FIXED + N + 1;  // cột "Tỉ lệ %"
+        const TOTAL_COLS     = FIXED + N + 2;
+        const DATA_ROW_START = 4;              // hàng dữ liệu câu hỏi bắt đầu
+
+        // ── Hàng 0: Tiêu đề lớn ──────────────────────────────────────────
+        setCell(ws, 0, 0, 'BẢNG CHI TIẾT TỪNG CÂU HỎI', mkStyle(C.HDR_DARK, C.FG_WHITE, 'center', true, 16));
+        merges.push({ s: { r: 0, c: 0 }, e: { r: 0, c: TOTAL_COLS - 1 } });
+
+        // ── Hàng 1: Tên player ───────────────────────────────────────────
+        // Cột cố định hàng 1–3: merge dọc
+        const fixedHdrs = ['STT', 'Câu hỏi', 'P.án A', 'P.án B', 'P.án C', 'P.án D', 'Đ.án đúng'];
+        fixedHdrs.forEach((lbl, c) => {
+            setCell(ws, 1, c, lbl, hdrMkStyle(C.HDR_DARK));
+            merges.push({ s: { r: 1, c }, e: { r: 3, c } }); // merge 3 hàng header
+        });
+        // Thống kê: merge dọc
+        setCell(ws, 1, COL_STAT_COUNT, 'Số đúng',   hdrMkStyle(C.STAT_BG, C.STAT_FG));
+        setCell(ws, 1, COL_STAT_RATIO, 'Tỉ lệ đúng', hdrMkStyle(C.STAT_BG, C.STAT_FG));
+        merges.push({ s: { r: 1, c: COL_STAT_COUNT }, e: { r: 3, c: COL_STAT_COUNT } });
+        merges.push({ s: { r: 1, c: COL_STAT_RATIO }, e: { r: 3, c: COL_STAT_RATIO } });
+
+        // Tên player (hàng 1)
+        sortedPlayers.forEach((p, pi) => {
+            const col    = FIXED + pi;
+            const teamBg = p.team === 'A' ? C.HDR_A : C.HDR_B;
+            setCell(ws, 1, col, p.name, hdrMkStyle(teamBg));
+        });
+        // Đội (hàng 2)
+        sortedPlayers.forEach((p, pi) => {
+            const col    = FIXED + pi;
+            const teamBg = p.team === 'A' ? C.HDR_A : C.HDR_B;
+            setCell(ws, 2, col, 'Đội ' + p.team, hdrMkStyle(teamBg));
+        });
+        // Điểm tổng (hàng 3)
+        sortedPlayers.forEach((p, pi) => {
+            const col    = FIXED + pi;
+            const teamBg = p.team === 'A' ? C.HDR_A : C.HDR_B;
+            setCell(ws, 3, col, p.score + 'đ', hdrMkStyle(teamBg));
+        });
+
+        // ── Hàng câu hỏi (R4+) ───────────────────────────────────────────
+        allQuestions.forEach((q, qi) => {
+            const r      = DATA_ROW_START + qi;
+            const isEven = qi % 2 === 0;
+            const rowBg  = isEven ? C.Q_BG_EVEN : C.Q_BG_ODD;
+
+            // Cột cố định
+            setCell(ws, r, 0, qi + 1,                    mkStyle(rowBg,    C.FG_DARK,  'center', true,  10));
+            setCell(ws, r, 1, q.text,                    mkStyle(rowBg,    C.Q_TEXT,   'left',   false, 10));
+            setCell(ws, r, 2, q.choices['A'] || '',      mkStyle(rowBg,    C.FG_DARK,  'left',   false,  9));
+            setCell(ws, r, 3, q.choices['B'] || '',      mkStyle(rowBg,    C.FG_DARK,  'left',   false,  9));
+            setCell(ws, r, 4, q.choices['C'] || '',      mkStyle(rowBg,    C.FG_DARK,  'left',   false,  9));
+            setCell(ws, r, 5, q.choices['D'] || '',      mkStyle(rowBg,    C.FG_DARK,  'left',   false,  9));
+            // Đáp án đúng: key + nội dung
+            const ansText = q.correctKey ? q.correctKey + ': ' + (q.choices[q.correctKey] || '') : '';
+            setCell(ws, r, 6, ansText,                   mkStyle(C.ANS_BG, C.ANS_FG,  'left',   true,  10));
+
+            // Cột từng player
+            let correctCount = 0;
+            let answeredCount = 0;
+            sortedPlayers.forEach((p, pi) => {
+                const col = FIXED + pi;
+                const h   = (p.history || [])[qi];
+                if (!h) {
+                    setCell(ws, r, col, '—', mkStyle(rowBg, 'AAAAAA', 'center', false, 10));
+                    return;
+                }
+                const isSkipped = h.skipped || h.chosenAnswer === '(bỏ qua)';
+                const isCorrect = h.isCorrect && !isSkipped;
+                answeredCount++;
+                if (isCorrect) correctCount++;
+
+                let cellVal, bg, fg;
+                if (isSkipped) {
+                    cellVal = '⏭ BỎ QUA';
+                    bg = C.SKIP_BG; fg = C.SKIP_FG;
+                } else if (isCorrect) {
+                    cellVal = '✔ ' + (h.chosenAnswer || '');
+                    bg = C.CORRECT_BG; fg = C.CORRECT_FG;
+                } else {
+                    cellVal = '✘ ' + (h.chosenAnswer || '');
+                    bg = C.WRONG_BG; fg = C.WRONG_FG;
+                }
+                setCell(ws, r, col, cellVal, mkStyle(bg, fg, 'center', true, 10));
+            });
+
+            // Thống kê
+            const totalAnswered = answeredCount;
+            const ratio = totalAnswered > 0 ? Math.round(correctCount / N * 100) : 0;
+            setCell(ws, r, COL_STAT_COUNT, correctCount + '/' + N,  mkStyle(C.STAT_BG, C.STAT_FG, 'center', true, 10));
+            setCell(ws, r, COL_STAT_RATIO, ratio + '%',              mkStyle(
+                ratio >= 70 ? C.CORRECT_BG : ratio >= 40 ? C.SKIP_BG : C.WRONG_BG,
+                ratio >= 70 ? C.CORRECT_FG : ratio >= 40 ? C.SKIP_FG : C.WRONG_FG,
+                'center', true, 10
+            ));
+        });
+
+        // ── !ref, !merges, !cols, !rows ───────────────────────────────────
+        ws['!ref']    = XLSX.utils.encode_range({ s: { r: 0, c: 0 }, e: { r: DATA_ROW_START + Q - 1, c: TOTAL_COLS - 1 } });
+        ws['!merges'] = merges;
+        ws['!rows']   = [{ hpt: 26 }, { hpt: 32 }, { hpt: 20 }, { hpt: 24 }];
+        // Sau hàng header thêm chiều cao cho các hàng câu
+        for (let qi = 0; qi < Q; qi++) ws['!rows'].push({ hpt: 52 });
+
+        const colWidths = [
+            { wch: 5  },   // STT
+            { wch: 48 },   // Câu hỏi
+            { wch: 22 },   // A
+            { wch: 22 },   // B
+            { wch: 22 },   // C
+            { wch: 22 },   // D
+            { wch: 24 },   // Đáp án đúng
+        ];
+        sortedPlayers.forEach(() => colWidths.push({ wch: 13 }));  // mỗi player
+        colWidths.push({ wch: 10 }, { wch: 11 });                  // Số đúng, Tỉ lệ
+        ws['!cols'] = colWidths;
+
+        XLSX.utils.book_append_sheet(wb, ws, 'Chi Tiết');
+    }
+
+    // ═══════════════════════════════════════════════════════════════════════
+    // SHEET 3 — BẢNG XẾP HẠNG (giữ lại sheet cũ để tương thích)
+    // ═══════════════════════════════════════════════════════════════════════
+    // (đã có ở Sheet 1 — không cần nhân đôi)
 
     // Xuất file
     const now = new Date();
