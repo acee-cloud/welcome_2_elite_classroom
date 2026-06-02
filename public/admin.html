@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin – Physics Game</title>
+    <title>Admin – Physics Gamee</title>
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=IBM+Plex+Sans:wght@400;600;700&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
@@ -527,8 +527,9 @@
         @keyframes goldPulse { 0%,100%{box-shadow:0 0 10px rgba(255,215,0,.6);} 50%{box-shadow:0 0 22px rgba(255,215,0,.9),0 0 32px rgba(255,165,0,.4);} }
 
         .team-pill { display: inline-block; padding: 2px 10px; border-radius: 99px; font-size: .74rem; font-weight: 700; letter-spacing: .5px; }
-        /* Xóa phần time-fast, time-slow vì hiện tại chung một màu xám */
         .time-display { font-size: .81rem; color: #475569; font-variant-numeric: tabular-nums; }
+        .time-fast { color: #00ff88; }
+        .time-slow { color: #ff6b6b; }
         .score-cell { font-weight: 700; display: flex; align-items: center; gap: 5px; font-variant-numeric: tabular-nums; }
 
         .leaderboard-card h3 { display:flex; align-items:center; gap:10px; }
@@ -636,24 +637,24 @@
 <div id="lobby-view">
     <div class="web-title-wrapper">
         <div class="web-title-glow"></div>
-        <h1 class="web-title"><span class="wt-phys">PHYSICS</span><span class="wt-game">GAME</span></h1>
+        <h1 class="web-title"><span class="wt-phys">PHYSICS</span><span class="wt-game">GAMEE</span></h1>
         <p class="web-subtitle">made by HYen</p>
     </div>
-    <button id="btn-create" onclick="createRoom()">TẠO PHÒNG MỚI</button>
+    <button id="btn-create" onclick="createRoom()">NEW ROOM</button>
 
     <!-- HƯỚNG DẪN QUY TẮC -->
     <div class="rules-wrapper">
         <div class="rules-header" onclick="toggleRules(this)">
             <span class="rules-header-left">
-                <span class="rules-icon">📋</span>
-                <span>QUY TẮC TRẬN ĐẤU</span>
+                <span class="rules-icon">👇</span>
+                <span>RULES</span>
             </span>
             <span class="rules-chevron">▾</span>
         </div>
         <div class="rules-body">
 
             <div class="rules-section">
-                <div class="rules-section-title">⚙️ CẤU TRÚC TRẬN</div>
+                <div class="rules-section-title">GAME STRUCTURE</div>
                 <div class="rules-grid">
                     <div class="rules-item">
                         <div class="rules-item-icon">🔢</div>
@@ -665,7 +666,7 @@
                     <div class="rules-item">
                         <div class="rules-item-icon">❓</div>
                         <div>
-                            <div class="rules-item-label">Câu hỏi / vòng</div>
+                            <div class="rules-item-label">Số câu hỏi / vòng</div>
                             <div class="rules-item-val">5 câu trắc nghiệm (A/B/C/D)</div>
                         </div>
                     </div>
@@ -673,14 +674,14 @@
                         <div class="rules-item-icon">⏱</div>
                         <div>
                             <div class="rules-item-label">Thời gian / vòng</div>
-                            <div class="rules-item-val">60 giây &nbsp;·&nbsp; Vòng cuối: 50 giây</div>
+                            <div class="rules-item-val">50 giây &nbsp;·&nbsp; Vòng cuối: 40 giây</div>
                         </div>
                     </div>
                     <div class="rules-item">
                         <div class="rules-item-icon">☕</div>
                         <div>
-                            <div class="rules-item-label">Giải lao giữa vòng</div>
-                            <div class="rules-item-val">15 giây (tự động chuyển)</div>
+                            <div class="rules-item-label">Giải lao giữa các vòng</div>
+                            <div class="rules-item-val">15 giây </div>
                         </div>
                     </div>
                 </div>
@@ -689,58 +690,58 @@
             <div class="rules-divider"></div>
 
             <div class="rules-section">
-                <div class="rules-section-title">🏆 ĐIỂM SỐ</div>
+                <div class="rules-section-title">🏆 SCORE</div>
                 <div class="rules-score-row">
                     <div class="rules-score-block correct">
-                        <div class="rules-score-num">+10đ</div>
+                        <div class="rules-score-num">+10</div>
                         <div class="rules-score-desc">Đúng (vòng thường)</div>
                     </div>
                     <div class="rules-score-block wrong">
-                        <div class="rules-score-num">−3đ</div>
+                        <div class="rules-score-num">−3</div>
                         <div class="rules-score-desc">Sai (vòng thường)</div>
                     </div>
                     <div class="rules-score-block correct final">
-                        <div class="rules-score-num">+20đ</div>
+                        <div class="rules-score-num">+20</div>
                         <div class="rules-score-desc">Đúng (vòng cuối ×2)</div>
                     </div>
                     <div class="rules-score-block wrong final">
-                        <div class="rules-score-num">−5đ</div>
-                        <div class="rules-score-desc">Sai (vòng cuối ×2)</div>
+                        <div class="rules-score-num">−5</div>
+                        <div class="rules-score-desc">Sai (vòng cuối)</div>
                     </div>
                 </div>
                 <div class="rules-note">
-                    💡 Điểm có thể âm nếu trả lời sai nhiều. Thứ hạng cá nhân xét theo điểm cao → thời gian trả lời thấp.
+                    💡 Điểm có thể âm. Thứ hạng cá nhân xét theo điểm cao + thời gian trả lời ngắn.
                 </div>
             </div>
 
             <div class="rules-divider"></div>
 
             <div class="rules-section">
-                <div class="rules-section-title">👥 ĐỘI</div>
+                <div class="rules-section-title">TEAM</div>
                 <div class="rules-teams">
                     <div class="rules-team a">
-                        <span class="rules-team-badge a">ĐỘI A</span>
+                        <span class="rules-team-badge a">TEAM A</span>
                         Màu đỏ
                     </div>
                     <div class="rules-team b">
-                        <span class="rules-team-badge b">ĐỘI B</span>
+                        <span class="rules-team-badge b">TEAM B</span>
                         Màu xanh
                     </div>
                 </div>
                 <div class="rules-note">
-                    🤖 Server tự chia đội cân bằng. Chiến thắng xét theo <strong>điểm trung bình / người</strong> của mỗi đội (làm tròn 1 chữ số thập phân).
+                    Server tự chia đội cân bằng. Chiến thắng xét theo <strong>điểm trung bình</strong> của mỗi đội.
                 </div>
             </div>
 
             <div class="rules-divider"></div>
 
             <div class="rules-section">
-                <div class="rules-section-title">📌 LƯU Ý VẬN HÀNH</div>
+                <div class="rules-section-title">NOTES</div>
                 <ul class="rules-list">
-                    <li>Chia sẻ <strong>mã phòng</strong> hoặc <strong>QR Code</strong> cho học sinh trước khi bắt đầu.</li>
+                    <li>Chia sẻ <strong>Room ID</strong> hoặc <strong>QR Code</strong> cho người chơi trước khi bắt đầu.</li>
                     <li>Không thể vào phòng sau khi trận đã bắt đầu.</li>
-                    <li>Nhấn <strong>Reset</strong> để tạo phòng mới với mã mới — tất cả player hiện tại sẽ bị kick.</li>
-                    <li>Reload trang admin cũng sẽ tự động dọn phòng cũ và kick player.</li>
+                    <li>Nhấn <strong>Reset</strong> để tạo phòng mới với mã mới — toàn bộ người chơi hiện tại sẽ bị kick.</li>
+                    <li>Reload trang admin cũng sẽ tự động dọn phòng cũ và kick toàn bộ người chơi.</li>
                 </ul>
             </div>
 
@@ -752,7 +753,7 @@
 <div id="qr-fullscreen-overlay" onclick="closeFullscreenQR()">
     <div class="qr-fs-content" onclick="event.stopPropagation()">
         <div id="qrcode-fs"></div>
-        <button id="btn-close-qr" onclick="closeFullscreenQR()">Đóng</button>
+        <button id="btn-close-qr" onclick="closeFullscreenQR()">Close</button>
     </div>
 </div>
 
@@ -760,7 +761,7 @@
 <div id="room-view">
     <div id="room-topbar">
         <div class="code-block">
-            <div class="code-label">Mã phòng</div>
+            <div class="code-label">Room ID</div>
             <div id="room-code-txt">----</div>
         </div>
 
@@ -775,14 +776,14 @@
             để vào phòng.<br><br>
             Nhập tên → Chọn avatar<br>
             Máy tự chia <span>đội ngẫu nhiên</span>.<br><br>
-            <span id="total-count-topbar">0</span> học sinh đã vào.
+            <span id="total-count-topbar">0</span> người chơi đã vào.
         </div>
     </div>
 
     <div id="room-main">
         <div class="team-box" id="box-a">
             <div class="team-box-header">
-                <span class="team-name">ĐỘI A</span>
+                <span class="team-name">TEAM A</span>
                 <span class="team-count-pill" id="count-a">0</span>
             </div>
             <div class="team-member-list" id="list-a">
@@ -794,20 +795,20 @@
             <div id="player-counter-card">
                 <div class="counter-label">Người chơi đã vào</div>
                 <div class="counter-num" id="total-count">0</div>
-                <div class="counter-sub">học sinh sẵn sàng</div>
+                <div class="counter-sub">Người chơi sẵn sàng</div>
             </div>
             <div style="text-align:center;">
                 <span class="live-badge">LIVE</span>
             </div>
             <button id="btn-start-game" onclick="startGame()" disabled>
-                KÍCH HOẠT TRẬN ĐẤU
+                START GAME
             </button>
-            <p id="start-hint">Cần ít nhất <span>1</span> người để bắt đầu</p>
+            <p id="start-hint">Cần ít nhất <span>1</span> người chơi để bắt đầu</p>
         </div>
 
         <div class="team-box" id="box-b">
             <div class="team-box-header">
-                <span class="team-name">ĐỘI B</span>
+                <span class="team-name">TEAM B</span>
                 <span class="team-count-pill" id="count-b">0</span>
             </div>
             <div class="team-member-list" id="list-b">
@@ -826,19 +827,19 @@
 
     <div class="grid-layout">
         <div class="card score-card-animated" id="card-team-a" style="border-color:var(--team-a); text-align:center;">
-            <h3 style="color:var(--team-a); margin:0; font-size:.85rem; letter-spacing:1px;">TB ĐIỂM ĐỘI A</h3>
+            <h3 style="color:var(--team-a); margin:0; font-size:.85rem; letter-spacing:1px;">TEAM A</h3>
             <div class="score-big" id="score-a-view" style="color:var(--team-a);">0</div>
-            <div style="font-size:.7rem; color:#475569;">điểm trung bình/người</div>
+            <div style="font-size:.7rem; color:#475569;">điểm trung bình</div>
         </div>
         <div class="card score-card-animated" id="card-team-b" style="border-color:var(--team-b); text-align:center;">
-            <h3 style="color:var(--team-b); margin:0; font-size:.85rem; letter-spacing:1px;">TB ĐIỂM ĐỘI B</h3>
+            <h3 style="color:var(--team-b); margin:0; font-size:.85rem; letter-spacing:1px;">TEAM B</h3>
             <div class="score-big" id="score-b-view" style="color:var(--team-b);">0</div>
-            <div style="font-size:.7rem; color:#475569;">điểm trung bình/người</div>
+            <div style="font-size:.7rem; color:#475569;">điểm trung bình</div>
         </div>
     </div>
 
     <div class="card leaderboard-card" style="margin-top:14px; text-align:left;">
-        <h3 style="margin-top:0; color:var(--accent); font-family:'Orbitron';">BẢNG XẾP HẠNG</h3>
+        <h3 style="margin-top:0; color:var(--accent); font-family:'Orbitron';">RANKING</h3>
         <div class="table-wrapper">
             <table>
                 <thead>
@@ -846,7 +847,7 @@
                         <th>Hạng</th>
                         <th>Tên</th>
                         <th>Avatar</th>
-                        <th>Đội</th>
+                        <th>Team</th>
                         <th>Điểm</th>
                         <th>Thời gian</th>
                     </tr>
@@ -859,10 +860,10 @@
     <div id="reset-zone" style="margin-top:24px; text-align:center; display:none;">
         <div style="display:flex; gap:12px; justify-content:center; flex-wrap:wrap;">
             <button onclick="exportExcel()" style="background:#1d6a30; color:#fff; font-family:'Orbitron'; font-size:0.85rem;">
-                📊 XUẤT FILE EXCEL
+                EXPORT
             </button>
             <button onclick="resetGame()" style="background:#ff4a4a; color:#fff; font-family:'Orbitron';">
-                RESET PHÒNG &amp; BẮT ĐẦU LẠI
+                RESET PHÒNG
             </button>
         </div>
     </div>
@@ -872,11 +873,11 @@
 <div id="winner-overlay">
     <div class="winner-card" id="winner-card">
         <div class="winner-trophy" id="winner-trophy">🏆</div>
-        <div class="winner-title">KẾT QUẢ TRẬN ĐẤU</div>
-        <div class="winner-name" id="winner-name">ĐỘI A</div>
+        <div class="winner-title">CONGRATULATIONS!</div>
+        <div class="winner-name" id="winner-name">TEAM A</div>
         <div class="score-row">
             <div class="score-col">
-                <div class="score-col-label">ĐỘI A (TB)</div>
+                <div class="score-col-label">TEAM A</div>
                 <div class="score-col-val a" id="final-score-a">0</div>
             </div>
             <div class="score-col">
@@ -884,28 +885,28 @@
                 <div class="score-col-val" style="color:#ffaa00; font-size:1.2rem;">–</div>
             </div>
             <div class="score-col">
-                <div class="score-col-label">ĐỘI B (TB)</div>
+                <div class="score-col-label">TEAM B</div>
                 <div class="score-col-val b" id="final-score-b">0</div>
             </div>
         </div>
-        <button id="btn-close-winner" onclick="closeWinner()">Xem bảng điểm →</button>
+        <button id="btn-close-winner" onclick="closeWinner()">BACK →</button>
     </div>
 </div>
 
 <!-- ── MODAL CHỌN SỐ VÒNG ─────────────────────────────────────────────────── -->
 <div id="round-overlay">
     <div class="round-modal">
-        <h3>⚙ CÀI ĐẶT TRẬN ĐẤU</h3>
-        <p>Nhập số vòng chơi cho trận đấu này:</p>
+        <h3>SETTING</h3>
+        <p>Nhập số vòng chơi:</p>
         <input type="number" id="input-rounds" value="5" min="1" max="50"
                onkeypress="if(event.key==='Enter') confirmStartGame()">
         <div class="round-modal-note">
-            🔥 <span>Vòng cuối</span> tự động nhân đôi điểm<br>
-            Đúng <span>+20đ</span> &nbsp;|&nbsp; Sai <span style="color:#ff4a4a">−5đ</span>
+            🔥 <span>Vòng cuối</span> tự động nhân đôi số điểm<br>
+            Đúng <span>+20</span> &nbsp;|&nbsp; Sai <span style="color:#ff4a4a">−5</span>
         </div>
         <div class="round-btn-row">
-            <button class="btn-cancel" onclick="closeRoundModal()">Hủy</button>
-            <button class="btn-confirm" onclick="confirmStartGame()">Bắt Đầu Ngay ▶</button>
+            <button class="btn-cancel" onclick="closeRoundModal()">CANCEL</button>
+            <button class="btn-confirm" onclick="confirmStartGame()">START ▶</button>
         </div>
     </div>
 </div>
@@ -928,12 +929,12 @@ function toggleRules(headerEl) {
 function createRoom() {
     const btn = document.getElementById('btn-create');
     btn.disabled = true;
-    btn.innerText = 'ĐANG TẠO...';
+    btn.innerText = 'CREATING...';
     socket.emit('adminCreateRoom');
     setTimeout(() => {
         if (document.getElementById('lobby-view').style.display !== 'none') {
             btn.disabled = false;
-            btn.innerText = 'TẠO PHÒNG MỚI';
+            btn.innerText = 'NEW ROOM';
         }
     }, 3000);
 }
@@ -1107,9 +1108,9 @@ socket.on('timerUpdate', (timeLeft) => {
 });
 
 socket.on('intermissionStart', (data) => {
-    const bonus = (data && data.bonusTime > 0) ? ' (+' + data.bonusTime + 's hoàn thành sớm)' : '';
+    const bonus = (data && data.bonusTime > 0) ? ' (+' + data.bonusTime + 's)' : '';
     const total = (data && data.totalTime) ? data.totalTime : 15;
-    document.getElementById('current-stage-txt').innerText = '⏸ GIẢI LAO (' + total + 'S)' + bonus;
+    document.getElementById('current-stage-txt').innerText = 'GIẢI LAO (' + total + 'S)' + bonus;
 });
 
 socket.on('gameOver', (d) => {
@@ -1128,16 +1129,16 @@ function showWinnerOverlay(d) {
     document.getElementById('final-score-a').innerText = typeof d.scoreA === 'number' ? d.scoreA.toFixed(1) : '0.0';
     document.getElementById('final-score-b').innerText = typeof d.scoreB === 'number' ? d.scoreB.toFixed(1) : '0.0';
 
-    if (d.winningTeam === 'Hòa') {
+    if (d.winningTeam === 'Tie') {
         card.className  = 'winner-card draw';
         name.className  = 'winner-name draw';
-        name.innerText  = 'HÒA NHAU!';
-        trophy.innerText = '🤝';
+        name.innerText  = 'TIE!';
+        trophy.innerText = ' ';
     } else {
         const isA = d.winningTeam === 'A';
         card.className  = 'winner-card ' + (isA ? 'team-a' : 'team-b');
         name.className  = 'winner-name ' + (isA ? 'team-a' : 'team-b');
-        name.innerText  = `ĐỘI ${d.winningTeam} CHIẾN THẮNG`;
+        name.innerText  = `TEAM ${d.winningTeam} WIN`;
         trophy.innerText = '🏆';
     }
     overlay.classList.add('show');
@@ -1176,6 +1177,9 @@ socket.on('realtimeScoreUpdate', (data) => {
         return a.totalTimeTaken - b.totalTimeTaken;
     });
 
+    const times  = sorted.map(p => p.totalTimeTaken).filter(t => t > 0);
+    const minT   = times.length ? Math.min(...times) : 0;
+    const maxT   = times.length ? Math.max(...times) : 0;
     const tbody  = document.getElementById('leaderboard-rows');
 
     const cache = {};
@@ -1183,8 +1187,8 @@ socket.on('realtimeScoreUpdate', (data) => {
 
     sorted.forEach((p, idx) => {
         let tColor = 'var(--accent)', tTxt = 'Đơn Lẻ', tBg = 'rgba(0,255,136,.12)';
-        if (p.team === 'A') { tColor = 'var(--team-a)'; tTxt = 'Đội A'; tBg = 'rgba(255,74,74,.15)'; }
-        if (p.team === 'B') { tColor = 'var(--team-b)'; tTxt = 'Đội B'; tBg = 'rgba(0,210,255,.15)'; }
+        if (p.team === 'A') { tColor = 'var(--team-a)'; tTxt = 'Team A'; tBg = 'rgba(255,74,74,.15)'; }
+        if (p.team === 'B') { tColor = 'var(--team-b)'; tTxt = 'Team B'; tBg = 'rgba(0,210,255,.15)'; }
 
         let deltaHtml = '';
         if (p.lastDelta > 0) deltaHtml = `<span class="delta-badge delta-plus">+${p.lastDelta}</span>`;
@@ -1197,8 +1201,11 @@ socket.on('realtimeScoreUpdate', (data) => {
             rank === 3 ? `<span class="rank-medal rank-3">3</span>` :
                          `<span class="rank-medal rank-n">${rank}</span>`;
 
-        // Lớp chung không phân biệt tốc độ
         let tClass = 'time-display';
+        if (times.length > 1) {
+            if (p.totalTimeTaken === minT) tClass += ' time-fast';
+            else if (p.totalTimeTaken === maxT) tClass += ' time-slow';
+        }
 
         const pid = p.id || p.name;
         let row = cache[pid];
@@ -1227,7 +1234,7 @@ socket.on('realtimeScoreUpdate', (data) => {
 // FIX: Admin nhận {newRoomId} từ server, sau đó server tự emit 'roomCreated'
 // với newRoomId. Handler roomCreated sẽ setup UI phòng mới + QR mới.
 function resetGame() {
-    if (confirm('Bạn có chắc muốn reset phòng và bắt đầu lượt chơi mới?\nMã phòng mới sẽ được tạo.')) {
+    if (confirm('Bạn có chắc muốn reset phòng và bắt đầu lượt chơi mới?\nRoom ID mới sẽ được tạo.')) {
         socket.emit('adminResetGame', myRoomId);
     }
 }
@@ -1347,7 +1354,7 @@ socket.on('fullReportData', (players) => {
     // bg, fg, align ('center'|'left'), bold, fontSize, borderColor
     function cs(bg, fg, align, bold, sz, bClr) {
         return {
-            font:      { bold: !!bold, sz: sz || 11, color: { rgb: fg || '1A1A1A' } },
+            font:      { bold: !!bold, sz: sz || 10, color: { rgb: fg || '1A1A1A' } },
             fill:      bg ? { patternType: 'solid', fgColor: { rgb: bg } } : undefined,
             alignment: { horizontal: align || 'center', vertical: 'center', wrapText: true },
             border:    allBorders(bClr || 'BBBBBB')
@@ -1381,13 +1388,13 @@ socket.on('fullReportData', (players) => {
         const ws = {};
         const merges = [];
 
-        // Title row (Size to hơn, in đậm)
-        sc(ws,0,0,'BẢNG XẾP HẠNG', cs('1B3A6B','FFFFFF','center',true,16,'1B3A6B'));
+        // Title row
+        sc(ws,0,0,'BẢNG XẾP HẠNG', cs('1B3A6B','FFFFFF','center',true,14,'1B3A6B'));
         merges.push({s:{r:0,c:0},e:{r:0,c:4}});
 
-        // Header row (Size to hơn, in đậm)
-        const hdrs = ['#','Tên học sinh','Đội','Điểm','Thời gian (s)'];
-        hdrs.forEach((h,c)=>sc(ws,1,c,h,cs('2D4A7A','FFFFFF','center',true,12,'1B3A6B')));
+        // Header row
+        const hdrs = ['#','Tên','Team','Điểm','Thời gian (s)'];
+        hdrs.forEach((h,c)=>sc(ws,1,c,h,cs('2D4A7A','FFFFFF','center',true,10,'1B3A6B')));
 
         // Data rows — thời gian dùng style xám chung như các cột khác
         sorted.forEach((p,i)=>{
@@ -1395,21 +1402,21 @@ socket.on('fullReportData', (players) => {
             const even=i%2===0;
             const bg=i===0?'FFF3CD':i===1?'F2F2F2':i===2?'FDE8D8':(even?'F8F9FA':'FFFFFF');
             const fg='1A1A1A';
-            const std=cs(bg,fg,'center',false,11,'BBBBBB');
-            const stdB=cs(bg,fg,'center',true,11,'BBBBBB');
-            const stdL=cs(bg,fg,'left',false,11,'BBBBBB');
+            const std=cs(bg,fg,'center',false,10,'BBBBBB');
+            const stdB=cs(bg,fg,'center',true,10,'BBBBBB');
+            const stdL=cs(bg,fg,'left',false,10,'BBBBBB');
             const teamBg=p.team==='A'?'DCE8FF':'FFE8E8';
             sc(ws,r,0,i+1,stdB);
             sc(ws,r,1,p.name,stdL);
-            sc(ws,r,2,'Đội '+p.team,cs(teamBg,fg,'center',true,11,'BBBBBB'));
+            sc(ws,r,2,'Team '+p.team,cs(teamBg,fg,'center',true,10,'BBBBBB'));
             sc(ws,r,3,p.score,stdB);
             sc(ws,r,4,parseFloat(p.totalTimeTaken.toFixed(2)),std);
         });
 
         ws['!ref']=XLSX.utils.encode_range({s:{r:0,c:0},e:{r:N+1,c:4}});
         ws['!merges']=merges;
-        ws['!rows']=[{hpt:30},{hpt:26}]; // Tăng chiều cao hàng
-        ws['!cols']=[{wch:6},{wch:30},{wch:12},{wch:12},{wch:18}]; // Tăng độ rộng cột
+        ws['!rows']=[{hpt:22},{hpt:22}];
+        ws['!cols']=[{wch:5},{wch:28},{wch:9},{wch:9},{wch:16}];
         XLSX.utils.book_append_sheet(wb,ws,'Xếp Hạng');
     }
 
@@ -1428,103 +1435,90 @@ socket.on('fullReportData', (players) => {
         const DROW    = 3;                    // hàng dữ liệu bắt đầu
 
         // ── Màu ──────────────────────────────────────────────────────────────
-        const HDR_DARK  = '1B3A6B';
-        const HDR_PA    = '1A4480';  // player đội A (điểm)
-        const HDR_PB    = '7B2020';  // player đội B (điểm)
-        const LGT_PA    = '4A75B5';  // player đội A (tên nhạt hơn để phân biệt với hàng trên)
-        const LGT_PB    = 'BA5B5B';  // player đội B (tên nhạt hơn)
+        const HDR_DARK  = '2766BF';
+        const HDR_PA    = '7B2020';  // player đội A
+        const HDR_PB    = '1A4480';  // player đội B
         const HDR_STAT  = '3D5A80';  // header cột thống kê
         const Q_EVEN    = 'F0F4FF';
         const Q_ODD     = 'FFFFFF';
         const OK_BG     = 'D4EDDA'; const OK_FG = '155724';
         const ERR_BG    = 'F8D7DA'; const ERR_FG = '721C24';
         const SKP_BG    = 'FFF3CD'; const SKP_FG = '856404';
-        
-        // Màu cho Tỉ lệ (Khác hoàn toàn Đúng/Sai/Bỏ qua)
-        const RATIO_HI_BG = 'CCE5FF'; const RATIO_HI_FG = '004085'; // Xanh lam (>=70%)
-        const RATIO_MD_BG = 'E2D9F3'; const RATIO_MD_FG = '381B53'; // Tím nhạt (40-69%)
-        const RATIO_LO_BG = 'E2E3E5'; const RATIO_LO_FG = '383D41'; // Xám (<40%)
-
         const STAT_BG   = 'EDE7F6'; const STAT_FG = '4527A0';
-        const BC_DARK   = '1B3A6B';
+        const BC_DARK   = '568EDC';
         const BC_NORM   = 'BBBBBB';
 
         // ── R0: Tiêu đề lớn ──────────────────────────────────────────────────
-        sc(ws,0,0,'BẢNG CHI TIẾT TỪNG CÂU HỎI',cs(HDR_DARK,'FFFFFF','center',true,16,BC_DARK));
+        sc(ws,0,0,'BẢNG CHI TIẾT TỪNG CÂU HỎI',cs(HDR_DARK,'FFFFFF','center',true,14,BC_DARK));
         merges.push({s:{r:0,c:0},e:{r:0,c:TCOLS-1}});
 
         // ── Header cố định (merge 3 hàng R0–R2) ──────────────────────────────
-        const fixHdr = cs(HDR_DARK,'FFFFFF','center',true,12,BC_DARK);
-        sc(ws,0,0,'BẢNG CHI TIẾT TỪNG CÂU HỎI',fixHdr); // đã set ở trên với size 16
+        const fixHdr = cs(HDR_DARK,'FFFFFF','center',true,10,BC_DARK);
+        sc(ws,0,0,'BẢNG CHI TIẾT TỪNG CÂU HỎI',fixHdr); // đã set ở trên
         // Row 1: header cột cố định (merge xuống R2)
         ['#','Câu hỏi'].forEach((lbl,c)=>{
             sc(ws,1,c,lbl,fixHdr);
             merges.push({s:{r:1,c},e:{r:2,c}});
         });
         // Thống kê cũng merge
-        sc(ws,1,CCOUNT,'Số đúng',  cs(HDR_STAT,'FFFFFF','center',true,12,BC_DARK));
-        sc(ws,1,CRATIO,'Tỉ lệ đúng',cs(HDR_STAT,'FFFFFF','center',true,12,BC_DARK));
+        sc(ws,1,CCOUNT,'Số lượng chọn đúng',  cs(HDR_STAT,'FFFFFF','center',true,10,BC_DARK));
+        sc(ws,1,CRATIO,'Tỉ lệ đúng',cs(HDR_STAT,'FFFFFF','center',true,10,BC_DARK));
         merges.push({s:{r:1,c:CCOUNT},e:{r:2,c:CCOUNT}});
         merges.push({s:{r:1,c:CRATIO},e:{r:2,c:CRATIO}});
 
-        // Row 1: tên player (màu nhạt hơn)
+        // Row 1: tên player
         sorted.forEach((p,pi)=>{
             const col=PSTART+pi;
-            const bg=p.team==='A'?LGT_PA:LGT_PB;
-            sc(ws,1,col,p.name,cs(bg,'FFFFFF','center',true,12,BC_DARK));
+            const bg=p.team==='A'?HDR_PA:HDR_PB;
+            sc(ws,1,col,p.name,cs(bg,'FFFFFF','center',true,10,BC_DARK));
         });
         // Row 2: điểm tổng player
         sorted.forEach((p,pi)=>{
             const col=PSTART+pi;
             const bg=p.team==='A'?HDR_PA:HDR_PB;
-            sc(ws,2,col,p.score+'đ',cs(bg,'FFFFFF','center',true,12,BC_DARK));
+            sc(ws,2,col,p.score+'đ',cs(bg,'FFFFFF','center',true,10,BC_DARK));
         });
 
         // ── Data rows ─────────────────────────────────────────────────────────
         allQs.forEach((q,qi)=>{
             const r=DROW+qi;
             const bg=qi%2===0?Q_EVEN:Q_ODD;
-            sc(ws,r,0,qi+1,     cs(bg,'1A1A1A','center',true, 11,BC_NORM));
-            sc(ws,r,1,q.text,   cs(bg,'1A1A1A','left',  false,11,BC_NORM));
+            sc(ws,r,0,qi+1,     cs(bg,'1A1A1A','center',true, 10,BC_NORM));
+            sc(ws,r,1,q.text,   cs(bg,'1A1A1A','left',  false,10,BC_NORM));
 
             let correctCount=0;
             sorted.forEach((p,pi)=>{
                 const col=PSTART+pi;
                 const h=(p.history||[])[qi];
-                if(!h){ sc(ws,r,col,'—',cs(bg,'AAAAAA','center',false,11,BC_NORM)); return; }
+                if(!h){ sc(ws,r,col,'—',cs(bg,'AAAAAA','center',false,10,BC_NORM)); return; }
                 const isSkip=h.skipped||h.chosenAnswer==='(bỏ qua)';
                 const isOk=h.isCorrect&&!isSkip;
                 if(isOk) correctCount++;
                 let txt,oBg,oFg;
-                
-                // Chỉ hiển thị Đúng/Sai/Bỏ qua, không hiện kết quả ABCD
-                if(isSkip)      { txt='Bỏ qua'; oBg=SKP_BG; oFg=SKP_FG; }
-                else if(isOk)   { txt='Đúng';   oBg=OK_BG; oFg=OK_FG; }
-                else            { txt='Sai';    oBg=ERR_BG; oFg=ERR_FG; }
-                sc(ws,r,col,txt,cs(oBg,oFg,'center',true,11,BC_NORM));
+                if(isSkip)      { txt='⏭ Bỏ qua'; oBg=SKP_BG; oFg=SKP_FG; }
+                else if(isOk)   { txt='✔ '+h.chosenAnswer; oBg=OK_BG; oFg=OK_FG; }
+                else            { txt='✘ '+h.chosenAnswer; oBg=ERR_BG; oFg=ERR_FG; }
+                sc(ws,r,col,txt,cs(oBg,oFg,'center',true,10,BC_NORM));
             });
 
             const ratio=N>0?Math.round(correctCount/N*100):0;
-            sc(ws,r,CCOUNT,correctCount+'/'+N,  cs(STAT_BG,STAT_FG,'center',true,11,BC_NORM));
-            
-            // Màu của tỉ lệ khác biệt với màu Đáp án
-            let rBg, rFg;
-            if (ratio >= 70) { rBg = RATIO_HI_BG; rFg = RATIO_HI_FG; }
-            else if (ratio >= 40) { rBg = RATIO_MD_BG; rFg = RATIO_MD_FG; }
-            else { rBg = RATIO_LO_BG; rFg = RATIO_LO_FG; }
-
-            sc(ws,r,CRATIO,ratio+'%', cs(rBg,rFg,'center',true,11,BC_NORM));
+            sc(ws,r,CCOUNT,correctCount+'/'+N,  cs(STAT_BG,STAT_FG,'center',true,10,BC_NORM));
+            sc(ws,r,CRATIO,ratio+'%',            cs(
+                ratio>=70?OK_BG:ratio>=40?SKP_BG:ERR_BG,
+                ratio>=70?OK_FG:ratio>=40?SKP_FG:ERR_FG,
+                'center',true,10,BC_NORM
+            ));
         });
 
         // ── Kích thước ───────────────────────────────────────────────────────
         ws['!ref']=XLSX.utils.encode_range({s:{r:0,c:0},e:{r:DROW+Q-1,c:TCOLS-1}});
         ws['!merges']=merges;
-        ws['!rows']=[{hpt:34},{hpt:30},{hpt:26}]; // Tăng chiều cao hàng tiêu đề
-        for(let i=0;i<Q;i++) ws['!rows'].push({hpt:55}); // Tăng chiều cao hàng câu hỏi
+        ws['!rows']=[{hpt:24},{hpt:28},{hpt:22}];
+        for(let i=0;i<Q;i++) ws['!rows'].push({hpt:48});
 
-        const cols=[{wch:6},{wch:60}]; // Tăng độ rộng cột
-        sorted.forEach(()=>cols.push({wch:16})); // Tăng độ rộng cột player
-        cols.push({wch:12},{wch:14});
+        const cols=[{wch:5},{wch:52}];
+        sorted.forEach(()=>cols.push({wch:14}));
+        cols.push({wch:10},{wch:12});
         ws['!cols']=cols;
 
         XLSX.utils.book_append_sheet(wb,ws,'Chi Tiết');
@@ -1537,7 +1531,7 @@ socket.on('fullReportData', (players) => {
         String(now.getDate()).padStart(2,'0')+'_'+
         String(now.getHours()).padStart(2,'0')+
         String(now.getMinutes()).padStart(2,'0');
-    XLSX.writeFile(wb,'PhysicsGame_KetQua_'+ts+'.xlsx');
+    XLSX.writeFile(wb,'PhysicsGamee_Result_'+ts+'.xlsx');
 });
 
 // ── UTILS ─────────────────────────────────────────────────────────────────────
