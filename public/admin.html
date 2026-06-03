@@ -966,6 +966,9 @@ function setupRoomUI(roomId) {
 socket.on('roomCreated', (roomId) => {
     setupRoomUI(roomId);
 
+    // Lưu roomId vào sessionStorage để admin có thể rejoin nếu F5/đóng tab
+    sessionStorage.setItem('adminRoomId', roomId);
+
     // Ẩn lobby, hiện room view
     document.getElementById('lobby-view').style.display  = 'none';
     document.getElementById('dashboard-view').style.display = 'none';
@@ -1243,8 +1246,21 @@ function resetGame() {
 socket.on('roomResetByAdmin', (data) => {
     // Đóng winner overlay nếu đang mở
     document.getElementById('winner-overlay').classList.remove('show');
+    // Xóa session cũ khi phòng bị đóng hẳn (newRoomId: null = admin đã thoát hẳn)
+    if (!data || !data.newRoomId) {
+        sessionStorage.removeItem('adminRoomId');
+    }
     // roomCreated sẽ được emit ngay sau từ server với newRoomId
     // UI sẽ tự cập nhật trong handler roomCreated bên trên
+});
+
+// ── ADMIN RECONNECT: tự động rejoin phòng cũ khi mở lại tab ─────────────────
+socket.on('connect', () => {
+    const savedRoomId = sessionStorage.getItem('adminRoomId');
+    if (savedRoomId && !myRoomId) {
+        // Thử lấy lại phòng cũ (server còn trong grace period)
+        socket.emit('adminRejoin', savedRoomId);
+    }
 });
 
 
@@ -1353,18 +1369,12 @@ socket.on('fullReportData', (players) => {
     // ── Cell style builder ────────────────────────────────────────────────────
     // bg, fg, align ('center'|'left'), bold, fontSize, borderColor
     function cs(bg, fg, align, bold, sz, bClr) {
-        const borderObj = allBorders(bClr || 'BBBBBB');
-        const style = {
+        return {
             font:      { bold: !!bold, sz: sz || 10, color: { rgb: fg || '1A1A1A' } },
+            fill:      bg ? { patternType: 'solid', fgColor: { rgb: bg } } : undefined,
             alignment: { horizontal: align || 'center', vertical: 'center', wrapText: true },
-            border:    borderObj
+            border:    allBorders(bClr || 'BBBBBB')
         };
-        if (bg) {
-            style.fill = { patternType: 'solid', fgColor: { rgb: bg } };
-        } else {
-            style.fill = { patternType: 'solid', fgColor: { rgb: 'FFFFFF' } };
-        }
-        return style;
     }
 
     // ── Set cell ──────────────────────────────────────────────────────────────
@@ -1395,12 +1405,12 @@ socket.on('fullReportData', (players) => {
         const merges = [];
 
         // Title row
-        sc(ws,0,0,'BẢNG XẾP HẠNG', cs('1B3A6B','FFFFFF','center',true,16,'1B3A6B'));
+        sc(ws,0,0,'BẢNG XẾP HẠNG', cs('1B3A6B','FFFFFF','center',true,14,'1B3A6B'));
         merges.push({s:{r:0,c:0},e:{r:0,c:4}});
 
-        // Header row — màu xanh lá để phân biệt với title row màu navy
+        // Header row
         const hdrs = ['#','Tên','Team','Điểm','Thời gian (s)'];
-        hdrs.forEach((h,c)=>sc(ws,1,c,h,cs('1A6B3A','FFFFFF','center',true,12,'145C2E')));
+        hdrs.forEach((h,c)=>sc(ws,1,c,h,cs('2D4A7A','FFFFFF','center',true,10,'1B3A6B')));
 
         // Data rows — thời gian dùng style xám chung như các cột khác
         sorted.forEach((p,i)=>{
@@ -1445,8 +1455,8 @@ socket.on('fullReportData', (players) => {
         const HDR_PA    = '7B2020';  // player đội A
         const HDR_PB    = '1A4480';  // player đội B
         const HDR_STAT  = '3D5A80';  // header cột thống kê
-        const Q_EVEN    = 'FFFDE7';  // vàng nhạt — khác rõ với header xanh lá
-        const Q_ODD     = 'FFFFFF';  // trắng
+        const Q_EVEN    = 'F0F4FF';
+        const Q_ODD     = 'FFFFFF';
         const OK_BG     = 'D4EDDA'; const OK_FG = '155724';
         const ERR_BG    = 'F8D7DA'; const ERR_FG = '721C24';
         const SKP_BG    = 'FFF3CD'; const SKP_FG = '856404';
@@ -1455,21 +1465,20 @@ socket.on('fullReportData', (players) => {
         const BC_NORM   = 'BBBBBB';
 
         // ── R0: Tiêu đề lớn ──────────────────────────────────────────────────
-        sc(ws,0,0,'BẢNG CHI TIẾT TỪNG CÂU HỎI',cs(HDR_DARK,'FFFFFF','center',true,16,BC_DARK));
+        sc(ws,0,0,'BẢNG CHI TIẾT TỪNG CÂU HỎI',cs(HDR_DARK,'FFFFFF','center',true,14,BC_DARK));
         merges.push({s:{r:0,c:0},e:{r:0,c:TCOLS-1}});
 
         // ── Header cố định (merge 3 hàng R0–R2) ──────────────────────────────
-        // Header hàng tên cột — màu xanh lá để phân biệt với tiêu đề lớn màu navy
-        const fixHdr = cs('1A6B3A','FFFFFF','center',true,12,'145C2E');
-        sc(ws,0,0,'BẢNG CHI TIẾT TỪNG CÂU HỎI',cs(HDR_DARK,'FFFFFF','center',true,16,BC_DARK)); // đã set ở trên
+        const fixHdr = cs(HDR_DARK,'FFFFFF','center',true,10,BC_DARK);
+        sc(ws,0,0,'BẢNG CHI TIẾT TỪNG CÂU HỎI',fixHdr); // đã set ở trên
         // Row 1: header cột cố định (merge xuống R2)
         ['#','Câu hỏi'].forEach((lbl,c)=>{
             sc(ws,1,c,lbl,fixHdr);
             merges.push({s:{r:1,c},e:{r:2,c}});
         });
-        // Thống kê cũng merge — dùng màu xanh lá tối hơn để nhất quán
-        sc(ws,1,CCOUNT,'Số lượng chọn đúng',  cs('145C2E','FFFFFF','center',true,12,'0F4A26'));
-        sc(ws,1,CRATIO,'Tỉ lệ đúng',cs('145C2E','FFFFFF','center',true,12,'0F4A26'));
+        // Thống kê cũng merge
+        sc(ws,1,CCOUNT,'Số lượng chọn đúng',  cs(HDR_STAT,'FFFFFF','center',true,10,BC_DARK));
+        sc(ws,1,CRATIO,'Tỉ lệ đúng',cs(HDR_STAT,'FFFFFF','center',true,10,BC_DARK));
         merges.push({s:{r:1,c:CCOUNT},e:{r:2,c:CCOUNT}});
         merges.push({s:{r:1,c:CRATIO},e:{r:2,c:CRATIO}});
 
@@ -1502,9 +1511,9 @@ socket.on('fullReportData', (players) => {
                 const isOk=h.isCorrect&&!isSkip;
                 if(isOk) correctCount++;
                 let txt,oBg,oFg;
-                if(isSkip)      { txt='[Bo qua]'; oBg=SKP_BG; oFg=SKP_FG; }
-                else if(isOk)   { txt='[Dung] '+h.chosenAnswer; oBg=OK_BG; oFg=OK_FG; }
-                else            { txt='[Sai] '+h.chosenAnswer; oBg=ERR_BG; oFg=ERR_FG; }
+                if(isSkip)      { txt='⏭ Bỏ qua'; oBg=SKP_BG; oFg=SKP_FG; }
+                else if(isOk)   { txt='✔ '+h.chosenAnswer; oBg=OK_BG; oFg=OK_FG; }
+                else            { txt='✘ '+h.chosenAnswer; oBg=ERR_BG; oFg=ERR_FG; }
                 sc(ws,r,col,txt,cs(oBg,oFg,'center',true,10,BC_NORM));
             });
 
