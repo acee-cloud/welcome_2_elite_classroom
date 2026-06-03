@@ -966,7 +966,7 @@ function setupRoomUI(roomId) {
 socket.on('roomCreated', (roomId) => {
     setupRoomUI(roomId);
 
-    // Lưu roomId vào sessionStorage để admin có thể rejoin nếu F5/đóng tab
+    // [FIX] Lưu roomId vào sessionStorage để admin có thể rejoin khi F5/đóng-mở tab
     sessionStorage.setItem('adminRoomId', roomId);
 
     // Ẩn lobby, hiện room view
@@ -1244,21 +1244,19 @@ function resetGame() {
 
 // FIX: roomResetByAdmin cho admin chỉ là xác nhận — phòng mới sẽ đến qua 'roomCreated'
 socket.on('roomResetByAdmin', (data) => {
-    // Đóng winner overlay nếu đang mở
     document.getElementById('winner-overlay').classList.remove('show');
-    // Xóa session cũ khi phòng bị đóng hẳn (newRoomId: null = admin đã thoát hẳn)
+    // [FIX] Xóa session khi phòng bị đóng hẳn (newRoomId: null)
     if (!data || !data.newRoomId) {
         sessionStorage.removeItem('adminRoomId');
     }
     // roomCreated sẽ được emit ngay sau từ server với newRoomId
-    // UI sẽ tự cập nhật trong handler roomCreated bên trên
 });
 
-// ── ADMIN RECONNECT: tự động rejoin phòng cũ khi mở lại tab ─────────────────
+// [FIX] Khi socket kết nối (bao gồm lần đầu và sau khi F5/reconnect),
+// tự động thử rejoin phòng cũ nếu còn lưu trong sessionStorage
 socket.on('connect', () => {
     const savedRoomId = sessionStorage.getItem('adminRoomId');
     if (savedRoomId && !myRoomId) {
-        // Thử lấy lại phòng cũ (server còn trong grace period)
         socket.emit('adminRejoin', savedRoomId);
     }
 });
