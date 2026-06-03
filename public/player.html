@@ -1628,6 +1628,34 @@ socket.on('receiveLobbyMessage', (data) => {
     appendLobbyChatMsg(data);
 });
 
+socket.on('lobbyChatHistory', (messages) => {
+    const container = document.getElementById('lobby-chat-messages');
+    if (!container || !Array.isArray(messages)) return;
+    // Xóa sạch trước rồi render lại toàn bộ lịch sử
+    container.innerHTML = '';
+    messages.forEach(msg => appendLobbyChatMsg(msg));
+});
+
+// ── ADMIN MẤT KẾT NỐI / QUAY LẠI ────────────────────────────────────────────
+socket.on('adminDisconnected', ({ graceSeconds }) => {
+    const toast = document.getElementById('conn-toast');
+    if (toast) {
+        toast.textContent = `⚠ Admin mất kết nối – chờ ${graceSeconds}s...`;
+        toast.classList.add('show');
+    }
+    if (document.getElementById('waiting-screen').classList.contains('active')) {
+        appendLobbyChatMsg({ msg: `⚠ Admin mất kết nối – chờ tối đa ${graceSeconds}s để quay lại...` }, true);
+    }
+});
+
+socket.on('adminReconnected', () => {
+    const toast = document.getElementById('conn-toast');
+    if (toast) toast.classList.remove('show');
+    if (document.getElementById('waiting-screen').classList.contains('active')) {
+        appendLobbyChatMsg({ msg: '✓ Admin đã kết nối lại.' }, true);
+    }
+});
+
 socket.on('lobbyChatSystem', (text) => {
     appendLobbyChatMsg({ msg: text }, true);
 });
