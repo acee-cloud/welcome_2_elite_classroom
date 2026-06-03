@@ -107,7 +107,8 @@ function createRoomState(roomId, adminSocketId) {
     timer: null,
     stageStartTime: 0,
     stageTimeLeft: 0,
-    roundQuestions: []
+    roundQuestions: [],
+    lobbyMessages: []   // lưu lịch sử chat sảnh chờ
   };
 }
 
@@ -201,6 +202,11 @@ io.on('connection', (socket) => {
 
     socket.emit('joinedRoom', { roomId: room.roomId, team: assignedTeam });
     socket.emit('roleAssignment', { team: assignedTeam });
+
+    // Gửi lịch sử chat sảnh chờ cho player mới vào
+    if (room.lobbyMessages.length > 0) {
+      socket.emit('lobbyChatHistory', room.lobbyMessages);
+    }
 
     io.to('room_' + rId).emit('updatePlayerList', room.players.map(p => ({
       id: p.id, name: p.name, avatar: p.avatar, team: p.team
@@ -330,11 +336,15 @@ io.on('connection', (socket) => {
     if (!room || room.status !== 'lobby' || !msg?.trim()) return;
     const player = room.players.find(p => p.id === socket.id);
     if (!player) return;
-    io.to('room_' + roomId).emit('receiveLobbyMessage', {
+    const message = {
       name: player.name,
       msg: msg.trim().substring(0, 150),
       team: player.team
-    });
+    };
+    // Lưu vào lịch sử, giới hạn 100 tin gần nhất
+    room.lobbyMessages.push(message);
+    if (room.lobbyMessages.length > 100) room.lobbyMessages.shift();
+    io.to('room_' + roomId).emit('receiveLobbyMessage', message);
   });
 
   // ── CHAT GIẢI LAO ─────────────────────────────────────────────────────────────
