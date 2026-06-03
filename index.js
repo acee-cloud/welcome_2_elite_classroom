@@ -108,9 +108,13 @@ function createRoomState(roomId, adminSocketId) {
     stageStartTime: 0,
     stageTimeLeft: 0,
     roundQuestions: [],
-    lobbyMessages: []   // lưu lịch sử chat sảnh chờ
+    lobbyMessages: [],        // lịch sử chat sảnh chờ
+    adminOffline: false,      // admin có đang offline không
+    adminGraceTimer: null     // timeout xóa phòng nếu admin không quay lại
   };
 }
+
+const ADMIN_GRACE_MS = 30000; // 30 giây chờ admin reconnect
 
 // ─── ĐIỂM TRUNG BÌNH MỖI ĐỘI ─────────────────────────────────────────────────
 function getScores(room) {
@@ -164,6 +168,34 @@ io.on('connection', (socket) => {
     socket.emit('roomCreated', roomId);
   });
 
+  // ── ADMIN: Reconnect lấy lại phòng cũ ────────────────────────────────────────
+  socket.on('adminRejoin', (roomId) => {
+    const room = rooms[roomId];
+    if (!room || !room.adminOffline) return;
+
+    // Huỷ timer xóa phòng
+    clearTimeout(room.adminGraceTimer);
+    room.adminGraceTimer = null;
+    room.adminOffline    = false;
+    room.adminSocketId   = socket.id;
+
+    socket.join('room_'  + roomId);
+    socket.join('admin_' + roomId);
+    socket.data.adminRoomId = roomId;
+
+    // Thông báo admin đã quay lại cho tất cả player
+    io.to('room_' + roomId).emit('adminReconnected');
+
+    // Gửi lại trạng thái phòng cho admin
+    socket.emit('roomCreated', roomId);
+    socket.emit('updatePlayerList', room.players.map(p => ({
+      id: p.id, name: p.name, avatar: p.avatar, team: p.team
+    })));
+    if (room.status !== 'lobby') {
+      socket.emit('gameStarted', { totalStages: room.totalStages });
+    }
+  });
+
   // ── PLAYER: Tham gia phòng ────────────────────────────────────────────────────
   socket.on('playerJoinRoom', ({ roomId, name, avatar }) => {
     const rId = roomId.toUpperCase();
@@ -202,11 +234,6 @@ io.on('connection', (socket) => {
 
     socket.emit('joinedRoom', { roomId: room.roomId, team: assignedTeam });
     socket.emit('roleAssignment', { team: assignedTeam });
-
-    // Gửi lịch sử chat sảnh chờ cho player mới vào
-    if (room.lobbyMessages.length > 0) {
-      socket.emit('lobbyChatHistory', room.lobbyMessages);
-    }
 
     io.to('room_' + rId).emit('updatePlayerList', room.players.map(p => ({
       id: p.id, name: p.name, avatar: p.avatar, team: p.team
@@ -336,15 +363,11 @@ io.on('connection', (socket) => {
     if (!room || room.status !== 'lobby' || !msg?.trim()) return;
     const player = room.players.find(p => p.id === socket.id);
     if (!player) return;
-    const message = {
+    io.to('room_' + roomId).emit('receiveLobbyMessage', {
       name: player.name,
       msg: msg.trim().substring(0, 150),
       team: player.team
-    };
-    // Lưu vào lịch sử, giới hạn 100 tin gần nhất
-    room.lobbyMessages.push(message);
-    if (room.lobbyMessages.length > 100) room.lobbyMessages.shift();
-    io.to('room_' + roomId).emit('receiveLobbyMessage', message);
+    });
   });
 
   // ── CHAT GIẢI LAO ─────────────────────────────────────────────────────────────
@@ -464,16 +487,27 @@ io.on('connection', (socket) => {
   });
 
   // ── Ngắt kết nối ─────────────────────────────────────────────────────────────
-  // ── Ngắt kết nối ─────────────────────────────────────────────────────────────
   socket.on('disconnect', () => {
     const adminRoomId = socket.data.adminRoomId;
     if (adminRoomId && rooms[adminRoomId] && rooms[adminRoomId].adminSocketId === socket.id) {
       const adminRoom = rooms[adminRoomId];
-      clearInterval(adminRoom.timer);
-      io.to('room_' + adminRoomId).emit('roomResetByAdmin', { newRoomId: null });
-      io.in('room_' + adminRoomId).socketsLeave('room_' + adminRoomId);
-      io.in('admin_' + adminRoomId).socketsLeave('admin_' + adminRoomId);
-      delete rooms[adminRoomId];
+
+      // Đánh dấu admin offline, không xóa phòng ngay
+      adminRoom.adminOffline = true;
+
+      // Thông báo cho player biết admin mất kết nối tạm thời
+      io.to('room_' + adminRoomId).emit('adminDisconnected', { graceSeconds: ADMIN_GRACE_MS / 1000 });
+
+      // Đặt timer: nếu sau ADMIN_GRACE_MS admin chưa quay lại → mới xóa phòng
+      adminRoom.adminGraceTimer = setTimeout(() => {
+        if (!rooms[adminRoomId]) return; // đã bị xóa trước đó
+        clearInterval(adminRoom.timer);
+        io.to('room_' + adminRoomId).emit('roomResetByAdmin', { newRoomId: null });
+        io.in('room_'  + adminRoomId).socketsLeave('room_'  + adminRoomId);
+        io.in('admin_' + adminRoomId).socketsLeave('admin_' + adminRoomId);
+        delete rooms[adminRoomId];
+      }, ADMIN_GRACE_MS);
+
       return;
     }
 
