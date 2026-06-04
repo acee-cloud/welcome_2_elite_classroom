@@ -647,14 +647,14 @@
         <div class="rules-header" onclick="toggleRules(this)">
             <span class="rules-header-left">
                 <span class="rules-icon">👇</span>
-                <span>RULES</span>
+                <span>HDSD</span>
             </span>
             <span class="rules-chevron">▾</span>
         </div>
         <div class="rules-body">
 
             <div class="rules-section">
-                <div class="rules-section-title">GAME STRUCTURE</div>
+                <div class="rules-section-title">RULES</div>
                 <div class="rules-grid">
                     <div class="rules-item">
                         <div class="rules-item-icon">🔢</div>
@@ -674,7 +674,7 @@
                         <div class="rules-item-icon">⏱</div>
                         <div>
                             <div class="rules-item-label">Thời gian / vòng</div>
-                            <div class="rules-item-val">50 giây &nbsp;·&nbsp; Vòng cuối: 40 giây</div>
+                            <div class="rules-item-val">50 giây &nbsp;·&nbsp; Vòng cuối 40 giây</div>
                         </div>
                     </div>
                     <div class="rules-item">
@@ -690,7 +690,7 @@
             <div class="rules-divider"></div>
 
             <div class="rules-section">
-                <div class="rules-section-title">🏆 SCORE</div>
+                <div class="rules-section-title">SCORE</div>
                 <div class="rules-score-row">
                     <div class="rules-score-block correct">
                         <div class="rules-score-num">+10</div>
@@ -710,7 +710,7 @@
                     </div>
                 </div>
                 <div class="rules-note">
-                    💡 Điểm có thể âm. Thứ hạng cá nhân xét theo điểm cao + thời gian trả lời ngắn.
+                    💡 Điểm có thể âm. Thứ hạng cá nhân xét theo điểm + thời gian trả lời.
                 </div>
             </div>
 
@@ -729,7 +729,7 @@
                     </div>
                 </div>
                 <div class="rules-note">
-                    Server tự chia đội cân bằng. Chiến thắng xét theo <strong>điểm trung bình</strong> của mỗi đội.
+                    Server tự chia đội cân bằng, giữa các đội không chênh lệch quá 1 thành viên. Chiến thắng xét theo <strong>điểm trung bình</strong> của mỗi đội.
                 </div>
             </div>
 
@@ -793,7 +793,7 @@
 
         <div id="room-center">
             <div id="player-counter-card">
-                <div class="counter-label">Người chơi đã vào</div>
+                <div class="counter-label">Hiện có</div>
                 <div class="counter-num" id="total-count">0</div>
                 <div class="counter-sub">Người chơi sẵn sàng</div>
             </div>
@@ -821,7 +821,7 @@
 <!-- ── DASHBOARD ──────────────────────────────────────────────────────────── -->
 <div id="dashboard-view">
     <div style="display:flex; justify-content:space-between; align-items:center; background:var(--panel); padding:14px 20px; border-radius:12px; border:1px solid var(--border); margin-bottom:14px; flex-wrap:wrap; gap:10px;">
-        <h2 id="current-stage-txt" style="font-family:'Orbitron'; margin:0; color:var(--accent);">STAGE 1</h2>
+        <h2 id="current-stage-txt" style="font-family:'Orbitron'; margin:0; color:var(--accent);">ROUND 1</h2>
         <h2 id="global-timer"      style="font-family:'Orbitron'; margin:0; color:#ffaa00;">60s</h2>
     </div>
 
@@ -901,7 +901,7 @@
         <input type="number" id="input-rounds" value="5" min="1" max="50"
                onkeypress="if(event.key==='Enter') confirmStartGame()">
         <div class="round-modal-note">
-            🔥 <span>Vòng cuối</span> tự động nhân đôi số điểm<br>
+            🔥 <span>Final round</span> tự động nhân đôi số điểm<br>
             Đúng <span>+20</span> &nbsp;|&nbsp; Sai <span style="color:#ff4a4a">−5</span>
         </div>
         <div class="round-btn-row">
@@ -1100,7 +1100,7 @@ socket.on('gameStarted', () => {
 socket.on('stageUpdate', (data) => {
     document.getElementById('current-stage-txt').innerText =
         `STAGE ${data.stageNum} / ${data.totalStages}` +
-        (data.isDouble ? ' — 🔥 VÒNG CUỐI X2 ĐIỂM' : '');
+        (data.isDouble ? ' — 🔥 FINAL ROUND X2' : '');
 });
 
 socket.on('timerUpdate', (timeLeft) => {
@@ -1114,7 +1114,7 @@ socket.on('intermissionStart', (data) => {
 });
 
 socket.on('gameOver', (d) => {
-    document.getElementById('current-stage-txt').innerText = '🏁 TRÒ CHƠI KẾT THÚC';
+    document.getElementById('current-stage-txt').innerText = '🏁 ALL ROUNDS CLEARED';
     document.getElementById('global-timer').innerText      = 'END';
     document.getElementById('reset-zone').style.display    = 'block';
     if (d && d.scoreA !== undefined) showWinnerOverlay(d);
@@ -1387,14 +1387,14 @@ socket.on('fullReportData', (players) => {
         const merges = [];
 
         // Title row — deep purple, size 16 (phân biệt với header xanh bên dưới)
-        const titleS1 = cs('4C1D95','EDE9FE','center',true,16,'2E1065');
+        const titleS1 = cs('30506E','EDE9FE','center',true,18,'2E1065');
         sc(ws,0,0,'BẢNG XẾP HẠNG',titleS1);
         fillMerge(ws,0,0,0,4,titleS1);
         merges.push({s:{r:0,c:0},e:{r:0,c:4}});
 
         // Header row
         const hdrs = ['#','Tên','Team','Điểm','Thời gian (s)'];
-        hdrs.forEach((h,c)=>sc(ws,1,c,h,cs('2D4A7A','FFFFFF','center',true,10,'1B3A6B')));
+        hdrs.forEach((h,c)=>sc(ws,1,c,h,cs('2D4A7A','FFFFFF','center',true,12,'1B3A6B')));
 
         // Data rows
         sorted.forEach((p,i)=>{
@@ -1402,13 +1402,13 @@ socket.on('fullReportData', (players) => {
             const even=i%2===0;
             const bg=i===0?'FFF3CD':i===1?'F2F2F2':i===2?'FDE8D8':(even?'F8F9FA':'FFFFFF');
             const fg='1A1A1A';
-            const std=cs(bg,fg,'center',false,10,'BBBBBB');
-            const stdB=cs(bg,fg,'center',true,10,'BBBBBB');
-            const stdL=cs(bg,fg,'left',false,10,'BBBBBB');
+            const std=cs(bg,fg,'center',false,11,'BBBBBB');
+            const stdB=cs(bg,fg,'center',true,11,'BBBBBB');
+            const stdL=cs(bg,fg,'left',false,11,'BBBBBB');
             const teamBg=p.team==='A'?'DCE8FF':'FFE8E8';
             sc(ws,r,0,i+1,stdB);
             sc(ws,r,1,p.name,stdL);
-            sc(ws,r,2,'Team '+p.team,cs(teamBg,fg,'center',true,10,'BBBBBB'));
+            sc(ws,r,2,'Team '+p.team,cs(teamBg,fg,'center',true,11,'BBBBBB'));
             sc(ws,r,3,p.score,stdB);
             sc(ws,r,4,parseFloat(p.totalTimeTaken.toFixed(2)),std);
         });
@@ -1435,8 +1435,8 @@ socket.on('fullReportData', (players) => {
         const DROW    = 3;                    // hàng dữ liệu bắt đầu
 
         // ── Màu cơ bản ───────────────────────────────────────────────────────
-        const HDR_PA    = '7B2020';  // player đội A
-        const HDR_PB    = '1A4480';  // player đội B
+        const HDR_PA    = 'DF4343';  // player đội A
+        const HDR_PB    = '4F7EC1';  // player đội B
         const HDR_STAT  = '3D5A80';  // header cột thống kê
         const Q_EVEN    = 'F0F4FF';
         const Q_ODD     = 'FFFFFF';
@@ -1448,23 +1448,23 @@ socket.on('fullReportData', (players) => {
         const BC_NORM   = 'BBBBBB';
 
         // ── Màu phân biệt: tiêu đề / STT / Câu hỏi ──────────────────────────
-        // Tím đậm  — tiêu đề lớn hàng đầu
-        const TITLE_BG = '4C1D95'; const TITLE_FG = 'EDE9FE';
-        // Xanh lá  — header cột STT
-        const STT_BG   = '065F46'; const STT_FG   = 'D1FAE5';
-        // Hổ phách — header cột câu hỏi
-        const Q_HDR_BG = '78350F'; const Q_HDR_FG = 'FFF7ED';
+        // Tiêu đề lớn hàng đầu
+        const TITLE_BG = '30506E'; const TITLE_FG = 'EDE9FE';
+        // Header cột STT
+        const STT_BG   = '447B76'; const STT_FG   = 'F0FFF7';
+        // Header cột câu hỏi
+        const Q_HDR_BG = 'B7B0CC'; const Q_HDR_FG = 'FFF7ED';
 
-        // ── R0: Tiêu đề lớn — tím đậm, size 16 ──────────────────────────────
-        const titleS2 = cs(TITLE_BG,TITLE_FG,'center',true,16,'2E1065');
+        // ── R0: Tiêu đề lớn — ──────────────────────────────
+        const titleS2 = cs(TITLE_BG,TITLE_FG,'center',true,18,'30506E');
         sc(ws,0,0,'BẢNG CHI TIẾT TỪNG CÂU HỎI',titleS2);
         fillMerge(ws,0,0,0,TCOLS-1,titleS2);
         merges.push({s:{r:0,c:0},e:{r:0,c:TCOLS-1}});
 
-        // ── Header cố định (merge R1–R2): STT xanh lá, Câu hỏi hổ phách ─────
-        const sttHdr  = cs(STT_BG,  STT_FG,  'center',true,10,BC_DARK);
-        const qHdr    = cs(Q_HDR_BG,Q_HDR_FG,'center',true,10,BC_DARK);
-        const statHdr = cs(HDR_STAT,'FFFFFF', 'center',true,10,BC_DARK);
+        // ── Header cố định (merge R1–R2): STT, Câu hỏi ─────
+        const sttHdr  = cs(STT_BG,  STT_FG,  'center',true,12,BC_DARK);
+        const qHdr    = cs(Q_HDR_BG,Q_HDR_FG,'center',true,12,BC_DARK);
+        const statHdr = cs(HDR_STAT,'FFFFFF', 'center',true,12,BC_DARK);
 
         sc(ws,1,0,'#',sttHdr);
         fillMerge(ws,1,0,2,0,sttHdr);
@@ -1486,38 +1486,38 @@ socket.on('fullReportData', (players) => {
         sorted.forEach((p,pi)=>{
             const col=PSTART+pi;
             const bg=p.team==='A'?HDR_PA:HDR_PB;
-            sc(ws,1,col,p.name,      cs(bg,'FFFFFF','center',true,10,BC_DARK));
-            sc(ws,2,col,p.score+'đ', cs(bg,'FFFFFF','center',true,10,BC_DARK));
+            sc(ws,1,col,p.name,      cs(bg,'FFFFFF','center',true,12,BC_DARK));
+            sc(ws,2,col,p.score+'đ', cs(bg,'FFFFFF','center',true,12,BC_DARK));
         });
 
         // ── Data rows ─────────────────────────────────────────────────────────
         allQs.forEach((q,qi)=>{
             const r=DROW+qi;
             const bg=qi%2===0?Q_EVEN:Q_ODD;
-            sc(ws,r,0,qi+1,     cs(bg,'1A1A1A','center',true, 10,BC_NORM));
-            sc(ws,r,1,q.text,   cs(bg,'1A1A1A','left',  false,10,BC_NORM));
+            sc(ws,r,0,qi+1,     cs(bg,'1A1A1A','center',true, 12,BC_NORM));
+            sc(ws,r,1,q.text,   cs(bg,'1A1A1A','left',  false,12,BC_NORM));
 
             let correctCount=0;
             sorted.forEach((p,pi)=>{
                 const col=PSTART+pi;
                 const h=(p.history||[])[qi];
-                if(!h){ sc(ws,r,col,'—',cs(bg,'AAAAAA','center',false,10,BC_NORM)); return; }
+                if(!h){ sc(ws,r,col,'—',cs(bg,'AAAAAA','center',false,12,BC_NORM)); return; }
                 const isSkip=h.skipped||h.chosenAnswer==='(bỏ qua)';
                 const isOk=h.isCorrect&&!isSkip;
                 if(isOk) correctCount++;
                 let txt,oBg,oFg;
-                if(isSkip)      { txt='⏭ Bỏ qua'; oBg=SKP_BG; oFg=SKP_FG; }
-                else if(isOk)   { txt='✔ '+h.chosenAnswer; oBg=OK_BG; oFg=OK_FG; }
-                else            { txt='✘ '+h.chosenAnswer; oBg=ERR_BG; oFg=ERR_FG; }
-                sc(ws,r,col,txt,cs(oBg,oFg,'center',true,10,BC_NORM));
+                if(isSkip)      { txt='Bỏ qua'; oBg=SKP_BG; oFg=SKP_FG; }
+                else if(isOk)   { txt='Đúng'+h.chosenAnswer; oBg=OK_BG; oFg=OK_FG; }
+                else            { txt='Sai'+h.chosenAnswer; oBg=ERR_BG; oFg=ERR_FG; }
+                sc(ws,r,col,txt,cs(oBg,oFg,'center',true,12,BC_NORM));
             });
 
             const ratio=N>0?Math.round(correctCount/N*100):0;
-            sc(ws,r,CCOUNT,correctCount+'/'+N,  cs(STAT_BG,STAT_FG,'center',true,10,BC_NORM));
+            sc(ws,r,CCOUNT,correctCount+'/'+N,  cs(STAT_BG,STAT_FG,'center',true,12,BC_NORM));
             sc(ws,r,CRATIO,ratio+'%',            cs(
                 ratio>=70?OK_BG:ratio>=40?SKP_BG:ERR_BG,
                 ratio>=70?OK_FG:ratio>=40?SKP_FG:ERR_FG,
-                'center',true,10,BC_NORM
+                'center',true,12,BC_NORM
             ));
         });
 
