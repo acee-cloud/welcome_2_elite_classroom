@@ -966,15 +966,12 @@ function setupRoomUI(roomId) {
 socket.on('roomCreated', (roomId) => {
     setupRoomUI(roomId);
 
-    // [FIX] Lưu roomId vào sessionStorage để admin có thể rejoin khi F5/đóng-mở tab
     sessionStorage.setItem('adminRoomId', roomId);
 
-    // Ẩn lobby, hiện room view
     document.getElementById('lobby-view').style.display  = 'none';
     document.getElementById('dashboard-view').style.display = 'none';
     document.getElementById('room-view').classList.add('active');
 
-    // Reset danh sách player
     playerMap = {};
     document.getElementById('list-a').innerHTML = '<div class="team-empty">Chưa có thành viên…</div>';
     document.getElementById('list-b').innerHTML = '<div class="team-empty">Chưa có thành viên…</div>';
@@ -1234,26 +1231,19 @@ socket.on('realtimeScoreUpdate', (data) => {
 });
 
 // ── RESET ─────────────────────────────────────────────────────────────────────
-// FIX: Admin nhận {newRoomId} từ server, sau đó server tự emit 'roomCreated'
-// với newRoomId. Handler roomCreated sẽ setup UI phòng mới + QR mới.
 function resetGame() {
     if (confirm('Bạn có chắc muốn reset phòng và bắt đầu lượt chơi mới?\nRoom ID mới sẽ được tạo.')) {
         socket.emit('adminResetGame', myRoomId);
     }
 }
 
-// FIX: roomResetByAdmin cho admin chỉ là xác nhận — phòng mới sẽ đến qua 'roomCreated'
 socket.on('roomResetByAdmin', (data) => {
     document.getElementById('winner-overlay').classList.remove('show');
-    // [FIX] Xóa session khi phòng bị đóng hẳn (newRoomId: null)
     if (!data || !data.newRoomId) {
         sessionStorage.removeItem('adminRoomId');
     }
-    // roomCreated sẽ được emit ngay sau từ server với newRoomId
 });
 
-// [FIX] Khi socket kết nối (bao gồm lần đầu và sau khi F5/reconnect),
-// tự động thử rejoin phòng cũ nếu còn lưu trong sessionStorage
 socket.on('connect', () => {
     const savedRoomId = sessionStorage.getItem('adminRoomId');
     if (savedRoomId && !myRoomId) {
@@ -1267,7 +1257,6 @@ socket.on('connect', () => {
 function katexToPlain(str) {
     if (!str) return '';
 
-    // Superscript / subscript Unicode maps
     const supMap = { '0':'⁰','1':'¹','2':'²','3':'³','4':'⁴','5':'⁵','6':'⁶','7':'⁷','8':'⁸','9':'⁹','+':'⁺','-':'⁻','n':'ⁿ','i':'ⁱ','a':'ᵃ','b':'ᵇ','c':'ᶜ','d':'ᵈ','e':'ᵉ','f':'ᶠ','g':'ᵍ','h':'ʰ','j':'ʲ','k':'ᵏ','l':'ˡ','m':'ᵐ','o':'ᵒ','p':'ᵖ','r':'ʳ','s':'ˢ','t':'ᵗ','u':'ᵘ','v':'ᵛ','w':'ʷ','x':'ˣ','y':'ʸ','z':'ᶻ' };
     const subMap = { '0':'₀','1':'₁','2':'₂','3':'₃','4':'₄','5':'₅','6':'₆','7':'₇','8':'₈','9':'₉','+':'₊','-':'₋','a':'ₐ','e':'ₑ','i':'ᵢ','N':'ₙ','o':'ₒ','r':'ᵣ','u':'ᵤ','v':'ᵥ','x':'ₓ','M':'ₘ' };
 
@@ -1275,35 +1264,26 @@ function katexToPlain(str) {
     function toSub(s) { return String(s).split('').map(c => subMap[c] || c).join(''); }
 
     return str
-        // Strip delimiters
         .replace(/\$\$([^$]*)\$\$/g, '$1')
         .replace(/\\\[([^\]]*)\\\]/g, '$1')
         .replace(/\$([^$]+)\$/g, '$1')
         .replace(/\\\(([^)]*)\\\)/g, '$1')
-        // Fractions
         .replace(/\\frac\{([^}]*)\}\{([^}]*)\}/g, '($1/$2)')
-        // Square roots
         .replace(/\\sqrt\[([^\]]*)\]\{([^}]*)\}/g, '($2)^(1/$1)')
         .replace(/\\sqrt\{([^}]*)\}/g, '√($1)')
         .replace(/\\sqrt\s+/g, '√')
-        // Vector: \vec{x} → x⃗  (combining right arrow above U+20D7)
         .replace(/\\vec\{([^}]{1,4})\}/g, (_, s) => s + '\u20D7')
         .replace(/\\overrightarrow\{([^}]*)\}/g, (_, s) => s + '\u20D7')
         .replace(/\\overleftarrow\{([^}]*)\}/g, (_, s) => s + '\u20D6')
-        // Hat / bar / dot / tilde
         .replace(/\\hat\{([^}]*)\}/g, (_, s) => s + '\u0302')
         .replace(/\\bar\{([^}]*)\}/g, (_, s) => s + '\u0305')
         .replace(/\\dot\{([^}]*)\}/g, (_, s) => s + '\u0307')
         .replace(/\\ddot\{([^}]*)\}/g, (_, s) => s + '\u0308')
         .replace(/\\tilde\{([^}]*)\}/g, (_, s) => s + '\u0303')
-        // Superscript in braces: ^{abc} → Unicode
         .replace(/\^\{([^}]+)\}/g, (_, e) => toSup(e))
-        // Subscript in braces: _{abc} → Unicode
         .replace(/\_\{([^}]+)\}/g, (_, e) => toSub(e))
-        // Single char sup/sub
         .replace(/\^([0-9a-zA-Z+\-])/g, (_, c) => toSup(c))
         .replace(/\_([0-9a-zA-Z+\-])/g, (_, c) => toSub(c))
-        // Operators
         .replace(/\\cdot/g,'·').replace(/\\times/g,'×').replace(/\\div/g,'÷')
         .replace(/\\pm/g,'±').replace(/\\mp/g,'∓')
         .replace(/\\leq/g,'≤').replace(/\\geq/g,'≥').replace(/\\neq/g,'≠').replace(/\\approx/g,'≈')
@@ -1313,7 +1293,6 @@ function katexToPlain(str) {
         .replace(/\\subset/g,'⊂').replace(/\\cup/g,'∪').replace(/\\cap/g,'∩')
         .replace(/\\perp/g,'⊥').replace(/\\parallel/g,'∥')
         .replace(/\\angle/g,'∠').replace(/\\degree/g,'°').replace(/\\circ/g,'°')
-        // Greek letters
         .replace(/\\alpha/g,'α').replace(/\\Alpha/g,'Α')
         .replace(/\\beta/g,'β').replace(/\\Beta/g,'Β')
         .replace(/\\gamma/g,'γ').replace(/\\Gamma/g,'Γ')
@@ -1332,15 +1311,10 @@ function katexToPlain(str) {
         .replace(/\\phi/g,'φ').replace(/\\Phi/g,'Φ').replace(/\\varphi/g,'ϕ')
         .replace(/\\chi/g,'χ').replace(/\\psi/g,'ψ').replace(/\\Psi/g,'Ψ')
         .replace(/\\omega/g,'ω').replace(/\\Omega/g,'Ω')
-        // Text wrappers
         .replace(/\\(?:text|mathrm|mathbf|mathit|textbf|textrm|boldsymbol)\{([^}]*)\}/g, '$1')
-        // Brackets
         .replace(/\\left[\(\[\|{\\]/g,'').replace(/\\right[\)\]\|}\\.]/g,'')
-        // Spacing
         .replace(/\\[,;:!]/g,' ')
-        // Leftover braces and backslashes
         .replace(/[{}]/g,'').replace(/\\/g,' ')
-        // Normalize whitespace
         .replace(/\s+/g,' ').trim();
 }
 
@@ -1355,23 +1329,22 @@ socket.on('fullReportData', (players) => {
 
     const wb = XLSX.utils.book_new();
 
-    // ── Thin border helper ────────────────────────────────────────────────────
+    // ── Border helpers ────────────────────────────────────────────────────────
     function bdr(clr) {
-        return { style: 'thin', color: { rgb: clr || 'AAAAAA' } };
+        return { style: 'thin', color: { rgb: clr || '888888' } };
     }
     function allBorders(clr) {
         const b = bdr(clr);
         return { top: b, bottom: b, left: b, right: b };
     }
 
-    // ── Cell style builder ────────────────────────────────────────────────────
-    // bg, fg, align ('center'|'left'), bold, fontSize, borderColor
+    // ── Cell style builder — fill ALWAYS explicit so borders render correctly ─
     function cs(bg, fg, align, bold, sz, bClr) {
         return {
             font:      { bold: !!bold, sz: sz || 10, color: { rgb: fg || '1A1A1A' } },
-            fill:      bg ? { patternType: 'solid', fgColor: { rgb: bg } } : undefined,
+            fill:      { patternType: 'solid', fgColor: { rgb: bg || 'FFFFFF' } },
             alignment: { horizontal: align || 'center', vertical: 'center', wrapText: true },
-            border:    allBorders(bClr || 'BBBBBB')
+            border:    allBorders(bClr || '888888')
         };
     }
 
@@ -1379,6 +1352,17 @@ socket.on('fullReportData', (players) => {
     function sc(ws, r, c, v, style) {
         const addr = XLSX.utils.encode_cell({ r, c });
         ws[addr] = { v, t: typeof v === 'number' ? 'n' : 's', s: style };
+    }
+
+    // ── Fill merged range with border stubs so all edges render correctly ─────
+    function fillMerge(ws, r1, c1, r2, c2, style) {
+        for (let r = r1; r <= r2; r++) {
+            for (let c = c1; c <= c2; c++) {
+                if (r === r1 && c === c1) continue; // main cell already set
+                const addr = XLSX.utils.encode_cell({ r, c });
+                ws[addr] = { v: '', t: 's', s: style };
+            }
+        }
     }
 
     // ── Prepare data ──────────────────────────────────────────────────────────
@@ -1402,15 +1386,17 @@ socket.on('fullReportData', (players) => {
         const ws = {};
         const merges = [];
 
-        // Title row
-        sc(ws,0,0,'BẢNG XẾP HẠNG', cs('1B3A6B','FFFFFF','center',true,14,'1B3A6B'));
+        // Title row — deep purple, size 16 (phân biệt với header xanh bên dưới)
+        const titleS1 = cs('4C1D95','EDE9FE','center',true,16,'2E1065');
+        sc(ws,0,0,'BẢNG XẾP HẠNG',titleS1);
+        fillMerge(ws,0,0,0,4,titleS1);
         merges.push({s:{r:0,c:0},e:{r:0,c:4}});
 
         // Header row
         const hdrs = ['#','Tên','Team','Điểm','Thời gian (s)'];
         hdrs.forEach((h,c)=>sc(ws,1,c,h,cs('2D4A7A','FFFFFF','center',true,10,'1B3A6B')));
 
-        // Data rows — thời gian dùng style xám chung như các cột khác
+        // Data rows
         sorted.forEach((p,i)=>{
             const r=i+2;
             const even=i%2===0;
@@ -1429,7 +1415,7 @@ socket.on('fullReportData', (players) => {
 
         ws['!ref']=XLSX.utils.encode_range({s:{r:0,c:0},e:{r:N+1,c:4}});
         ws['!merges']=merges;
-        ws['!rows']=[{hpt:22},{hpt:22}];
+        ws['!rows']=[{hpt:26},{hpt:22}];
         ws['!cols']=[{wch:5},{wch:28},{wch:9},{wch:9},{wch:16}];
         XLSX.utils.book_append_sheet(wb,ws,'Xếp Hạng');
     }
@@ -1448,8 +1434,7 @@ socket.on('fullReportData', (players) => {
         const TCOLS   = PSTART + N + 2;
         const DROW    = 3;                    // hàng dữ liệu bắt đầu
 
-        // ── Màu ──────────────────────────────────────────────────────────────
-        const HDR_DARK  = '2766BF';
+        // ── Màu cơ bản ───────────────────────────────────────────────────────
         const HDR_PA    = '7B2020';  // player đội A
         const HDR_PB    = '1A4480';  // player đội B
         const HDR_STAT  = '3D5A80';  // header cột thống kê
@@ -1462,35 +1447,47 @@ socket.on('fullReportData', (players) => {
         const BC_DARK   = '568EDC';
         const BC_NORM   = 'BBBBBB';
 
-        // ── R0: Tiêu đề lớn ──────────────────────────────────────────────────
-        sc(ws,0,0,'BẢNG CHI TIẾT TỪNG CÂU HỎI',cs(HDR_DARK,'FFFFFF','center',true,14,BC_DARK));
+        // ── Màu phân biệt: tiêu đề / STT / Câu hỏi ──────────────────────────
+        // Tím đậm  — tiêu đề lớn hàng đầu
+        const TITLE_BG = '4C1D95'; const TITLE_FG = 'EDE9FE';
+        // Xanh lá  — header cột STT
+        const STT_BG   = '065F46'; const STT_FG   = 'D1FAE5';
+        // Hổ phách — header cột câu hỏi
+        const Q_HDR_BG = '78350F'; const Q_HDR_FG = 'FFF7ED';
+
+        // ── R0: Tiêu đề lớn — tím đậm, size 16 ──────────────────────────────
+        const titleS2 = cs(TITLE_BG,TITLE_FG,'center',true,16,'2E1065');
+        sc(ws,0,0,'BẢNG CHI TIẾT TỪNG CÂU HỎI',titleS2);
+        fillMerge(ws,0,0,0,TCOLS-1,titleS2);
         merges.push({s:{r:0,c:0},e:{r:0,c:TCOLS-1}});
 
-        // ── Header cố định (merge 3 hàng R0–R2) ──────────────────────────────
-        const fixHdr = cs(HDR_DARK,'FFFFFF','center',true,10,BC_DARK);
-        sc(ws,0,0,'BẢNG CHI TIẾT TỪNG CÂU HỎI',fixHdr); // đã set ở trên
-        // Row 1: header cột cố định (merge xuống R2)
-        ['#','Câu hỏi'].forEach((lbl,c)=>{
-            sc(ws,1,c,lbl,fixHdr);
-            merges.push({s:{r:1,c},e:{r:2,c}});
-        });
-        // Thống kê cũng merge
-        sc(ws,1,CCOUNT,'Số lượng chọn đúng',  cs(HDR_STAT,'FFFFFF','center',true,10,BC_DARK));
-        sc(ws,1,CRATIO,'Tỉ lệ đúng',cs(HDR_STAT,'FFFFFF','center',true,10,BC_DARK));
+        // ── Header cố định (merge R1–R2): STT xanh lá, Câu hỏi hổ phách ─────
+        const sttHdr  = cs(STT_BG,  STT_FG,  'center',true,10,BC_DARK);
+        const qHdr    = cs(Q_HDR_BG,Q_HDR_FG,'center',true,10,BC_DARK);
+        const statHdr = cs(HDR_STAT,'FFFFFF', 'center',true,10,BC_DARK);
+
+        sc(ws,1,0,'#',sttHdr);
+        fillMerge(ws,1,0,2,0,sttHdr);
+        merges.push({s:{r:1,c:0},e:{r:2,c:0}});
+
+        sc(ws,1,1,'Câu hỏi',qHdr);
+        fillMerge(ws,1,1,2,1,qHdr);
+        merges.push({s:{r:1,c:1},e:{r:2,c:1}});
+
+        sc(ws,1,CCOUNT,'Số lượng chọn đúng',statHdr);
+        fillMerge(ws,1,CCOUNT,2,CCOUNT,statHdr);
         merges.push({s:{r:1,c:CCOUNT},e:{r:2,c:CCOUNT}});
+
+        sc(ws,1,CRATIO,'Tỉ lệ đúng',statHdr);
+        fillMerge(ws,1,CRATIO,2,CRATIO,statHdr);
         merges.push({s:{r:1,c:CRATIO},e:{r:2,c:CRATIO}});
 
-        // Row 1: tên player
+        // Row 1: tên player / Row 2: điểm tổng
         sorted.forEach((p,pi)=>{
             const col=PSTART+pi;
             const bg=p.team==='A'?HDR_PA:HDR_PB;
-            sc(ws,1,col,p.name,cs(bg,'FFFFFF','center',true,10,BC_DARK));
-        });
-        // Row 2: điểm tổng player
-        sorted.forEach((p,pi)=>{
-            const col=PSTART+pi;
-            const bg=p.team==='A'?HDR_PA:HDR_PB;
-            sc(ws,2,col,p.score+'đ',cs(bg,'FFFFFF','center',true,10,BC_DARK));
+            sc(ws,1,col,p.name,      cs(bg,'FFFFFF','center',true,10,BC_DARK));
+            sc(ws,2,col,p.score+'đ', cs(bg,'FFFFFF','center',true,10,BC_DARK));
         });
 
         // ── Data rows ─────────────────────────────────────────────────────────
@@ -1527,7 +1524,7 @@ socket.on('fullReportData', (players) => {
         // ── Kích thước ───────────────────────────────────────────────────────
         ws['!ref']=XLSX.utils.encode_range({s:{r:0,c:0},e:{r:DROW+Q-1,c:TCOLS-1}});
         ws['!merges']=merges;
-        ws['!rows']=[{hpt:24},{hpt:28},{hpt:22}];
+        ws['!rows']=[{hpt:26},{hpt:28},{hpt:22}];
         for(let i=0;i<Q;i++) ws['!rows'].push({hpt:48});
 
         const cols=[{wch:5},{wch:52}];
