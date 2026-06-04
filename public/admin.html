@@ -1099,7 +1099,7 @@ socket.on('gameStarted', () => {
 // ── DASHBOARD ─────────────────────────────────────────────────────────────────
 socket.on('stageUpdate', (data) => {
     document.getElementById('current-stage-txt').innerText =
-        `STAGE ${data.stageNum} / ${data.totalStages}` +
+        `ROUND ${data.stageNum} / ${data.totalStages}` +
         (data.isDouble ? ' — 🔥 FINAL ROUND X2' : '');
 });
 
@@ -1110,7 +1110,7 @@ socket.on('timerUpdate', (timeLeft) => {
 socket.on('intermissionStart', (data) => {
     const bonus = (data && data.bonusTime > 0) ? ' (+' + data.bonusTime + 's)' : '';
     const total = (data && data.totalTime) ? data.totalTime : 15;
-    document.getElementById('current-stage-txt').innerText = 'GIẢI LAO (' + total + 'S)' + bonus;
+    document.getElementById('current-stage-txt').innerText = 'BREAK TIME (' + total + 'S)' + bonus;
 });
 
 socket.on('gameOver', (d) => {
@@ -1437,14 +1437,14 @@ socket.on('fullReportData', (players) => {
         // ── Màu cơ bản ───────────────────────────────────────────────────────
         const HDR_PA    = 'DF4343';  // player đội A
         const HDR_PB    = '4F7EC1';  // player đội B
-        const HDR_STAT  = '3D5A80';  // header cột thống kê
+        const HDR_STAT  = '68717C';  // header cột thống kê
         const Q_EVEN    = 'F0F4FF';
         const Q_ODD     = 'FFFFFF';
         const OK_BG     = 'D4EDDA'; const OK_FG = '155724';
         const ERR_BG    = 'F8D7DA'; const ERR_FG = '721C24';
         const SKP_BG    = 'FFF3CD'; const SKP_FG = '856404';
         const STAT_BG   = 'EDE7F6'; const STAT_FG = '4527A0';
-        const BC_DARK   = '568EDC';
+        const BC_DARK   = '4C7BBD';
         const BC_NORM   = 'BBBBBB';
 
         // ── Màu phân biệt: tiêu đề / STT / Câu hỏi ──────────────────────────
@@ -1453,7 +1453,7 @@ socket.on('fullReportData', (players) => {
         // Header cột STT
         const STT_BG   = '447B76'; const STT_FG   = 'F0FFF7';
         // Header cột câu hỏi
-        const Q_HDR_BG = 'B7B0CC'; const Q_HDR_FG = 'FFF7ED';
+        const Q_HDR_BG = '645D79'; const Q_HDR_FG = 'FFF7ED';
 
         // ── R0: Tiêu đề lớn — ──────────────────────────────
         const titleS2 = cs(TITLE_BG,TITLE_FG,'center',true,18,'30506E');
@@ -1506,9 +1506,9 @@ socket.on('fullReportData', (players) => {
                 const isOk=h.isCorrect&&!isSkip;
                 if(isOk) correctCount++;
                 let txt,oBg,oFg;
-                if(isSkip)      { txt='Bỏ qua'; oBg=SKP_BG; oFg=SKP_FG; }
-                else if(isOk)   { txt='Đúng'+h.chosenAnswer; oBg=OK_BG; oFg=OK_FG; }
-                else            { txt='Sai'+h.chosenAnswer; oBg=ERR_BG; oFg=ERR_FG; }
+                if(isSkip)      { txt='Bỏ qua '; oBg=SKP_BG; oFg=SKP_FG; }
+                else if(isOk)   { txt='Đúng'; oBg=OK_BG; oFg=OK_FG; }
+                else            { txt='Sai'; oBg=ERR_BG; oFg=ERR_FG; }
                 sc(ws,r,col,txt,cs(oBg,oFg,'center',true,12,BC_NORM));
             });
 
