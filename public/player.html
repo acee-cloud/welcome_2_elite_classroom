@@ -854,7 +854,7 @@
             <div class="live-score-val team-a" id="live-score-a">0</div>
         </div>
         <div class="live-score-item me-item">
-            <div class="live-score-label">⭐ Điểm của bạn</div>
+            <div class="live-score-label">⭐ Your score</div>
             <div class="live-score-val my-score" id="live-score-me">0</div>
         </div>
         <div class="live-score-item">
@@ -864,7 +864,7 @@
     </div>
 
     <div class="game-header">
-        <span class="stage-label" id="stage-title">STAGE 1</span>
+        <span class="stage-label" id="stage-title">ROUND 1</span>
         <span id="timer-text">50s</span>
     </div>
 
@@ -1675,7 +1675,7 @@ socket.on('gameStarted', () => {
 });
 
 // ═══════════════════════════════════════
-//  STAGE / VÒNG
+//  ROUND / VÒNG
 // ═══════════════════════════════════════
 socket.on('startStage', (data) => {
     // Reset trạng thái giải lao khi vòng mới bắt đầu
@@ -1689,8 +1689,8 @@ socket.on('startStage', (data) => {
     currentTimeLimit = data.timeLimit || 50;
     questionIndex = 0;
 
-    const stageLabel = `STAGE ${data.stageNum} / ${data.totalStages}` +
-                       (currentStageDouble ? ' ★ NHÂN ĐÔI' : '');
+    const stageLabel = `ROUND ${data.stageNum} / ${data.totalStages}` +
+                       (currentStageDouble ? ' ★ X2' : '');
     document.getElementById('stage-title').textContent = stageLabel;
     document.getElementById('top-progress-container').style.display = 'block';
 
@@ -1722,7 +1722,7 @@ function renderSingleQuestion() {
         <div class="question-card">
             <div class="q-meta">
                 <span>Câu ${questionIndex + 1} / ${currentQuestions.length}</span>
-                ${isBonus ? '<span class="q-bonus-badge">★ X2 ĐIỂM</span>' : ''}
+                ${isBonus ? '<span class="q-bonus-badge">★ X2</span>' : ''}
             </div>
             <div class="question-text">${q.text}</div>
             <div style="display:flex; flex-direction:column; gap:2px;">
@@ -1935,7 +1935,7 @@ socket.on('intermissionStart', (data) => {
     const timerEl = document.getElementById('break-timer');
     if (timerEl) { timerEl.textContent = data.totalTime || 15; timerEl.style.fontSize = ''; }
     const subtitle = document.getElementById('intermission-subtitle');
-    if (subtitle) subtitle.textContent = 'Stage tiếp theo bắt đầu sau...';
+    if (subtitle) subtitle.textContent = 'Next round starts in...';
 
     // Thông báo hệ thống cho tất cả
     addIntermissionMessage({
@@ -2042,7 +2042,7 @@ socket.on('gameOver', (d) => {
         winColor = '#ffaa00';
     } else {
         const isA = d.winningTeam === 'A';
-        winText  = `🏆 TEAM ${d.winningTeam} WIN!`;
+        winText  = `🏆 TEAM ${d.winningTeam} WIN !`;
         winColor = isA ? 'var(--team-a)' : 'var(--team-b)';
     }
 
@@ -2062,7 +2062,7 @@ socket.on('gameOver', (d) => {
                 <div style="font-size:0.7rem; color:#64748b;">điểm</div>
             </div>
         </div>
-        <div style="color:var(--gold); font-size:0.9rem; margin-top:8px;">⭐ Điểm cá nhân: <strong style="font-family:'Orbitron'">${myScore}</strong>đ</div>
+        <div style="color:var(--gold); font-size:0.9rem; margin-top:8px;">⭐ Your score <strong style="font-family:'Orbitron'">${myScore}</strong>đ</div>
     `;
     switchScreen('summary-screen');
 });
