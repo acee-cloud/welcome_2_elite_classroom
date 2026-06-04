@@ -1202,11 +1202,6 @@ socket.on('realtimeScoreUpdate', (data) => {
                          `<span class="rank-medal rank-n">${rank}</span>`;
 
         let tClass = 'time-display';
-        if (times.length > 1) {
-            if (p.totalTimeTaken === minT) tClass += ' time-fast';
-            else if (p.totalTimeTaken === maxT) tClass += ' time-slow';
-        }
-
         const pid = p.id || p.name;
         let row = cache[pid];
         if (!row) { row = document.createElement('tr'); row.dataset.pid = pid; }
@@ -1334,8 +1329,13 @@ socket.on('fullReportData', (players) => {
         return { style: 'thin', color: { rgb: clr || '888888' } };
     }
     function allBorders(clr) {
-        const b = bdr(clr);
-        return { top: b, bottom: b, left: b, right: b };
+        // Khởi tạo các object bdr() độc lập cho từng cạnh để xlsx-js-style có thể render được viền
+        return { 
+            top: bdr(clr), 
+            bottom: bdr(clr), 
+            left: bdr(clr), 
+            right: bdr(clr) 
+        };
     }
 
     // ── Cell style builder — fill ALWAYS explicit so borders render correctly ─
